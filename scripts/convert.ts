@@ -2,6 +2,12 @@ import fs from 'fs/promises'
 import path from 'path'
 import sharp from 'sharp'
 
+const MSG = {
+  ERROR: '\x1b[0m[\x1b[31m ERROR \x1b[0m]',
+  SUCCESS: '\x1b[0m[\x1b[32m DONE \x1b[0m]',
+  WARN: '\x1b[0m[\x1b[33m WARN \x1b[0m]',
+} as const
+
 const DIRS = {
   input: path.join(process.cwd(), 'public/images'),
   webp: path.join(process.cwd(), 'public/images/webp'),
@@ -72,10 +78,13 @@ async function main() {
 
   const total = stats.processed + stats.skipped + stats.failed.length
   if (stats.failed.length) {
-    console.warn(`[WARN] Processed ${total} files, but failed: ${stats.failed.join(', ')}`)
+    console.warn(`${MSG.WARN} Processed ${total} files, but failed: ${stats.failed.join(', ')}`)
   } else {
-    console.log(`[DONE] Processed ${total} files`)
+    console.log(`${MSG.SUCCESS} Processed ${total} files`)
   }
 }
 
-main().catch(err => console.error(`[ERROR] ${err}`))
+main().catch(err => {
+  console.error(`${MSG.ERROR} ${err}`)
+  process.exit(1)
+})

@@ -2,6 +2,12 @@ import { commissionData } from '#data/commissionData'
 import fs from 'fs'
 import path from 'path'
 
+const MSG = {
+  ERROR: '\x1b[0m[\x1b[31m ERROR \x1b[0m]',
+  SUCCESS: '\x1b[0m[\x1b[32m DONE \x1b[0m]',
+  WARN: '\x1b[0m[\x1b[33m WARN \x1b[0m]',
+} as const
+
 const OUTPUT_FILE_PATH = path.join(process.cwd(), 'data/imageImports.ts')
 
 function getPartNumber(fileName: string): number {
@@ -48,4 +54,10 @@ const content = [
   '',
 ].join('\n')
 
-fs.writeFileSync(OUTPUT_FILE_PATH, content, 'utf-8')
+try {
+  fs.writeFileSync(OUTPUT_FILE_PATH, content, 'utf-8')
+  console.log(`${MSG.SUCCESS} Generated imports for ${importItems.length} images`)
+} catch (err) {
+  console.error(`${MSG.ERROR} ${(err as Error).message}`)
+  process.exit(1)
+}
