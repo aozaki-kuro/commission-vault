@@ -1,4 +1,4 @@
-import { kebabCase } from '#components/utils'
+import { kebabCase } from '#lib/strings'
 import Link from 'next/link'
 
 type TitleProps = {

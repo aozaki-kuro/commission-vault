@@ -1,52 +1,68 @@
 'use client'
-import { findActiveSection, getAllCharacters, getSections, kebabCase } from '#components/utils'
-import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { kebabCase } from '#lib/strings'
+import { getAllCharacters } from '#lib/characters'
+import { getSections, findActiveSection } from '#lib/visibility'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 
 const CharacterList = () => {
-  const allCharacters = getAllCharacters()
+  const allCharacters = useMemo(() => getAllCharacters(), [])
   const [activeId, setActiveId] = useState<string>('')
-  const listRefs = useRef<(HTMLLIElement | null)[]>([])
-
-  // 使用 useRef 来存储 rafId，避免在每次渲染时重新创建
   const rafId = useRef<number | null>(null)
+  const introductionElementRef = useRef<HTMLElement | null>(null)
 
+  // 缓存 DOM 查询
   useEffect(() => {
-    const handleScroll = () => {
-      if (rafId.current !== null) {
-        cancelAnimationFrame(rafId.current)
-      }
+    introductionElementRef.current = document.getElementById('title-introduction')
+  }, [])
 
-      rafId.current = requestAnimationFrame(() => {
-        const sections = getSections(allCharacters)
-        const newActiveId = findActiveSection(sections)
+  // 计算最佳阈值：桌面端25%，移动端20%，最小80px（考虑导航栏）
+  const getOptimalThreshold = useCallback(() => {
+    const isMobile = window.innerWidth < 768
+    const viewportRatio = isMobile ? 0.2 : 0.25
+    const calculatedThreshold = window.innerHeight * viewportRatio
+    const minThreshold = 80 // 考虑导航栏高度
 
-        const introductionElement = document.getElementById('title-introduction')
-        const isAtTop = window.scrollY === 0
-        const isAtIntroduction =
-          introductionElement &&
-          introductionElement.getBoundingClientRect().top <= window.innerHeight / 2 &&
-          introductionElement.getBoundingClientRect().bottom >= window.innerHeight / 2
+    return Math.max(minThreshold, calculatedThreshold)
+  }, [])
 
-        if (isAtTop || isAtIntroduction) {
-          setActiveId('')
-        } else {
-          setActiveId(newActiveId)
-        }
-
-        if (window.location.hash) {
-          const element = document.querySelector(window.location.hash)
-          if (element) {
-            const rect = element.getBoundingClientRect()
-            // 如果元素不在当前视口内，则清空哈希
-            if (rect.bottom < 0 || rect.top > window.innerHeight) {
-              history.replaceState(null, '', ' ')
-            }
-          }
-        }
-      })
+  const handleScroll = useCallback(() => {
+    if (rafId.current !== null) {
+      cancelAnimationFrame(rafId.current)
     }
 
+    rafId.current = requestAnimationFrame(() => {
+      const sections = getSections(allCharacters)
+      const newActiveId = findActiveSection(sections)
+
+      const introductionElement = introductionElementRef.current
+      const isAtTop = window.scrollY === 0
+
+      // 使用优化后的阈值
+      const threshold = getOptimalThreshold()
+      const isAtIntroduction =
+        introductionElement &&
+        (() => {
+          const rect = introductionElement.getBoundingClientRect()
+          return rect.top <= threshold && rect.bottom >= threshold
+        })()
+
+      setActiveId(isAtTop || isAtIntroduction ? '' : newActiveId)
+
+      // 优化 hash 处理
+      const hash = window.location.hash
+      if (hash) {
+        const element = document.querySelector(hash)
+        if (element) {
+          const rect = element.getBoundingClientRect()
+          if (rect.bottom < 0 || rect.top > window.innerHeight) {
+            history.replaceState(null, '', ' ')
+          }
+        }
+      }
+    })
+  }, [allCharacters, getOptimalThreshold])
+
+  useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll()
 
@@ -56,7 +72,17 @@ const CharacterList = () => {
         cancelAnimationFrame(rafId.current)
       }
     }
-  }, [allCharacters])
+  }, [handleScroll])
+
+  // 预计算字符数据
+  const characterItems = useMemo(
+    () =>
+      allCharacters.map(character => ({
+        id: kebabCase(character.DisplayName),
+        displayName: character.DisplayName,
+      })),
+    [allCharacters],
+  )
 
   return (
     <aside
@@ -65,16 +91,12 @@ const CharacterList = () => {
     >
       <nav className="sticky top-4 ml-8">
         <ul className="space-y-2">
-          {allCharacters.map((character, index) => {
-            const id = kebabCase(character.DisplayName)
+          {characterItems.map(({ id, displayName }) => {
             const isActive = activeId === `title-${id}`
 
             return (
               <li
                 key={id}
-                ref={el => {
-                  listRefs.current[index] = el // 直接赋值，不返回任何值
-                }}
                 className="relative pl-4 text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:text-white"
               >
                 <div
@@ -82,12 +104,12 @@ const CharacterList = () => {
                     isActive ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
                   }`}
                 />
-                <Link
+                <a
                   href={`#${id}`}
                   className="font-mono text-sm no-underline transition-colors duration-200"
                 >
-                  {character.DisplayName}
-                </Link>
+                  {displayName}
+                </a>
               </li>
             )
           })}
