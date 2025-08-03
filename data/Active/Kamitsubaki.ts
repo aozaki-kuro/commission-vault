@@ -8,6 +8,10 @@ export const Kamitsubaki: Props = [
       //
       /* ================== Isekaijochou ================== */
       {
+        fileName: '20250802_七市',
+        Links: [''],
+      },
+      {
         fileName: '20250730_白栎',
         Links: ['https://twitter.com/BailiKoi'],
       },
