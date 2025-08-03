@@ -2,13 +2,11 @@
 import { kebabCase } from '#lib/strings'
 import { getAllCharacters } from '#lib/characters'
 import { getSections, findActiveSection } from '#lib/visibility'
-import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 const CharacterList = () => {
-  const allCharacters = getAllCharacters()
+  const allCharacters = useMemo(() => getAllCharacters(), [])
   const [activeId, setActiveId] = useState<string>('')
-  const listRefs = useRef<(HTMLLIElement | null)[]>([])
 
   // 使用 useRef 来存储 rafId，避免在每次渲染时重新创建
   const rafId = useRef<number | null>(null)
@@ -67,16 +65,13 @@ const CharacterList = () => {
     >
       <nav className="sticky top-4 ml-8">
         <ul className="space-y-2">
-          {allCharacters.map((character, index) => {
+          {allCharacters.map(character => {
             const id = kebabCase(character.DisplayName)
             const isActive = activeId === `title-${id}`
 
             return (
               <li
                 key={id}
-                ref={el => {
-                  listRefs.current[index] = el // 直接赋值，不返回任何值
-                }}
                 className="relative pl-4 text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:text-white"
               >
                 <div
@@ -84,12 +79,12 @@ const CharacterList = () => {
                     isActive ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
                   }`}
                 />
-                <Link
+                <a
                   href={`#${id}`}
                   className="font-mono text-sm no-underline transition-colors duration-200"
                 >
                   {character.DisplayName}
-                </Link>
+                </a>
               </li>
             )
           })}
