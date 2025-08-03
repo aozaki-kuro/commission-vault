@@ -1,7 +1,5 @@
 @import 'tailwindcss';
 
-@config '../tailwind.config.ts';
-
 /*
   The default border color has changed to `currentColor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still
@@ -27,7 +25,7 @@
 
   h2 {
     font: bold;
-    @apply text-[1.4em] font-bold text-gray-800 dark:text-gray-100 md:text-[1.5em];
+    @apply text-[1.4em] font-bold text-gray-800 md:text-[1.5em] dark:text-gray-100;
   }
 
   /* Article Main Font color */
