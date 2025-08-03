@@ -1,5 +1,7 @@
 'use client'
-import { findActiveSection, getAllCharacters, getSections, kebabCase } from '#components/utils'
+import { kebabCase } from '#lib/strings'
+import { getAllCharacters } from '#lib/characters'
+import { getSections, findActiveSection } from '#lib/visibility'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 

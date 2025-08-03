@@ -1,12 +1,13 @@
 // #components/commission/IllustratorInfo.tsx
-import { kebabCase, parseAndFormatDate } from '#components/utils'
+import { parseAndFormatDate } from '#lib/date'
+import { parseCommissionFileName } from '#lib/commissions'
 import { Commission } from '#data/types'
 import Link from 'next/link'
 import { createLinks } from './CreateLinks'
 
 type IllustratorInfoProps = {
   commission: Commission
-  characterName: string
+  kebabName: string
 }
 
 /**
@@ -16,16 +17,13 @@ type IllustratorInfoProps = {
  * 无实际空格字符直接置于JSX中，减少选择文本时选中无意义空格的情况。
  */
 
-const IllustratorInfo = ({ commission, characterName }: IllustratorInfoProps) => {
-  const kebabCaseName = kebabCase(characterName)
+const IllustratorInfo = ({ commission, kebabName }: IllustratorInfoProps) => {
   const { fileName, Description: description, Links: links, Design: designLink } = commission
+  const { date, creator } = parseCommissionFileName(fileName)
+  const linkId = `#${kebabName}-${date}`
+  const formattedDate = parseAndFormatDate(date, 'yyyy/MM/dd')
 
-  const commissionDate = fileName.slice(0, 8)
-  const commissionCreator = fileName.split('_')[1] || ''
-  const linkId = `#${kebabCaseName}-${commissionDate}`
-  const formattedDate = parseAndFormatDate(commissionDate, 'yyyy/MM/dd')
-
-  const hasCreator = Boolean(commissionCreator)
+  const hasCreator = Boolean(creator)
   const hasDescription = Boolean(description)
   const hasBoth = hasCreator && hasDescription
 
@@ -41,7 +39,7 @@ const IllustratorInfo = ({ commission, characterName }: IllustratorInfoProps) =>
 
         <div className="flex items-center">
           {hasCreator ? (
-            <span>{commissionCreator}</span>
+            <span>{creator}</span>
           ) : hasDescription ? (
             <span>{description}</span>
           ) : (

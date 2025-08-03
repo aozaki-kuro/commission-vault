@@ -1,11 +1,11 @@
+import { getBaseFileName, kebabCase } from '#lib/strings'
+import { isCharacterActive } from '#lib/characters'
 import {
-  getBaseFileName,
-  isCharacterActive,
-  kebabCase,
   mergePartsAndPreviews,
-  parseAndFormatDate,
   sortCommissionsByDate,
-} from '#components/utils'
+  parseCommissionFileName,
+} from '#lib/commissions'
+import { parseAndFormatDate } from '#lib/date'
 import { commissionData } from '#data/commissionData'
 import { Commission } from '#data/types'
 import Link from 'next/link'
@@ -70,12 +70,9 @@ const Update = () => {
         <div className="flex flex-col space-y-2">
           {/* 遍历最近的委托作品条目并渲染 */}
           {sortedEntries.map(({ fileName, Character }, index) => {
-            // 提取日期部分（前8位）
-            const commissionDate = fileName.substring(0, 8)
-            // 格式化日期字符串
-            const formattedDate = parseAndFormatDate(commissionDate, 'yyyy/MM/dd')
-            // 生成链接的锚点 ID
-            const linkId = `#${kebabCase(Character)}-${commissionDate}`
+            const { date } = parseCommissionFileName(fileName)
+            const formattedDate = parseAndFormatDate(date, 'yyyy/MM/dd')
+            const linkId = `#${kebabCase(Character)}-${date}`
 
             return (
               <p key={index} className="mr-2">

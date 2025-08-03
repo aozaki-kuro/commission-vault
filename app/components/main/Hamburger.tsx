@@ -1,6 +1,6 @@
 'use client'
 
-import { kebabCase } from '#components/utils'
+import { kebabCase } from '#lib/strings'
 import { characterStatus } from '#data/commissionStatus'
 import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react'
 import Link from 'next/link'
