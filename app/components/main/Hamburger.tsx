@@ -273,7 +273,7 @@ MenuContent.displayName = 'MenuContent'
 // Hamburger 组件，用于显示汉堡菜单
 const Hamburger = () => {
   return (
-    <Menu as="div" className="fixed right-8 bottom-8 hidden md:block">
+    <Menu as="div" className="fixed right-8 bottom-8 md:hidden">
       {({ open, close }) => <MenuContent open={open} close={close} />}
     </Menu>
   )

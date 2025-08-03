@@ -53,7 +53,7 @@ const selectMainLinks = (links: string[]): { type: string; url: string }[] => {
  * 功能与规则：
  * 1. 优先从 links 中选取主要链接（Twitter、Pixiv、Patreon等），最多取3个。
  *    如果有 designLink，则主要链接的数量限制为2个（因为需要给 designLink 预留一个名额）。
- * 2. 渲染时，第一个链接不加左边距，后续链接通过添加 `ml-3 md:ml-2` 来分隔。
+ * 2. 渲染时，第一个链接不加左边距，后续链接通过添加 `ml-2 md:ml-3` 来分隔。
  * 3. 如果没有任何链接匹配（mainLinks为空且无designLink），则返回 'N/A'。
  * 4. 设计链接（Design）如果存在，始终在最后显示，并同样根据是否为第一个显示的链接决定是否添加间距。
  */
@@ -69,9 +69,9 @@ export const createLinks = ({ links, designLink }: CreateLinksProps) => {
   const limitedMainLinks = mainLinks.slice(0, maxMainLinks)
 
   // 将主要链接映射为 React 元素。
-  // 如果是第一个链接，不加 ml- 类。否则在类名中添加 'ml-3 md:ml-2' 来分隔链接。
+  // 如果是第一个链接，不加 ml- 类。否则在类名中添加 'ml-2 md:ml-3' 来分隔链接。
   const mainLinkElements = limitedMainLinks.map((link, index) => {
-    const marginClass = index > 0 ? 'ml-3 md:ml-2' : ''
+    const marginClass = index > 0 ? 'ml-2 md:ml-3' : ''
     return (
       <span key={`${link.type}-${index}`} className={marginClass}>
         <Link href={link.url} className="underline-offset-2 select-none" target="_blank">
@@ -83,7 +83,7 @@ export const createLinks = ({ links, designLink }: CreateLinksProps) => {
 
   // 如果有 designLink，需要根据当前已有链接数量决定是否加间距
   const designLinkElement = hasDesign ? (
-    <span key="Design" className={mainLinkElements.length > 0 ? 'ml-3 md:ml-2' : ''}>
+    <span key="Design" className={mainLinkElements.length > 0 ? 'ml-2 md:ml-3' : ''}>
       <Link
         href={sanitizeUrl(designLink!)}
         className="underline-offset-2 select-none"

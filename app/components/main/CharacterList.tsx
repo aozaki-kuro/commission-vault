@@ -61,7 +61,7 @@ const CharacterList = () => {
   return (
     <aside
       id="Character List"
-      className="fixed top-52 left-[calc(50%+20rem)] h-screen w-full max-w-[15rem] md:hidden"
+      className="hidden md:fixed md:top-52 md:left-[calc(50%+20rem)] md:block md:h-screen md:w-full md:max-w-[15rem]"
     >
       <nav className="sticky top-4 ml-8">
         <ul className="space-y-2">

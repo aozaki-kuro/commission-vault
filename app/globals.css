@@ -22,12 +22,12 @@
   /* Headings and Strong */
   h1 {
     margin-bottom: 0.4em;
-    @apply text-[1.6em] font-bold text-gray-800 md:text-[1.6em] dark:text-gray-100;
+    @apply text-[1.6em] font-bold text-gray-800 dark:text-gray-100;
   }
 
   h2 {
     font: bold;
-    @apply text-[1.5em] font-bold text-gray-800 md:text-[1.4em] dark:text-gray-100;
+    @apply text-[1.4em] font-bold text-gray-800 dark:text-gray-100 md:text-[1.5em];
   }
 
   /* Article Main Font color */
