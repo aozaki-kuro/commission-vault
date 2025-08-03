@@ -16,8 +16,8 @@ const Home: NextPage = () => {
   return (
     <>
       <Warning />
-      <div className="relative mx-auto flex justify-center">
-        <div id="Main Contents" className="w-full max-w-[40rem]">
+      <div className="mx-auto grid max-w-screen-xl grid-cols-1 gap-x-8 md:grid-cols-[1fr_40rem_15rem]">
+        <div id="Main Contents" className="w-full max-w-[40rem] md:col-start-2">
           <CommissionDescription />
           <Commission />
           <Footer />
