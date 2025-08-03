@@ -63,7 +63,7 @@ const Listing = ({ Character }: ListingProps) => {
                 />
               )}
               {/* 显示委托作品的详细信息 */}
-              <div className="mt-8 mb-4 md:mt-6 md:mb-2">
+              <div className="mt-6 mb-2 md:mt-8 md:mb-4">
                 <IllustratorInfo commission={commission} characterName={Character} />
               </div>
             </div>

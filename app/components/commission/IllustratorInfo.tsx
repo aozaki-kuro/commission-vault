@@ -30,10 +30,10 @@ const IllustratorInfo = ({ commission, characterName }: IllustratorInfoProps) =>
   const hasBoth = hasCreator && hasDescription
 
   return (
-    <div className="flex w-full flex-wrap items-center gap-y-2 font-mono text-sm text-gray-800 md:text-xs dark:text-gray-300">
+    <div className="flex w-full flex-wrap items-center gap-y-2 font-mono text-xs text-gray-800 md:text-sm dark:text-gray-300">
       {/* 左侧信息块：包含日期、创作者、描述 */}
       <div className="flex items-center">
-        <span className="mr-16 select-none md:mr-6">
+        <span className="mr-6 select-none md:mr-16">
           <Link href={linkId} className="text-gray-800 no-underline dark:text-gray-300!">
             <time>{formattedDate}</time>
           </Link>
@@ -51,7 +51,7 @@ const IllustratorInfo = ({ commission, characterName }: IllustratorInfoProps) =>
           {hasBoth && (
             <>
               {/* 使用分隔符，并通过 mx 来控制间距，不使用空格字符 */}
-              <span className="mx-4 select-none md:mx-2">|</span>
+              <span className="mx-2 select-none md:mx-4">|</span>
               <span>{description}</span>
             </>
           )}
