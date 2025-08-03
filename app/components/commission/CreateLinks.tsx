@@ -21,6 +21,7 @@ const LINK_PRIORITY = [
   { type: 'Fanbox', patterns: ['fanbox.cc'] },
   { type: 'Patreon', patterns: ['patreon.com'] },
   { type: 'Fantia', patterns: ['fantia.jp'] },
+  { type: 'Hedao', patterns: ['hedaoapp.com'] },
 ]
 
 /**
