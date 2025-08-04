@@ -24,6 +24,7 @@
     ]
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.7",
     "dotenv": "^17.2.1",
     "next": "^15.4.5",
     "react": "^19.1.1",

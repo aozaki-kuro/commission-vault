@@ -7,11 +7,11 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Fragment, memo, useCallback, useEffect, useRef, useState } from 'react'
 
-// 预计算静态数据
+// ─────────────────── 预计算静态数据 ───────────────────
 const ACTIVE_CHARACTERS = characterStatus.active
 const STALE_CHARACTERS = characterStatus.stale
 
-// 预计算 href 映射，避免运行时重复计算
+// 预计算 href 映射
 const CHARACTER_HREF_MAP = new Map([
   ...ACTIVE_CHARACTERS.map(
     char => [char.DisplayName, `/#title-${kebabCase(char.DisplayName)}`] as const,
@@ -21,7 +21,7 @@ const CHARACTER_HREF_MAP = new Map([
   ),
 ])
 
-// 样式常量
+// ─────────────────── 样式常量 ───────────────────
 const STYLES = {
   menuButton:
     'relative z-30 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-gray-900 shadow-[0_2px_8px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur-[12px] transition-all duration-300 hover:bg-gray-100/80 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] focus:outline-hidden dark:bg-black/80 dark:text-white dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] dark:ring-white/10 dark:hover:bg-gray-900/80 dark:hover:shadow-[0_4px_16px_rgba(0,0,0,0.3)]',
@@ -32,24 +32,12 @@ const STYLES = {
   backdrop: 'blur(12px)',
 } as const
 
-// 防抖 hook
-const useDebounce = (callback: () => void, delay: number) => {
-  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
-
-  return useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-    }
-    timeoutRef.current = setTimeout(callback, delay)
-  }, [callback, delay])
-}
-
-// 定义 Character 接口，表示角色的基本信息
+// ─────────────────── 接口定义 ───────────────────
 interface Character {
   DisplayName: string
 }
 
-// MenuIcon 组件，用于显示汉堡菜单的图标
+// MenuIcon 组件
 const MenuIcon = memo(({ isOpen }: { isOpen: boolean }) => (
   <svg
     className="h-5 w-5 transform transition-transform duration-300"
@@ -72,7 +60,7 @@ const MenuIcon = memo(({ isOpen }: { isOpen: boolean }) => (
 ))
 MenuIcon.displayName = 'MenuIcon'
 
-// ChevronIcon 组件，用于显示展开/折叠的箭头图标
+// ChevronIcon 组件
 const ChevronIcon = memo(({ isExpanded }: { isExpanded: boolean }) => (
   <svg
     className={`h-4 w-4 text-gray-600 transition-transform duration-200 dark:text-gray-300 ${
@@ -87,17 +75,15 @@ const ChevronIcon = memo(({ isExpanded }: { isExpanded: boolean }) => (
 ))
 ChevronIcon.displayName = 'ChevronIcon'
 
-// ListItem 组件的 props 接口
+// ListItem 组件
 interface ListItemProps {
   character: Character
   isActive?: boolean
   close: () => void
 }
 
-// ListItem 组件，用于显示单个角色项
 const ListItem = memo(({ character, isActive, close }: ListItemProps) => {
   const router = useRouter()
-  // 使用预计算的 href
   const href =
     CHARACTER_HREF_MAP.get(character.DisplayName) || `/#title-${kebabCase(character.DisplayName)}`
 
@@ -115,7 +101,7 @@ const ListItem = memo(({ character, isActive, close }: ListItemProps) => {
       href={href}
       onClick={handleClick}
       prefetch
-      className={`${STYLES.listItem} ${isActive ? 'bg-white/70 dark:bg-white/10' : ''}`}
+      className={`${isActive ? 'bg-white/70 dark:bg-white/10' : ''} ${STYLES.listItem}`}
     >
       {character.DisplayName}
     </Link>
@@ -135,109 +121,133 @@ const OptimizedMenuItem = memo(
 )
 OptimizedMenuItem.displayName = 'OptimizedMenuItem'
 
-// CharacterList 组件的 props 接口
+// CharacterList 组件
 interface CharacterListProps {
   close: () => void
 }
 
-// CharacterList 组件，用于显示角色列表
 const CharacterList = memo(({ close }: CharacterListProps) => {
   const [isStaleExpanded, setIsStaleExpanded] = useState(false)
+  const [isAnimating, setIsAnimating] = useState(false)
   const [isInitialRender, setIsInitialRender] = useState(true)
+
   const activeListRef = useRef<HTMLDivElement>(null)
   const staleListRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // 优化的高度更新逻辑
+  // 👇 getListHeight 改为接受 MutableRef，允许 null ── modified
+  const getListHeight = useCallback((listRef: React.MutableRefObject<HTMLDivElement | null>) => {
+    return listRef.current?.scrollHeight ?? 0
+  }, [])
+
+  // 更新容器高度
   const updateContainerHeight = useCallback(() => {
-    const activeList = activeListRef.current
-    const staleList = staleListRef.current
     const container = containerRef.current
+    if (!container) return
 
-    if (!activeList || !staleList || !container) return
-
-    const targetHeight = isStaleExpanded ? staleList.scrollHeight : activeList.scrollHeight
+    const activeHeight = getListHeight(activeListRef)
+    const staleHeight = getListHeight(staleListRef)
+    const targetHeight = isStaleExpanded ? staleHeight : activeHeight
 
     if (isInitialRender) {
       container.style.height = `${targetHeight}px`
       setIsInitialRender(false)
     } else {
-      // 使用 requestAnimationFrame 确保在下一帧更新
       requestAnimationFrame(() => {
         container.style.height = `${targetHeight}px`
       })
     }
-  }, [isStaleExpanded, isInitialRender])
+  }, [isStaleExpanded, isInitialRender, getListHeight])
 
-  // 防抖的高度更新
-  const debouncedUpdateHeight = useDebounce(updateContainerHeight, 16) // ~60fps
-
+  // 监听列表尺寸变化
   useEffect(() => {
     const activeList = activeListRef.current
     const staleList = staleListRef.current
-
     if (!activeList || !staleList) return
 
     const resizeObserver = new ResizeObserver(() => {
-      debouncedUpdateHeight()
+      requestAnimationFrame(updateContainerHeight)
     })
 
     resizeObserver.observe(activeList)
     resizeObserver.observe(staleList)
     updateContainerHeight()
 
-    return () => {
-      resizeObserver.disconnect()
-    }
-  }, [updateContainerHeight, debouncedUpdateHeight])
+    return () => resizeObserver.disconnect()
+  }, [updateContainerHeight])
 
+  // 切换列表
   const toggleStaleList = useCallback(() => {
+    if (isAnimating) return
+    setIsAnimating(true)
     setIsStaleExpanded(prev => !prev)
-  }, [])
+    setTimeout(() => setIsAnimating(false), 300) // 匹配 CSS 动画时长
+  }, [isAnimating])
 
-  // 使用预计算的数据和优化的渲染
+  // 预渲染列表项
   const activeItems = ACTIVE_CHARACTERS.map(character => (
     <OptimizedMenuItem key={character.DisplayName} character={character} close={close} />
   ))
-
   const staleItems = STALE_CHARACTERS.map(character => (
     <OptimizedMenuItem key={character.DisplayName} character={character} close={close} />
   ))
 
-  // 计算过渡类名
-  const transitionClass = isInitialRender ? '' : 'transition-transform duration-300 ease-out'
-  const heightTransitionClass = isInitialRender ? '' : 'transition-[height] duration-300 ease-out'
+  // 计算动画 class
+  const getListTransform = (isStaleList: boolean) => {
+    if (isInitialRender) return isStaleList ? 'translate-y-full' : 'translate-y-0'
+    if (isStaleExpanded) return isStaleList ? 'translate-y-0' : '-translate-y-full'
+    return isStaleList ? 'translate-y-full' : 'translate-y-0'
+  }
+
+  const getListOpacity = (isStaleList: boolean) => {
+    if (isInitialRender) return isStaleList ? 'opacity-0' : 'opacity-100'
+    if (isAnimating) return 'opacity-100'
+    return isStaleExpanded
+      ? isStaleList
+        ? 'opacity-100'
+        : 'opacity-0'
+      : isStaleList
+        ? 'opacity-0'
+        : 'opacity-100'
+  }
+
+  const transitionClasses = isInitialRender ? '' : 'transition-all duration-300 ease-out'
 
   return (
     <div className="relative">
       <div
         ref={containerRef}
-        className={`relative overflow-hidden will-change-[height] ${heightTransitionClass}`}
+        className={`relative overflow-hidden will-change-[height] ${
+          isInitialRender ? '' : 'transition-[height] duration-300 ease-out'
+        }`}
       >
-        {/* Active Characters 列表 */}
+        {/* Active list */}
         <div
           ref={activeListRef}
-          className={`absolute right-0 left-0 w-full will-change-transform ${transitionClass} ${
-            isStaleExpanded ? '-translate-y-full' : 'translate-y-0'
-          }`}
-          style={{ visibility: isStaleExpanded ? 'hidden' : 'visible' }}
+          className={`absolute inset-x-0 w-full will-change-transform ${transitionClasses} ${getListTransform(
+            false,
+          )} ${getListOpacity(false)}`}
         >
           {activeItems}
         </div>
 
-        {/* Stale Characters 列表 */}
+        {/* Stale list */}
         <div
           ref={staleListRef}
-          className={`absolute right-0 left-0 w-full will-change-transform ${transitionClass} ${
-            isStaleExpanded ? 'translate-y-0' : 'translate-y-full'
-          }`}
-          style={{ visibility: isStaleExpanded ? 'visible' : 'hidden' }}
+          className={`absolute inset-x-0 w-full will-change-transform ${transitionClasses} ${getListTransform(
+            true,
+          )} ${getListOpacity(true)}`}
         >
           {staleItems}
         </div>
       </div>
 
-      <button onClick={toggleStaleList} className={STYLES.toggleButton} type="button">
+      <button
+        onClick={toggleStaleList}
+        className={STYLES.toggleButton}
+        type="button"
+        disabled={isAnimating}
+      >
         <p className="font-bold text-gray-600 dark:text-gray-300">Stale Characters</p>
         <ChevronIcon isExpanded={isStaleExpanded} />
       </button>
@@ -246,25 +256,22 @@ const CharacterList = memo(({ close }: CharacterListProps) => {
 })
 CharacterList.displayName = 'CharacterList'
 
-// MenuContent 组件，用于显示菜单内容
+// MenuContent 组件
 const MenuContent = memo(({ open, close }: { open: boolean; close: () => void }) => {
   useEffect(() => {
     const html = document.documentElement
-    const classes = ['overflow-hidden', 'touch-none']
-
     if (open) {
-      html.classList.add(...classes)
+      html.classList.add('overflow-hidden', 'touch-none')
     } else {
-      html.classList.remove(...classes)
+      html.classList.remove('overflow-hidden', 'touch-none')
     }
-
-    return () => html.classList.remove(...classes)
+    return () => html.classList.remove('overflow-hidden', 'touch-none')
   }, [open])
 
   const backdropStyle = {
     WebkitBackdropFilter: STYLES.backdrop,
     backdropFilter: STYLES.backdrop,
-  }
+  } as const
 
   return (
     <>
@@ -303,13 +310,11 @@ const MenuContent = memo(({ open, close }: { open: boolean; close: () => void })
 })
 MenuContent.displayName = 'MenuContent'
 
-// Hamburger 组件，用于显示汉堡菜单
-const Hamburger = () => {
-  return (
-    <Menu as="div" className="fixed right-8 bottom-8 md:hidden">
-      {({ open, close }) => <MenuContent open={open} close={close} />}
-    </Menu>
-  )
-}
+// Hamburger 组件
+const Hamburger = () => (
+  <Menu as="div" className="fixed right-8 bottom-8 block md:hidden">
+    {({ open, close }) => <MenuContent open={open} close={close} />}
+  </Menu>
+)
 
 export default Hamburger
