@@ -8,12 +8,12 @@ export const Kamitsubaki: Props = [
       //
       /* ================== Isekaijochou ================== */
       {
-        fileName: '20250802_七市',
-        Links: [''],
+        fileName: '20250802_七市', // Sekai-chan punishing
+        Links: ['https://www.pixiv.net/artworks/133595023'],
       },
       {
-        fileName: '20250730_白栎',
-        Links: ['https://twitter.com/BailiKoi'],
+        fileName: '20250730_白栎', // The first cosplay commission
+        Links: ['https://twitter.com/BailiKoi/status/1950544174693990727'],
       },
       {
         fileName: '20250602',
