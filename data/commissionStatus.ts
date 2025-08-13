@@ -19,12 +19,12 @@ export const characterStatus: CommissionStatus = {
 
   /* ======= Stale Characters ======= */
   stale: [
-    { DisplayName: 'Blue Archive' },
     { DisplayName: 'H*nabasami Kyo' },
 
     // Very unlikely to change
-    { DisplayName: 'HACHI' },
     { DisplayName: 'Sport!' },
+    { DisplayName: 'HACHI' },
+    { DisplayName: 'Blue Archive' },
     { DisplayName: "Ninomae Ina'nis" },
     { DisplayName: 'Tokomachi' },
   ],
