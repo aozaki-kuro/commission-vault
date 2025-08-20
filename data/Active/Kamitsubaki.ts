@@ -12,8 +12,11 @@ export const Kamitsubaki: Props = [
         Links: ['https://www.pixiv.net/artworks/133595023'],
       },
       {
-        fileName: '20250730_白栎', // The first cosplay commission
-        Links: ['https://twitter.com/BailiKoi/status/1950544174693990727'],
+        fileName: '20250820_白栎', // The first cosplay commission
+        Links: [
+          'https://twitter.com/BailiKoi/status/1950544174693990727',
+          'https://www.hedaoapp.com/yunPC/goodsDetails?pid=31284',
+        ],
       },
       {
         fileName: '20250602',
