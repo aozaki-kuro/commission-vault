@@ -48,9 +48,11 @@ import A20231018 from '#images/webp/20231018.webp'
 import A20231031 from '#images/webp/20231031_七市.webp'
 import A20231109 from '#images/webp/20231109_YYDAP.webp'
 import A20231117 from '#images/webp/20231117.webp'
-import A20231204 from '#images/webp/20231204_温野りょく.webp'
+import A20231204B from '#images/webp/20231204_かりうめ.webp'
+import A20231204A from '#images/webp/20231204_温野りょく.webp'
 import A20231215 from '#images/webp/20231215.webp'
 import A20231231 from '#images/webp/20231231_流し満貫.webp'
+import A20240102 from '#images/webp/20240102_温野りょく.webp'
 import A20240113 from '#images/webp/20240113.webp'
 import A20240114 from '#images/webp/20240114_七市.webp'
 import A20240223 from '#images/webp/20240223_AOS.webp'
@@ -152,9 +154,11 @@ export const imageImports = {
   '20231031_七市': A20231031,
   '20231109_YYDAP': A20231109,
   '20231117': A20231117,
-  '20231204_温野りょく': A20231204,
+  '20231204_かりうめ': A20231204B,
+  '20231204_温野りょく': A20231204A,
   '20231215': A20231215,
   '20231231_流し満貫': A20231231,
+  '20240102_温野りょく': A20240102,
   '20240113': A20240113,
   '20240114_七市': A20240114,
   '20240223_AOS': A20240223,

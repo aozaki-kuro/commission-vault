@@ -22,6 +22,7 @@ export const characterStatus: CommissionStatus = {
     { DisplayName: 'H*nabasami Kyo' },
 
     // Very unlikely to change
+    { DisplayName: 'K*toha' },
     { DisplayName: 'Sport!' },
     { DisplayName: 'HACHI' },
     { DisplayName: 'Blue Archive' },
