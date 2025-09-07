@@ -28,6 +28,11 @@ const totalCommissions = new Set(
 ).size
 
 /**
+ * 检查是否为里程碑数字（50的倍数）
+ */
+const isMilestone = (num: number): boolean => num > 0 && num % 50 === 0
+
+/**
  * 获取活跃角色的最新委托作品列表。
  */
 const latestEntries = commissionData
@@ -62,8 +67,10 @@ const Update = () => {
   // 渲染最新的委托作品信息
   return (
     <div className="mt-6 mb-4 flex flex-col font-mono text-xs sm:text-sm md:mt-8">
-      {/* 显示当前的委托总数 */}
-      <p className="mb-2">Currently {totalCommissions} commissions</p>
+      {/* 显示当前的委托总数，如果是里程碑数字则添加庆祝表情 */}
+      <p className="mb-2">
+        Currently {totalCommissions} commissions{isMilestone(totalCommissions) ? ' 🎉' : ''}
+      </p>
 
       <div className="flex items-start">
         <p className="mr-2">Last update:</p>
