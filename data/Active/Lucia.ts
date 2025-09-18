@@ -8,7 +8,7 @@ export const Lucia: Props = [
       /* ================== 2025 ================== */
       {
         fileName: '20250907_七市',
-        Links: [''],
+        Links: ['https://www.pixiv.net/artworks/135249770'],
       },
       {
         fileName: '20250429',
