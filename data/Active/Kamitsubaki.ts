@@ -72,6 +72,10 @@ export const Kamitsubaki: Props = [
 
       /* ================== CIEL ================== */
       {
+        fileName: '20250919', // CIEL solo sex
+        Links: [''],
+      },
+      {
         fileName: '20241126', // w/ Sex machine
         Links: ['https://www.pixiv.net/artworks/124739716'],
         Description: 'Remote Ecstasy',
