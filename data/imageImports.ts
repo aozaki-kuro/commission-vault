@@ -106,6 +106,7 @@ import A20250802 from '#images/webp/20250802_七市.webp'
 import A20250820 from '#images/webp/20250820_白栎.webp'
 import A20250907 from '#images/webp/20250907_七市.webp'
 import A20250919 from '#images/webp/20250919.webp'
+import A20250920 from '#images/webp/20250920_七市.webp'
 
 export const imageImports = {
   '20201220_病ん太廊': A20201220,
@@ -214,4 +215,5 @@ export const imageImports = {
   '20250820_白栎': A20250820,
   '20250907_七市': A20250907,
   '20250919': A20250919,
+  '20250920_七市': A20250920,
 }
