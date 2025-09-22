@@ -7,6 +7,10 @@ export const Nishe: Props = [
     Commissions: [
       /* ================== 2025 ================== */
       {
+        fileName: '20250930_Q (part 1)',
+        Links: [''],
+      },
+      {
         fileName: '20250920_七市',
         Links: [''],
       },
