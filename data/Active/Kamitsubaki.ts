@@ -8,6 +8,10 @@ export const Kamitsubaki: Props = [
       //
       /* ================== Isekaijochou ================== */
       {
+        fileName: '20250923_温野りょく', // Joucho masturbating
+        Links: [''],
+      },
+      {
         fileName: '20250802_七市', // Sekai-chan punishing
         Links: ['https://www.pixiv.net/artworks/133595023'],
       },

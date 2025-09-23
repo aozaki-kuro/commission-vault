@@ -7,12 +7,12 @@ export const Nishe: Props = [
     Commissions: [
       /* ================== 2025 ================== */
       {
-        fileName: '20250930_Q (part 1)',
-        Links: [''],
+        fileName: '20250930_Q (preview 1)',
+        Links: ['https://www.fanbox.cc/@ledzeppelin910/posts/10610387'],
       },
       {
         fileName: '20250920_七市',
-        Links: [''],
+        Links: ['https://www.pixiv.net/artworks/135463560'],
       },
       {
         fileName: '20250320_中村六翅',

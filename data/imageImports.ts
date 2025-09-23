@@ -107,7 +107,8 @@ import A20250820 from '#images/webp/20250820_白栎.webp'
 import A20250907 from '#images/webp/20250907_七市.webp'
 import A20250919 from '#images/webp/20250919.webp'
 import A20250920 from '#images/webp/20250920_七市.webp'
-import A20250930 from '#images/webp/20250930_Q (part 1).webp'
+import A20250923 from '#images/webp/20250923_温野りょく.webp'
+import A20250930 from '#images/webp/20250930_Q (preview 1).webp'
 
 export const imageImports = {
   '20201220_病ん太廊': A20201220,
@@ -217,5 +218,6 @@ export const imageImports = {
   '20250907_七市': A20250907,
   '20250919': A20250919,
   '20250920_七市': A20250920,
-  '20250930_Q (part 1)': A20250930,
+  '20250923_温野りょく': A20250923,
+  '20250930_Q (preview 1)': A20250930,
 }
