@@ -10,6 +10,7 @@ export const Kamitsubaki: Props = [
       {
         fileName: '20250923_温野りょく', // Joucho masturbating
         Links: [''],
+        Design: 'https://twitter.com/issikiiiiiii2/status/1903408633108672912',
       },
       {
         fileName: '20250802_七市', // Sekai-chan punishing
