@@ -9,7 +9,7 @@ export const Kamitsubaki: Props = [
       /* ================== Isekaijochou ================== */
       {
         fileName: '20250923_温野りょく', // Joucho masturbating
-        Links: [''],
+        Links: ['https://www.pixiv.net/artworks/135611973'],
         Design: 'https://twitter.com/issikiiiiiii2/status/1903408633108672912',
       },
       {
