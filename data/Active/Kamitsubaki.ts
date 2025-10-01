@@ -10,6 +10,7 @@ export const Kamitsubaki: Props = [
       {
         fileName: '20250923', // Joucho masturbating
         Links: ['https://www.pixiv.net/artworks/135611973'],
+        Description: 'Summer Vacation',
         Design: 'https://twitter.com/issikiiiiiii2/status/1903408633108672912',
       },
       {
@@ -107,6 +108,7 @@ export const Kamitsubaki: Props = [
       {
         fileName: '20251001', // ARU and ASU fucking BEMA
         Links: [''],
+        Description: 'Another Welcome Party',
       },
       {
         fileName: '20250124', // Albemuth after sex on stage
