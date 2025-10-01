@@ -4,15 +4,15 @@
   "private": true,
   "author": "Crystallize",
   "scripts": {
-    "build": "bun run pre-build && next build",
-    "clean": "rm -rf .next node_modules out .wrangler && bun i",
-    "deploy": "bun run prod && wrangler deploy",
-    "dev": "bun run pre-build && next dev --turbo",
+    "build": "bun run pre-build ; next build",
+    "clean": "rm -rf .next node_modules out .wrangler ; bun i",
+    "deploy": "bun run prod ; wrangler deploy",
+    "dev": "bun run pre-build ; next dev --turbo",
     "dl": "bun run scripts/dl.ts",
     "lint": "eslint --fix",
-    "pre-build": "bun run scripts/convert.ts && bun run scripts/imageImport.ts",
+    "pre-build": "bun run scripts/convert.ts ; bun run scripts/imageImport.ts",
     "prepare": "husky",
-    "prod": "bun run pre-build && next build",
+    "prod": "bun run pre-build ; next build",
     "start": "next start"
   },
   "lint-staged": {
@@ -24,33 +24,33 @@
     ]
   },
   "dependencies": {
-    "@headlessui/react": "^2.2.8",
-    "dotenv": "^17.2.2",
+    "@headlessui/react": "^2.2.9",
+    "dotenv": "^17.2.3",
     "next": "^15.5.4",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "rss-parser": "^3.13.0",
     "sharp": "^0.34.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
-    "@tailwindcss/postcss": "^4.1.13",
+    "@tailwindcss/postcss": "^4.1.14",
     "@types/eslint__eslintrc": "^3.3.0",
-    "@types/node": "^24.5.2",
-    "@types/react": "^19.1.13",
-    "@types/react-dom": "^19.1.9",
+    "@types/node": "^24.6.1",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.36.0",
     "eslint-config-next": "15.5.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "husky": "^9.1.7",
-    "lint-staged": "^16.2.0",
+    "lint-staged": "^16.2.3",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.6.14",
-    "tailwindcss": "^4.1.13",
-    "typescript": "^5.9.2",
-    "wrangler": "^4.39.0"
+    "tailwindcss": "^4.1.14",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.40.3"
   }
 }
