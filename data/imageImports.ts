@@ -102,13 +102,15 @@ import A20250403 from '#images/webp/20250403_七市.webp'
 import A20250429 from '#images/webp/20250429.webp'
 import A20250602 from '#images/webp/20250602.webp'
 import A20250608 from '#images/webp/20250608_七市.webp'
-import A20250802 from '#images/webp/20250802_七市.webp'
+import A20250802 from '#images/webp/20250802.webp'
 import A20250820 from '#images/webp/20250820_白栎.webp'
 import A20250907 from '#images/webp/20250907_七市.webp'
 import A20250919 from '#images/webp/20250919.webp'
 import A20250920 from '#images/webp/20250920_七市.webp'
-import A20250923 from '#images/webp/20250923_温野りょく.webp'
-import A20250930 from '#images/webp/20250930_Q (preview 1).webp'
+import A20250923 from '#images/webp/20250923.webp'
+import A20250930A from '#images/webp/20250930_Q (part 1).webp'
+import A20250930B from '#images/webp/20250930_Q (part 2).webp'
+import A20251001 from '#images/webp/20251001.webp'
 
 export const imageImports = {
   '20201220_病ん太廊': A20201220,
@@ -213,11 +215,13 @@ export const imageImports = {
   '20250429': A20250429,
   '20250602': A20250602,
   '20250608_七市': A20250608,
-  '20250802_七市': A20250802,
+  '20250802': A20250802,
   '20250820_白栎': A20250820,
   '20250907_七市': A20250907,
   '20250919': A20250919,
   '20250920_七市': A20250920,
-  '20250923_温野りょく': A20250923,
-  '20250930_Q (preview 1)': A20250930,
+  '20250923': A20250923,
+  '20250930_Q (part 1)': A20250930A,
+  '20250930_Q (part 2)': A20250930B,
+  '20251001': A20251001,
 }

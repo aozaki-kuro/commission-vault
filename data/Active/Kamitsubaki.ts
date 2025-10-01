@@ -8,12 +8,12 @@ export const Kamitsubaki: Props = [
       //
       /* ================== Isekaijochou ================== */
       {
-        fileName: '20250923_温野りょく', // Joucho masturbating
+        fileName: '20250923', // Joucho masturbating
         Links: ['https://www.pixiv.net/artworks/135611973'],
         Design: 'https://twitter.com/issikiiiiiii2/status/1903408633108672912',
       },
       {
-        fileName: '20250802_七市', // Sekai-chan punishing
+        fileName: '20250802', // Sekai-chan punishing
         Links: ['https://www.pixiv.net/artworks/133595023'],
       },
       {
@@ -104,6 +104,10 @@ export const Kamitsubaki: Props = [
       },
 
       /* ================== Albemuth ================== */
+      {
+        fileName: '20251001', // ARU and ASU fucking BEMA
+        Links: [''],
+      },
       {
         fileName: '20250124', // Albemuth after sex on stage
         Links: ['https://www.pixiv.net/artworks/126631198'],
