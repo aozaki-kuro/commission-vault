@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nsfw-commission-neo",
+  "compatibility_date": "2025-09-24",
+  "vars": {},
+  "assets": {
+    "directory": "./out",
+  },
+}

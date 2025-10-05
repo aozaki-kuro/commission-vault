@@ -1,0 +1,17 @@
+{
+  "github": {
+    "silent": true
+  },
+  "redirects": [
+    {
+      "source": "/commission",
+      "destination": "/",
+      "statusCode": 301
+    },
+    {
+      "source": "/feed.xml",
+      "destination": "/rss",
+      "statusCode": 301
+    }
+  ]
+}

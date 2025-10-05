@@ -1,0 +1,73 @@
+@import 'tailwindcss';
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  /* Headings and Strong */
+  h1 {
+    margin-bottom: 0.4em;
+    @apply text-[1.6em] font-bold text-gray-800 dark:text-gray-100;
+  }
+
+  h2 {
+    font: bold;
+    @apply text-[1.4em] font-bold text-gray-800 md:text-[1.5em] dark:text-gray-100;
+  }
+
+  /* Article Main Font color */
+  p,
+  li {
+    @apply text-gray-800 dark:text-gray-300;
+  }
+
+  hr {
+    @apply dark:border-neutral-800!;
+  }
+
+  /* Link Styles */
+  a {
+    text-underline-position: from-font;
+    text-decoration-skip-ink: all;
+    @apply font-medium underline decoration-gray-400 decoration-1 underline-offset-1 transition-opacity hover:opacity-70 dark:text-white dark:decoration-gray-600;
+  }
+
+  /*=========================*/
+  /*       Antialiased       */
+  /*=========================*/
+  @media screen and (min-device-pixel-ratio: 1.5), screen and (min-resolution: 1.5dppx) {
+    body {
+      @apply antialiased;
+    }
+  }
+}
+
+@layer utilities {
+  @keyframes fadeInOut {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    30%,
+    70% {
+      opacity: 1;
+    }
+  }
+
+  .animate-fade-in-out {
+    animation: fadeInOut 2s ease-in-out;
+  }
+}
