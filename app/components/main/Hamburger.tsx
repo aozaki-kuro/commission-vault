@@ -1,6 +1,6 @@
 'use client'
 
-import { kebabCase } from '#lib/strings'
+import { buildCharacterNavItems, CharacterNavItem } from '#lib/characters'
 import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -57,15 +57,14 @@ const ChevronIcon = memo(({ isExpanded }: { isExpanded: boolean }) => (
 ChevronIcon.displayName = 'ChevronIcon'
 
 interface ListItemProps {
-  character: CharacterEntry
+  item: CharacterNavItem
   isActive?: boolean
   close: () => void
-  getHref: (name: string) => string
 }
 
-const ListItem = memo(({ character, isActive, close, getHref }: ListItemProps) => {
+const ListItem = memo(({ item, isActive, close }: ListItemProps) => {
   const router = useRouter()
-  const href = getHref(character.DisplayName)
+  const href = `/${item.titleHash}`
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -83,39 +82,26 @@ const ListItem = memo(({ character, isActive, close, getHref }: ListItemProps) =
       prefetch
       className={`${isActive ? 'bg-white/70 dark:bg-white/10' : ''} ${STYLES.listItem}`}
     >
-      {character.DisplayName}
+      {item.displayName}
     </Link>
   )
 })
 ListItem.displayName = 'ListItem'
 
-const OptimizedMenuItem = memo(
-  ({
-    character,
-    close,
-    getHref,
-  }: {
-    character: CharacterEntry
-    close: () => void
-    getHref: (name: string) => string
-  }) => (
-    <MenuItem key={character.DisplayName} as={Fragment}>
-      {({ active }: { active: boolean }) => (
-        <ListItem character={character} isActive={active} close={close} getHref={getHref} />
-      )}
-    </MenuItem>
-  ),
-)
+const OptimizedMenuItem = memo(({ item, close }: { item: CharacterNavItem; close: () => void }) => (
+  <MenuItem key={item.displayName} as={Fragment}>
+    {({ active }: { active: boolean }) => <ListItem item={item} isActive={active} close={close} />}
+  </MenuItem>
+))
 OptimizedMenuItem.displayName = 'OptimizedMenuItem'
 
 interface CharacterListProps {
   active: CharacterEntry[]
   stale: CharacterEntry[]
   close: () => void
-  getHref: (name: string) => string
 }
 
-const CharacterList = memo(({ active, stale, close, getHref }: CharacterListProps) => {
+const CharacterList = memo(({ active, stale, close }: CharacterListProps) => {
   const [isStaleExpanded, setIsStaleExpanded] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isInitialRender, setIsInitialRender] = useState(true)
@@ -169,30 +155,23 @@ const CharacterList = memo(({ active, stale, close, getHref }: CharacterListProp
     setTimeout(() => setIsAnimating(false), 300)
   }, [isAnimating])
 
+  const activeNavItems = useMemo(() => buildCharacterNavItems(active), [active])
+  const staleNavItems = useMemo(() => buildCharacterNavItems(stale), [stale])
+
   const activeItems = useMemo(
     () =>
-      active.map(character => (
-        <OptimizedMenuItem
-          key={character.DisplayName}
-          character={character}
-          close={close}
-          getHref={getHref}
-        />
+      activeNavItems.map(item => (
+        <OptimizedMenuItem key={item.displayName} item={item} close={close} />
       )),
-    [active, close, getHref],
+    [activeNavItems, close],
   )
 
   const staleItems = useMemo(
     () =>
-      stale.map(character => (
-        <OptimizedMenuItem
-          key={character.DisplayName}
-          character={character}
-          close={close}
-          getHref={getHref}
-        />
+      staleNavItems.map(item => (
+        <OptimizedMenuItem key={item.displayName} item={item} close={close} />
       )),
-    [stale, close, getHref],
+    [staleNavItems, close],
   )
 
   const getListTransform = (isStaleList: boolean) => {
@@ -257,10 +236,9 @@ interface MenuContentProps {
   close: () => void
   active: CharacterEntry[]
   stale: CharacterEntry[]
-  getHref: (name: string) => string
 }
 
-const MenuContent = memo(({ open, close, active, stale, getHref }: MenuContentProps) => {
+const MenuContent = memo(({ open, close, active, stale }: MenuContentProps) => {
   useEffect(() => {
     const html = document.documentElement
     if (open) {
@@ -304,7 +282,7 @@ const MenuContent = memo(({ open, close, active, stale, getHref }: MenuContentPr
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">Characters</h2>
           </div>
           <div className="p-2">
-            <CharacterList active={active} stale={stale} close={close} getHref={getHref} />
+            <CharacterList active={active} stale={stale} close={close} />
           </div>
         </MenuItems>
       </Transition>
@@ -319,27 +297,9 @@ interface HamburgerProps {
 }
 
 const Hamburger = ({ active, stale }: HamburgerProps) => {
-  const hrefMap = useMemo(
-    () =>
-      new Map(
-        [...active, ...stale].map(
-          character =>
-            [character.DisplayName, `/#title-${kebabCase(character.DisplayName)}`] as const,
-        ),
-      ),
-    [active, stale],
-  )
-
-  const getHref = useCallback(
-    (name: string) => hrefMap.get(name) ?? `/#title-${kebabCase(name)}`,
-    [hrefMap],
-  )
-
   return (
     <Menu as="div" className="fixed right-8 bottom-8 block md:hidden">
-      {({ open, close }) => (
-        <MenuContent open={open} close={close} active={active} stale={stale} getHref={getHref} />
-      )}
+      {({ open, close }) => <MenuContent open={open} close={close} active={active} stale={stale} />}
     </Menu>
   )
 }

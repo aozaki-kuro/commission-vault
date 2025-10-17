@@ -1,5 +1,5 @@
 'use client'
-import { kebabCase } from '#lib/strings'
+import { buildCharacterNavItems } from '#lib/characters'
 import { getSections, findActiveSection } from '#lib/visibility'
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 
@@ -78,14 +78,7 @@ const CharacterList = ({ characters }: CharacterListProps) => {
   }, [handleScroll])
 
   // 预计算字符数据
-  const characterItems = useMemo(
-    () =>
-      allCharacters.map(character => ({
-        id: kebabCase(character.DisplayName),
-        displayName: character.DisplayName,
-      })),
-    [allCharacters],
-  )
+  const characterItems = useMemo(() => buildCharacterNavItems(allCharacters), [allCharacters])
 
   return (
     <aside
@@ -94,12 +87,12 @@ const CharacterList = ({ characters }: CharacterListProps) => {
     >
       <nav className="sticky top-4 ml-8">
         <ul className="space-y-2">
-          {characterItems.map(({ id, displayName }) => {
-            const isActive = activeId === `title-${id}`
+          {characterItems.map(({ displayName, sectionId, sectionHash, titleId }) => {
+            const isActive = activeId === titleId
 
             return (
               <li
-                key={id}
+                key={sectionId}
                 className="relative pl-4 text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:text-white"
               >
                 <div
@@ -108,7 +101,7 @@ const CharacterList = ({ characters }: CharacterListProps) => {
                   }`}
                 />
                 <a
-                  href={`#${id}`}
+                  href={sectionHash}
                   className="font-mono text-sm no-underline transition-colors duration-200"
                 >
                   {displayName}

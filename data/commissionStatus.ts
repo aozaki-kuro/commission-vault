@@ -1,3 +1,5 @@
+import 'server-only'
+
 import { queryAll } from './sqlite'
 
 interface CharacterProps {
