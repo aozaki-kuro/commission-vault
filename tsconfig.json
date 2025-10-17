@@ -37,6 +37,8 @@
       "#components/*": ["app/components/*"],
       "#images/*": ["public/images/*"],
       "#commission/*": ["components/commission/*"],
+      "#admin/actions": ["app/(dev)/admin/actions.stub.ts"],
+      "#admin/*": ["app/(dev)/admin/*"],
       "#data/*": ["data/*"],
       "#lib/*": ["app/lib/*"]
     }

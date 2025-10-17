@@ -45,6 +45,8 @@ public/robots.txt
 
 # imageMap
 data/imageMap.ts
+data/commissions.db-shm
+data/commissions.db-wal
 
 # .env
 .env

@@ -1,89 +1,45 @@
+// next.config.ts
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { NextConfig } from 'next'
+import { PHASE_DEVELOPMENT_SERVER } from 'next/constants'
 
-const securityHeaders = [
-  // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
-  {
-    key: 'Referrer-Policy',
-    value: 'strict-origin-when-cross-origin',
-  },
-  // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
-  {
-    key: 'X-Frame-Options',
-    value: 'DENY',
-  },
-  // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options
-  {
-    key: 'X-Content-Type-Options',
-    value: 'nosniff',
-  },
-  // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-DNS-Prefetch-Control
-  {
-    key: 'X-DNS-Prefetch-Control',
-    value: 'on',
-  },
-  // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
-  {
-    key: 'Strict-Transport-Security',
-    value: 'max-age=31536000; includeSubDomains',
-  },
-  // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Feature-Policy
-  {
-    key: 'Permissions-Policy',
-    value: 'camera=(), microphone=(), geolocation=()',
-  },
-]
+const projectDir = path.dirname(fileURLToPath(import.meta.url))
 
-const noRobots = [
-  {
-    key: 'X-Robots-Tag',
-    value: 'noindex',
-  },
-]
+// 把绝对路径改成项目内的相对路径（以 ./ 开头，统一为 POSIX 斜杠）
+const rel = (p: string) => {
+  const r = path.posix.join('.', path.relative(projectDir, p).split(path.sep).join(path.posix.sep))
+  return r.startsWith('.') ? r : `./${r}`
+}
 
-const nextConfig: NextConfig = {
-  reactStrictMode: true,
-  cleanDistDir: true,
-  images: {
-    // unoptimized: process.env.CF_PAGES === 'true' ? true : false,
-    unoptimized: true,
-    minimumCacheTTL: 604800,
-  },
+const getAdminActionsPath = (isDev: boolean) =>
+  rel(path.join(projectDir, 'app/(dev)/admin', isDev ? 'actions.dev.ts' : 'actions.stub.ts'))
 
-  // Ignore Lint during Build
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+const nextConfig = (phase: string): NextConfig => {
+  const isDev = phase === PHASE_DEVELOPMENT_SERVER
+  const adminActionsPath = getAdminActionsPath(isDev)
 
-  output: 'export',
+  return {
+    reactStrictMode: true,
+    cleanDistDir: true,
+    images: { unoptimized: true, minimumCacheTTL: 604800 },
+    eslint: { ignoreDuringBuilds: true },
+    output: 'export',
 
-  // ...(process.env.CF_PAGES === 'true'
-  // ? /*
-  //   * If true = Cloudflare Pages
+    // ⚠️ 只保留 Turbopack 的 alias，避免和 webpack 重复配置打架
+    turbopack: {
+      resolveAlias: {
+        '#admin/actions': adminActionsPath,
+      },
+    },
 
-  //  {
-  /*
-   * bun run pre-build && bunx @cloudflare/next-on-pages
-   * Change output dir: .vercel/output/static
-   * Add compatibility flag: nodejs_compat
-   * Then you can disable output: 'export'
-   */
-  // output: 'export', // Use static output for Cloudflare Pages
-  //  }
-  /*
-    : 
-       * If false = Not Cloudflare Pages
-       
-      {
-        // Add headers when NOT on Cloudflare Pages
-        async headers() {
-          return [
-            {
-              source: '/(.*)',
-              headers: [...securityHeaders, ...noRobots],
-            },
-          ]
-        },
-      }),*/
+    // 可选：如果你偶尔用 webpack 模式再开（比如禁用 turbo），再同步一份
+    webpack: config => {
+      ;(config.resolve ??= {}).alias ??= {}
+      config.resolve.alias['#admin/actions'] = adminActionsPath
+      return config
+    },
+  }
 }
 
 export default nextConfig

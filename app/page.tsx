@@ -5,12 +5,11 @@ import Commission from '#components/commission'
 import CommissionDescription from '#components/main/Description'
 import Footer from '#components/main/Footer'
 
-// Sidebar
 import CharacterList from '#components/main/CharacterList'
 
-// Other components
 import Hamburger from '#components/main/Hamburger'
 import Warning from '#components/main/Warning'
+import { characterStatus } from '#data/commissionStatus'
 
 const Home: NextPage = () => {
   return (
@@ -22,9 +21,9 @@ const Home: NextPage = () => {
           <Commission />
           <Footer />
         </div>
-        <CharacterList />
+        <CharacterList characters={[...characterStatus.active, ...characterStatus.stale]} />
       </div>
-      <Hamburger />
+      <Hamburger active={characterStatus.active} stale={characterStatus.stale} />
     </>
   )
 }

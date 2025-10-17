@@ -1,27 +1,15 @@
 'use client'
 
 import { kebabCase } from '#lib/strings'
-import { characterStatus } from '#data/commissionStatus'
 import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Fragment, memo, useCallback, useEffect, useRef, useState } from 'react'
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-// ─────────────────── 预计算静态数据 ───────────────────
-const ACTIVE_CHARACTERS = characterStatus.active
-const STALE_CHARACTERS = characterStatus.stale
+interface CharacterEntry {
+  DisplayName: string
+}
 
-// 预计算 href 映射
-const CHARACTER_HREF_MAP = new Map([
-  ...ACTIVE_CHARACTERS.map(
-    char => [char.DisplayName, `/#title-${kebabCase(char.DisplayName)}`] as const,
-  ),
-  ...STALE_CHARACTERS.map(
-    char => [char.DisplayName, `/#title-${kebabCase(char.DisplayName)}`] as const,
-  ),
-])
-
-// ─────────────────── 样式常量 ───────────────────
 const STYLES = {
   menuButton:
     'relative z-30 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-gray-900 shadow-[0_2px_8px_rgba(0,0,0,0.08)] ring-1 ring-black/5 backdrop-blur-[12px] transition-all duration-300 hover:bg-gray-100/80 hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] focus:outline-hidden dark:bg-black/80 dark:text-white dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] dark:ring-white/10 dark:hover:bg-gray-900/80 dark:hover:shadow-[0_4px_16px_rgba(0,0,0,0.3)]',
@@ -32,19 +20,13 @@ const STYLES = {
   backdrop: 'blur(12px)',
 } as const
 
-// ─────────────────── 接口定义 ───────────────────
-interface Character {
-  DisplayName: string
-}
-
-// MenuIcon 组件
 const MenuIcon = memo(({ isOpen }: { isOpen: boolean }) => (
   <svg
-    className="h-5 w-5 transform transition-transform duration-300"
-    fill="none"
+    className="h-6 w-6 text-gray-900 dark:text-white"
     viewBox="0 0 24 24"
+    fill="none"
     stroke="currentColor"
-    style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
+    aria-hidden="true"
   >
     {isOpen ? (
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -60,7 +42,6 @@ const MenuIcon = memo(({ isOpen }: { isOpen: boolean }) => (
 ))
 MenuIcon.displayName = 'MenuIcon'
 
-// ChevronIcon 组件
 const ChevronIcon = memo(({ isExpanded }: { isExpanded: boolean }) => (
   <svg
     className={`h-4 w-4 text-gray-600 transition-transform duration-200 dark:text-gray-300 ${
@@ -75,17 +56,15 @@ const ChevronIcon = memo(({ isExpanded }: { isExpanded: boolean }) => (
 ))
 ChevronIcon.displayName = 'ChevronIcon'
 
-// ListItem 组件
 interface ListItemProps {
-  character: Character
+  character: CharacterEntry
+  href: string
   isActive?: boolean
   close: () => void
 }
 
-const ListItem = memo(({ character, isActive, close }: ListItemProps) => {
+const ListItem = memo(({ character, href, isActive, close }: ListItemProps) => {
   const router = useRouter()
-  const href =
-    CHARACTER_HREF_MAP.get(character.DisplayName) || `/#title-${kebabCase(character.DisplayName)}`
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -109,24 +88,24 @@ const ListItem = memo(({ character, isActive, close }: ListItemProps) => {
 })
 ListItem.displayName = 'ListItem'
 
-// 优化的 MenuItem 组件
 const OptimizedMenuItem = memo(
-  ({ character, close }: { character: Character; close: () => void }) => (
+  ({ character, href, close }: { character: CharacterEntry; href: string; close: () => void }) => (
     <MenuItem key={character.DisplayName} as={Fragment}>
       {({ active }: { active: boolean }) => (
-        <ListItem character={character} isActive={active} close={close} />
+        <ListItem character={character} href={href} isActive={active} close={close} />
       )}
     </MenuItem>
   ),
 )
 OptimizedMenuItem.displayName = 'OptimizedMenuItem'
 
-// CharacterList 组件
 interface CharacterListProps {
+  active: CharacterEntry[]
+  stale: CharacterEntry[]
   close: () => void
 }
 
-const CharacterList = memo(({ close }: CharacterListProps) => {
+const CharacterList = memo(({ active, stale, close }: CharacterListProps) => {
   const [isStaleExpanded, setIsStaleExpanded] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isInitialRender, setIsInitialRender] = useState(true)
@@ -135,12 +114,10 @@ const CharacterList = memo(({ close }: CharacterListProps) => {
   const staleListRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // 👇 getListHeight 改为接受 MutableRef，允许 null ── modified
   const getListHeight = useCallback((listRef: React.MutableRefObject<HTMLDivElement | null>) => {
     return listRef.current?.scrollHeight ?? 0
   }, [])
 
-  // 更新容器高度
   const updateContainerHeight = useCallback(() => {
     const container = containerRef.current
     if (!container) return
@@ -159,7 +136,6 @@ const CharacterList = memo(({ close }: CharacterListProps) => {
     }
   }, [isStaleExpanded, isInitialRender, getListHeight])
 
-  // 监听列表尺寸变化
   useEffect(() => {
     const activeList = activeListRef.current
     const staleList = staleListRef.current
@@ -176,23 +152,48 @@ const CharacterList = memo(({ close }: CharacterListProps) => {
     return () => resizeObserver.disconnect()
   }, [updateContainerHeight])
 
-  // 切换列表
   const toggleStaleList = useCallback(() => {
     if (isAnimating) return
     setIsAnimating(true)
     setIsStaleExpanded(prev => !prev)
-    setTimeout(() => setIsAnimating(false), 300) // 匹配 CSS 动画时长
+    setTimeout(() => setIsAnimating(false), 300)
   }, [isAnimating])
 
-  // 预渲染列表项
-  const activeItems = ACTIVE_CHARACTERS.map(character => (
-    <OptimizedMenuItem key={character.DisplayName} character={character} close={close} />
-  ))
-  const staleItems = STALE_CHARACTERS.map(character => (
-    <OptimizedMenuItem key={character.DisplayName} character={character} close={close} />
-  ))
+  const hrefMap = useMemo(() => {
+    return new Map(
+      [...active, ...stale].map(
+        character =>
+          [character.DisplayName, `/#title-${kebabCase(character.DisplayName)}`] as const,
+      ),
+    )
+  }, [active, stale])
 
-  // 计算动画 class
+  const activeItems = useMemo(
+    () =>
+      active.map(character => (
+        <OptimizedMenuItem
+          key={character.DisplayName}
+          character={character}
+          href={hrefMap.get(character.DisplayName) ?? `/#title-${kebabCase(character.DisplayName)}`}
+          close={close}
+        />
+      )),
+    [active, close, hrefMap],
+  )
+
+  const staleItems = useMemo(
+    () =>
+      stale.map(character => (
+        <OptimizedMenuItem
+          key={character.DisplayName}
+          character={character}
+          href={hrefMap.get(character.DisplayName) ?? `/#title-${kebabCase(character.DisplayName)}`}
+          close={close}
+        />
+      )),
+    [stale, close, hrefMap],
+  )
+
   const getListTransform = (isStaleList: boolean) => {
     if (isInitialRender) return isStaleList ? 'translate-y-full' : 'translate-y-0'
     if (isStaleExpanded) return isStaleList ? 'translate-y-0' : '-translate-y-full'
@@ -211,110 +212,92 @@ const CharacterList = memo(({ close }: CharacterListProps) => {
         : 'opacity-100'
   }
 
-  const transitionClasses = isInitialRender ? '' : 'transition-all duration-300 ease-out'
-
   return (
-    <div className="relative">
-      <div
-        ref={containerRef}
-        className={`relative overflow-hidden will-change-[height] ${
-          isInitialRender ? '' : 'transition-[height] duration-300 ease-out'
-        }`}
-      >
-        {/* Active list */}
+    <div className="relative overflow-hidden">
+      <div ref={containerRef} className="relative transition-all duration-300 ease-in-out">
         <div
           ref={activeListRef}
-          className={`absolute inset-x-0 w-full will-change-transform ${transitionClasses} ${getListTransform(
-            false,
-          )} ${getListOpacity(false)}`}
+          className={`space-y-1 transition-transform duration-300 ease-in-out ${getListTransform(false)} ${getListOpacity(false)}`}
         >
           {activeItems}
         </div>
-
-        {/* Stale list */}
         <div
           ref={staleListRef}
-          className={`absolute inset-x-0 w-full will-change-transform ${transitionClasses} ${getListTransform(
-            true,
-          )} ${getListOpacity(true)}`}
+          className={`pointer-events-none space-y-1 transition-transform duration-300 ease-in-out ${getListTransform(true)} ${getListOpacity(true)}`}
         >
           {staleItems}
         </div>
       </div>
-
       <button
+        type="button"
         onClick={toggleStaleList}
         className={STYLES.toggleButton}
-        type="button"
         disabled={isAnimating}
       >
-        <p className="font-bold text-gray-600 dark:text-gray-300">Stale Characters</p>
+        <span className="font-semibold text-gray-700 dark:text-gray-200">
+          {isStaleExpanded ? 'Active' : 'Stale'} →
+        </span>
         <ChevronIcon isExpanded={isStaleExpanded} />
       </button>
     </div>
   )
 })
-CharacterList.displayName = 'CharacterList'
+CharacterList.displayName = 'HamburgerCharacterList'
 
-// MenuContent 组件
-const MenuContent = memo(({ open, close }: { open: boolean; close: () => void }) => {
+interface HamburgerProps {
+  active: CharacterEntry[]
+  stale: CharacterEntry[]
+}
+
+const Hamburger = ({ active, stale }: HamburgerProps) => {
+  const [isOpen, setIsOpen] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
+
   useEffect(() => {
-    const html = document.documentElement
-    if (open) {
-      html.classList.add('overflow-hidden', 'touch-none')
-    } else {
-      html.classList.remove('overflow-hidden', 'touch-none')
-    }
-    return () => html.classList.remove('overflow-hidden', 'touch-none')
-  }, [open])
+    const timeout = setTimeout(() => setIsMounted(true), 100)
+    return () => clearTimeout(timeout)
+  }, [])
 
-  const backdropStyle = {
-    WebkitBackdropFilter: STYLES.backdrop,
-    backdropFilter: STYLES.backdrop,
-  } as const
+  const close = useCallback(() => setIsOpen(false), [])
 
   return (
-    <>
-      {open && (
-        <div className="fixed inset-0 z-20 bg-gray-200/10 backdrop-blur-xs dark:bg-gray-900/10" />
-      )}
-
-      <MenuButton className={STYLES.menuButton} style={backdropStyle}>
-        <span className="sr-only">Open navigation menu</span>
-        <MenuIcon isOpen={open} />
-      </MenuButton>
+    <Menu as="div" className="fixed right-6 bottom-6 z-40 flex items-center">
+      <Transition
+        show={isMounted}
+        enter="transition duration-300 ease-out"
+        enterFrom="opacity-0 translate-y-4"
+        enterTo="opacity-100 translate-y-0"
+        leave="transition duration-200 ease-in"
+        leaveFrom="opacity-100 translate-y-0"
+        leaveTo="opacity-0 translate-y-2"
+      >
+        <MenuButton
+          onClick={() => setIsOpen(prev => !prev)}
+          className={STYLES.menuButton}
+          aria-label="Open character navigation"
+        >
+          <MenuIcon isOpen={isOpen} />
+        </MenuButton>
+      </Transition>
 
       <Transition
-        as={Fragment}
-        enter="ease-out duration-300"
-        enterFrom="opacity-0 scale-95"
-        enterTo="opacity-100 scale-100"
-        leave="ease-in duration-200"
-        leaveFrom="opacity-100 scale-100"
-        leaveTo="opacity-0 scale-95"
+        show={isOpen}
+        enter="transition duration-200 ease-out"
+        enterFrom="opacity-0 translate-y-2"
+        enterTo="opacity-100 translate-y-0"
+        leave="transition duration-150 ease-in"
+        leaveFrom="opacity-100 translate-y-0"
+        leaveTo="opacity-0 translate-y-2"
       >
         <MenuItems
-          className="absolute right-4 bottom-full z-40 mb-4 max-h-[calc(100vh-8rem)] w-64 origin-bottom-right overflow-y-auto rounded-xl border border-white/20 bg-white/80 font-mono shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-lg focus:outline-hidden dark:bg-black/80"
-          style={backdropStyle}
+          static
+          className="absolute right-0 bottom-14 w-64 origin-bottom-right rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-[0_18px_36px_rgba(24,39,75,0.12)] backdrop-blur-[12px] focus:outline-hidden dark:border-white/10 dark:bg-black/80"
         >
-          <div className="border-b border-gray-300/50 p-4 dark:border-white/10">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Characters</h2>
-          </div>
-          <div className="p-2">
-            <CharacterList close={close} />
-          </div>
+          <CharacterList active={active} stale={stale} close={close} />
         </MenuItems>
       </Transition>
-    </>
+    </Menu>
   )
-})
-MenuContent.displayName = 'MenuContent'
-
-// Hamburger 组件
-const Hamburger = () => (
-  <Menu as="div" className="fixed right-8 bottom-8 block md:hidden">
-    {({ open, close }) => <MenuContent open={open} close={close} />}
-  </Menu>
-)
+}
 
 export default Hamburger

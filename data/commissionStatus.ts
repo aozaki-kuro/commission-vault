@@ -1,3 +1,5 @@
+import { queryAll } from './sqlite'
+
 interface CharacterProps {
   DisplayName: string
 }
@@ -7,26 +9,23 @@ interface CommissionStatus {
   stale: CharacterProps[]
 }
 
-export const characterStatus: CommissionStatus = {
-  /* ======= Active Characters ======= */
-  active: [
-    { DisplayName: 'L*cia' },
-    { DisplayName: 'Kanaut Nishe' },
-    { DisplayName: 'Studio K' },
-    { DisplayName: 'AZKi' },
-    { DisplayName: 'n*yuta' },
-  ],
+const loadStatus = (): CommissionStatus => {
+  const rows = queryAll<{ name: string; status: 'active' | 'stale' }>(
+    `SELECT name, status
+     FROM characters
+     ORDER BY sort_order ASC`,
+  )
 
-  /* ======= Stale Characters ======= */
-  stale: [
-    { DisplayName: 'H*nabasami Kyo' },
+  const active: CharacterProps[] = []
+  const stale: CharacterProps[] = []
 
-    // Very unlikely to change
-    { DisplayName: 'K*toha' },
-    { DisplayName: 'Sport!' },
-    { DisplayName: 'HACHI' },
-    { DisplayName: 'Blue Archive' },
-    { DisplayName: "Ninomae Ina'nis" },
-    { DisplayName: 'Tokomachi' },
-  ],
+  rows.forEach(row => {
+    const entry = { DisplayName: row.name }
+    if (row.status === 'active') active.push(entry)
+    else stale.push(entry)
+  })
+
+  return { active, stale }
 }
+
+export const characterStatus: CommissionStatus = loadStatus()

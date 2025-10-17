@@ -1,5 +1,4 @@
 import { kebabCase } from './strings'
-import { getAllCharacters } from './characters'
 
 export interface Section {
   id: string
@@ -34,7 +33,7 @@ export const calculateVisibility = (rect: DOMRect, contentHeight: number) => {
 /**
  * Collect visibility info for all character sections.
  */
-export const getSections = (characters: ReturnType<typeof getAllCharacters>): Section[] =>
+export const getSections = (characters: { DisplayName: string }[]): Section[] =>
   characters
     .map(character => {
       const id = `title-${kebabCase(character.DisplayName)}`

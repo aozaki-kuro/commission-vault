@@ -1,11 +1,14 @@
 'use client'
 import { kebabCase } from '#lib/strings'
-import { getAllCharacters } from '#lib/characters'
 import { getSections, findActiveSection } from '#lib/visibility'
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 
-const CharacterList = () => {
-  const allCharacters = useMemo(() => getAllCharacters(), [])
+interface CharacterListProps {
+  characters: { DisplayName: string }[]
+}
+
+const CharacterList = ({ characters }: CharacterListProps) => {
+  const allCharacters = useMemo(() => characters, [characters])
   const [activeId, setActiveId] = useState<string>('')
   const rafId = useRef<number | null>(null)
   const introductionElementRef = useRef<HTMLElement | null>(null)
