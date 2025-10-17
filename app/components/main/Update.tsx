@@ -1,5 +1,5 @@
 import { getBaseFileName, kebabCase } from '#lib/strings'
-import { isCharacterActive } from '#lib/characters'
+import { isCharacterActive } from '#lib/characterStatus'
 import {
   mergePartsAndPreviews,
   sortCommissionsByDate,
