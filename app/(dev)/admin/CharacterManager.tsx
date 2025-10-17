@@ -7,7 +7,6 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  type DragEndEvent,
   type DragOverEvent,
 } from '@dnd-kit/core'
 import {
@@ -266,7 +265,7 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
   }
 
   // 处理拖放结束
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = () => {
     persistOrder(list)
   }
 
