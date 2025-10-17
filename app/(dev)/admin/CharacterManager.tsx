@@ -2,6 +2,23 @@
 
 import { Disclosure, Input, Menu, Transition } from '@headlessui/react'
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove as dndArrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import {
   Fragment,
   useEffect,
   useMemo,
@@ -29,12 +46,167 @@ type FormFeedback = { type: 'success' | 'error'; text: string } | null
 const controlStyles =
   'w-full rounded-lg border border-gray-200 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-100 dark:focus-visible:ring-offset-gray-900'
 
-const arrayMove = <T,>(list: T[], from: number, to: number): T[] => {
-  if (from === to || from < 0 || to < 0 || from >= list.length || to >= list.length) return list
-  const copy = [...list]
-  const [item] = copy.splice(from, 1)
-  copy.splice(to, 0, item)
-  return copy
+// 可拖动的角色项组件
+interface SortableCharacterItemProps {
+  character: CharacterRow
+  group: CharacterGroup
+  isEditing: boolean
+  editingValue: string
+  onStartEdit: () => void
+  onRenameChange: (value: string) => void
+  onCancelEdit: () => void
+  onSubmitRename: () => void
+  onMoveToGroup: (to: CharacterGroup) => void
+}
+
+const SortableCharacterItem = ({
+  character,
+  group,
+  isEditing,
+  editingValue,
+  onStartEdit,
+  onRenameChange,
+  onCancelEdit,
+  onSubmitRename,
+  onMoveToGroup,
+}: SortableCharacterItemProps) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: character.id,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center justify-between gap-6 rounded-xl border border-gray-200/80 bg-white/95 p-4 text-sm shadow-sm ring-1 ring-gray-900/5 transition dark:border-gray-700/80 dark:bg-gray-900/50 dark:ring-white/10"
+    >
+      <div className="flex flex-1 items-center gap-3">
+        {/* 拖动手柄 */}
+        <button
+          type="button"
+          className="inline-flex h-8 w-8 cursor-grab items-center justify-center rounded-lg border border-transparent text-gray-400 transition hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white active:cursor-grabbing dark:hover:text-gray-200 dark:focus-visible:ring-offset-gray-900"
+          {...attributes}
+          {...listeners}
+          aria-label={`Drag ${character.name}`}
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 8h16M4 16h16"
+            />
+          </svg>
+        </button>
+
+        <span
+          aria-hidden="true"
+          className={`h-2.5 w-2.5 rounded-full ${group === 'active' ? 'bg-blue-500/90' : 'bg-gray-400/80'}`}
+        />
+        <button
+          type="button"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-xs text-gray-500 transition hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:text-gray-300 dark:hover:text-gray-100 dark:focus-visible:ring-offset-gray-900"
+          onClick={onStartEdit}
+          aria-label={`Rename ${character.name}`}
+        >
+          ✎
+        </button>
+        {isEditing ? (
+          <form
+            className="flex-1"
+            onSubmit={(event: FormEvent<HTMLFormElement>) => {
+              event.preventDefault()
+              onSubmitRename()
+            }}
+          >
+            <Input
+              autoFocus
+              value={editingValue}
+              onChange={event => onRenameChange(event.target.value)}
+              onBlur={onCancelEdit}
+              onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  onSubmitRename()
+                }
+                if (event.key === 'Escape') {
+                  event.preventDefault()
+                  onCancelEdit()
+                }
+              }}
+              className={controlStyles}
+            />
+          </form>
+        ) : (
+          <span className="text-base font-medium text-gray-900 dark:text-gray-100">
+            {character.name}
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Menu as="div" className="relative inline-block text-left">
+          <Menu.Button className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200/80 bg-white/80 px-3 text-xs font-semibold text-gray-600 transition hover:border-gray-400 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:border-gray-600/80 dark:bg-gray-900/60 dark:text-gray-200 dark:hover:border-gray-400/60 dark:hover:text-gray-50 dark:focus-visible:ring-offset-gray-900">
+            Move
+          </Menu.Button>
+          <Transition
+            as={Fragment}
+            enter="transition ease-out duration-100"
+            enterFrom="transform opacity-0 scale-95"
+            enterTo="transform opacity-100 scale-100"
+            leave="transition ease-in duration-75"
+            leaveFrom="transform opacity-100 scale-100"
+            leaveTo="transform opacity-0 scale-95"
+          >
+            <Menu.Items className="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-lg border border-gray-200 bg-white/95 p-1 shadow-lg ring-1 ring-black/5 focus:outline-none dark:border-gray-600 dark:bg-gray-900/90 dark:ring-white/10">
+              {group === 'active' ? (
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      type="button"
+                      className={`w-full rounded-md px-3 py-2 text-left text-sm ${
+                        active
+                          ? 'bg-gray-900/5 text-gray-900 dark:bg-white/15 dark:text-gray-100'
+                          : 'text-gray-600 dark:text-gray-200'
+                      }`}
+                      onClick={() => onMoveToGroup('stale')}
+                    >
+                      Move to Stale
+                    </button>
+                  )}
+                </Menu.Item>
+              ) : (
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      type="button"
+                      className={`w-full rounded-md px-3 py-2 text-left text-sm ${
+                        active
+                          ? 'bg-gray-900/5 text-gray-900 dark:bg-white/15 dark:text-gray-100'
+                          : 'text-gray-600 dark:text-gray-200'
+                      }`}
+                      onClick={() => onMoveToGroup('active')}
+                    >
+                      Move to Active
+                    </button>
+                  )}
+                </Menu.Item>
+              )}
+            </Menu.Items>
+          </Transition>
+        </Menu>
+        <span className="w-24 text-right font-mono text-xs tracking-wide text-gray-500 uppercase dark:text-gray-300">
+          {character.commissionCount.toString().padStart(3, ' ')} entries
+        </span>
+      </div>
+    </div>
+  )
 }
 
 const CharacterManager = ({ characters }: CharacterManagerProps) => {
@@ -58,6 +230,14 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
   const [feedback, setFeedback] = useState<FormFeedback>(null)
   const [isSaving, startSaveTransition] = useTransition()
   const [isRenaming, startRenameTransition] = useTransition()
+
+  // 配置拖放传感器
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  )
 
   useEffect(() => {
     setActiveOrder(initialActive)
@@ -90,25 +270,26 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
     })
   }
 
-  const moveWithinGroup = (group: CharacterGroup, index: number, direction: -1 | 1) => {
-    const listLength = group === 'active' ? activeOrder.length : staleOrder.length
-    const targetIndex = index + direction
-    if (targetIndex < 0 || targetIndex >= listLength) return
+  // 处理拖放结束事件
+  const handleDragEnd = (event: DragEndEvent, group: CharacterGroup) => {
+    const { active, over } = event
+
+    if (!over || active.id === over.id) return
+
+    const list = group === 'active' ? activeOrder : staleOrder
+    const oldIndex = list.findIndex(item => item.id === active.id)
+    const newIndex = list.findIndex(item => item.id === over.id)
+
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const reordered = dndArrayMove(list, oldIndex, newIndex)
 
     if (group === 'active') {
-      const nextActive = arrayMove(activeOrder, index, index + direction).map(character => ({
-        ...character,
-        status: 'active' as const,
-      }))
-      setActiveOrder(nextActive)
-      persistOrder(nextActive, staleOrder)
+      setActiveOrder(reordered)
+      persistOrder(reordered, staleOrder)
     } else {
-      const nextStale = arrayMove(staleOrder, index, index + direction).map(character => ({
-        ...character,
-        status: 'stale' as const,
-      }))
-      setStaleOrder(nextStale)
-      persistOrder(activeOrder, nextStale)
+      setStaleOrder(reordered)
+      persistOrder(activeOrder, reordered)
     }
   }
 
@@ -239,140 +420,36 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
                   No characters in this group.
                 </p>
               ) : (
-                list.map((character, index) => {
-                  const isEditing = editing?.id === character.id
-                  const editingValue = isEditing ? editing!.value : character.name
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={event => handleDragEnd(event, group)}
+                >
+                  <SortableContext
+                    items={list.map(c => c.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {list.map(character => {
+                      const isEditing = editing?.id === character.id
+                      const editingValue = isEditing ? editing!.value : character.name
 
-                  return (
-                    <div
-                      key={character.id}
-                      className="flex items-center justify-between gap-6 rounded-xl border border-gray-200/80 bg-white/95 p-4 text-sm shadow-sm ring-1 ring-gray-900/5 transition dark:border-gray-700/80 dark:bg-gray-900/50 dark:ring-white/10"
-                    >
-                      <div className="flex flex-1 items-center gap-3">
-                        <span
-                          aria-hidden="true"
-                          className={`h-2.5 w-2.5 rounded-full ${group === 'active' ? 'bg-blue-500/90' : 'bg-gray-400/80'}`}
+                      return (
+                        <SortableCharacterItem
+                          key={character.id}
+                          character={character}
+                          group={group}
+                          isEditing={isEditing}
+                          editingValue={editingValue}
+                          onStartEdit={() => startEditingName(character, group)}
+                          onRenameChange={handleRenameChange}
+                          onCancelEdit={cancelEditing}
+                          onSubmitRename={submitRename}
+                          onMoveToGroup={to => moveCharacterToGroup(character.id, group, to)}
                         />
-                        <button
-                          type="button"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-xs text-gray-500 transition hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:text-gray-300 dark:hover:text-gray-100 dark:focus-visible:ring-offset-gray-900"
-                          onClick={() => startEditingName(character, group)}
-                          aria-label={`Rename ${character.name}`}
-                        >
-                          ✎
-                        </button>
-                        {isEditing ? (
-                          <form
-                            className="flex-1"
-                            onSubmit={(event: FormEvent<HTMLFormElement>) => {
-                              event.preventDefault()
-                              submitRename()
-                            }}
-                          >
-                            <Input
-                              autoFocus
-                              value={editingValue}
-                              onChange={event => handleRenameChange(event.target.value)}
-                              onBlur={cancelEditing}
-                              onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-                                if (event.key === 'Enter') {
-                                  event.preventDefault()
-                                  submitRename()
-                                }
-                                if (event.key === 'Escape') {
-                                  event.preventDefault()
-                                  cancelEditing()
-                                }
-                              }}
-                              className={controlStyles}
-                            />
-                          </form>
-                        ) : (
-                          <span className="text-base font-medium text-gray-900 dark:text-gray-100">
-                            {character.name}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200/80 bg-white/80 text-xs font-semibold text-gray-600 transition hover:border-gray-400 hover:text-gray-900 disabled:opacity-40 dark:border-gray-600/80 dark:bg-gray-900/60 dark:text-gray-200 dark:hover:border-gray-400/60 dark:hover:text-gray-50"
-                          onClick={() => moveWithinGroup(group, index, -1)}
-                          disabled={index === 0 || isEditing}
-                        >
-                          ↑
-                        </button>
-                        <button
-                          type="button"
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200/80 bg-white/80 text-xs font-semibold text-gray-600 transition hover:border-gray-400 hover:text-gray-900 disabled:opacity-40 dark:border-gray-600/80 dark:bg-gray-900/60 dark:text-gray-200 dark:hover:border-gray-400/60 dark:hover:text-gray-50"
-                          onClick={() => moveWithinGroup(group, index, 1)}
-                          disabled={index === list.length - 1 || isEditing}
-                        >
-                          ↓
-                        </button>
-
-                        <Menu as="div" className="relative inline-block text-left">
-                          <Menu.Button className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200/80 bg-white/80 px-3 text-xs font-semibold text-gray-600 transition hover:border-gray-400 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:border-gray-600/80 dark:bg-gray-900/60 dark:text-gray-200 dark:hover:border-gray-400/60 dark:hover:text-gray-50 dark:focus-visible:ring-offset-gray-900">
-                            Move
-                          </Menu.Button>
-                          <Transition
-                            as={Fragment}
-                            enter="transition ease-out duration-100"
-                            enterFrom="transform opacity-0 scale-95"
-                            enterTo="transform opacity-100 scale-100"
-                            leave="transition ease-in duration-75"
-                            leaveFrom="transform opacity-100 scale-100"
-                            leaveTo="transform opacity-0 scale-95"
-                          >
-                            <Menu.Items className="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-lg border border-gray-200 bg-white/95 p-1 shadow-lg ring-1 ring-black/5 focus:outline-none dark:border-gray-600 dark:bg-gray-900/90 dark:ring-white/10">
-                              {group === 'active' ? (
-                                <Menu.Item>
-                                  {({ active }) => (
-                                    <button
-                                      type="button"
-                                      className={`w-full rounded-md px-3 py-2 text-left text-sm ${
-                                        active
-                                          ? 'bg-gray-900/5 text-gray-900 dark:bg-white/15 dark:text-gray-100'
-                                          : 'text-gray-600 dark:text-gray-200'
-                                      }`}
-                                      onClick={() =>
-                                        moveCharacterToGroup(character.id, 'active', 'stale')
-                                      }
-                                    >
-                                      Move to Stale
-                                    </button>
-                                  )}
-                                </Menu.Item>
-                              ) : (
-                                <Menu.Item>
-                                  {({ active }) => (
-                                    <button
-                                      type="button"
-                                      className={`w-full rounded-md px-3 py-2 text-left text-sm ${
-                                        active
-                                          ? 'bg-gray-900/5 text-gray-900 dark:bg-white/15 dark:text-gray-100'
-                                          : 'text-gray-600 dark:text-gray-200'
-                                      }`}
-                                      onClick={() =>
-                                        moveCharacterToGroup(character.id, 'stale', 'active')
-                                      }
-                                    >
-                                      Move to Active
-                                    </button>
-                                  )}
-                                </Menu.Item>
-                              )}
-                            </Menu.Items>
-                          </Transition>
-                        </Menu>
-                        <span className="w-24 text-right font-mono text-xs tracking-wide text-gray-500 uppercase dark:text-gray-300">
-                          {character.commissionCount.toString().padStart(3, ' ')} entries
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })
+                      )
+                    })}
+                  </SortableContext>
+                </DndContext>
               )}
             </Disclosure.Panel>
           </Transition>
