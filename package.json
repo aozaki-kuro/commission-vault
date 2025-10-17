@@ -8,7 +8,6 @@
     "clean": "rm -rf .next node_modules out .wrangler ; bun i",
     "deploy": "bun run prod ; wrangler deploy",
     "dev": "bun run pre-build ; next dev --turbo",
-    "dl": "bun run scripts/dl.ts",
     "lint": "eslint --fix",
     "pre-build": "bun run scripts/convert.ts ; bun run scripts/imageImport.ts",
     "prepare": "husky",
