@@ -1,6 +1,6 @@
 'use client'
 
-import { Disclosure, Transition } from '@headlessui/react'
+import { Disclosure, DisclosureButton, DisclosurePanel, Transition } from '@headlessui/react'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { CharacterRow, CommissionRow } from '#lib/admin/db'
@@ -82,17 +82,17 @@ const CommissionManager = ({ characters, commissions }: CommissionManagerProps) 
             <Disclosure key={`${character.id}-${isOpen ? 'open' : 'closed'}`} defaultOpen={isOpen}>
               {({ open }) => (
                 <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white/95 shadow-sm ring-1 ring-gray-900/5 dark:border-gray-700 dark:bg-gray-900/40 dark:ring-white/10">
-                  <Disclosure.Button
+                  <DisclosureButton
                     onClick={() =>
                       setOpenId(prev => (prev === character.id && open ? null : character.id))
                     }
                     className="flex w-full items-center justify-between bg-white/90 px-5 py-3 text-left text-base font-semibold text-gray-800 transition hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:bg-gray-900/40 dark:text-gray-100 dark:hover:bg-gray-800/60 dark:focus-visible:ring-offset-gray-900"
                   >
-                    <span>{character.name}</span>
-                    <span className="text-sm text-gray-500 dark:text-gray-300">
+                    <span className="font-semibold">{character.name}</span>
+                    <span className="font-mono text-xs font-normal text-gray-500 dark:text-gray-300">
                       {characterCommissions.length} entries
                     </span>
-                  </Disclosure.Button>
+                  </DisclosureButton>
                   <Transition
                     as={Fragment}
                     enter="transition ease-out duration-150"
@@ -102,7 +102,7 @@ const CommissionManager = ({ characters, commissions }: CommissionManagerProps) 
                     leaveFrom="opacity-100 translate-y-0"
                     leaveTo="opacity-0 -translate-y-1"
                   >
-                    <Disclosure.Panel
+                    <DisclosurePanel
                       static
                       className="space-y-4 border-t border-gray-200 bg-white/85 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/30"
                     >
@@ -120,7 +120,7 @@ const CommissionManager = ({ characters, commissions }: CommissionManagerProps) 
                           />
                         ))
                       )}
-                    </Disclosure.Panel>
+                    </DisclosurePanel>
                   </Transition>
                 </div>
               )}
