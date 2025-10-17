@@ -19,16 +19,14 @@ import { INITIAL_FORM_STATE } from './types'
 
 type StatusValue = 'active' | 'stale'
 
-const statusOptions: Array<{ value: StatusValue; label: string; description: string }> = [
+const statusOptions: Array<{ value: StatusValue; label: string }> = [
   {
     value: 'active',
     label: 'Active',
-    description: 'Show this character alongside current commissions.',
   },
   {
     value: 'stale',
     label: 'Stale',
-    description: 'Keep visible but move under the archive section.',
   },
 ]
 
@@ -98,6 +96,9 @@ const AddCharacterForm = () => {
 
               <Transition
                 as={Fragment}
+                enter="transition ease-out duration-150"
+                enterFrom="opacity-0 translate-y-1"
+                enterTo="opacity-100 translate-y-0"
                 leave="transition ease-in duration-100"
                 leaveFrom="opacity-100 translate-y-0"
                 leaveTo="opacity-0 -translate-y-1"
@@ -115,22 +116,7 @@ const AddCharacterForm = () => {
                         } ${selected ? 'ring-1 ring-gray-400/60 ring-inset' : ''}`
                       }
                     >
-                      {({ selected }) => (
-                        <>
-                          <div className="space-y-0.5">
-                            <p className="font-medium">{option.label}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-300">
-                              {option.description}
-                            </p>
-                          </div>
-                          <span
-                            aria-hidden="true"
-                            className={`mt-1 text-base ${selected ? 'text-gray-900 dark:text-gray-100' : 'text-transparent'}`}
-                          >
-                            ✓
-                          </span>
-                        </>
-                      )}
+                      <p className="font-medium">{option.label}</p>
                     </ListboxOption>
                   ))}
                 </ListboxOptions>

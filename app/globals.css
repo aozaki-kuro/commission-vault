@@ -70,4 +70,15 @@
   .animate-fade-in-out {
     animation: fadeInOut 2s ease-in-out;
   }
+
+  @keyframes tabFade {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }

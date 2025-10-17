@@ -158,9 +158,7 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
                       <span
                         className={`truncate ${selectedCharacter ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}
                       >
-                        {selectedCharacter
-                          ? `${selectedCharacter.name} • ${statusLabels[selectedCharacter.status]}`
-                          : 'Select character'}
+                        {selectedCharacter ? `${selectedCharacter.name}` : 'Select character'}
                       </span>
                       <svg
                         viewBox="0 0 20 20"
@@ -180,6 +178,9 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
 
                     <Transition
                       as={Fragment}
+                      enter="transition ease-out duration-150"
+                      enterFrom="opacity-0 translate-y-1"
+                      enterTo="opacity-100 translate-y-0"
                       leave="transition ease-in duration-100"
                       leaveFrom="opacity-100 translate-y-0"
                       leaveTo="opacity-0 -translate-y-1"
@@ -190,7 +191,7 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
                             key={character.id}
                             value={character.id}
                             className={({ active, selected }) =>
-                              `flex cursor-pointer items-start justify-between gap-3 rounded-md px-3 py-2 text-sm transition ${
+                              `flex cursor-pointer items-center justify-between gap-3 rounded-md px-3 py-2 text-sm transition ${
                                 active
                                   ? 'bg-gray-900/5 text-gray-900 dark:bg-white/10 dark:text-gray-100'
                                   : 'text-gray-700 dark:text-gray-100'
@@ -199,15 +200,15 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
                           >
                             {({ selected }) => (
                               <>
-                                <div className="space-y-0.5">
+                                <div className="flex w-full items-center justify-between gap-6">
                                   <p className="font-medium">{character.name}</p>
-                                  <p className="text-xs text-gray-500 dark:text-gray-300">
-                                    {statusLabels[character.status]}
-                                  </p>
+                                  <span className="text-xs font-semibold tracking-[0.35em] text-gray-500 uppercase dark:text-gray-300">
+                                    {statusLabels[character.status].toUpperCase()}
+                                  </span>
                                 </div>
                                 <span
                                   aria-hidden="true"
-                                  className={`mt-1 text-base ${selected ? 'text-gray-900 dark:text-gray-100' : 'text-transparent'}`}
+                                  className={`text-base ${selected ? 'text-gray-900 dark:text-gray-100' : 'text-transparent'}`}
                                 >
                                   ✓
                                 </span>
@@ -280,12 +281,16 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
           <Switch
             checked={isHidden}
             onChange={setIsHidden}
-            className={`${isHidden ? 'bg-gray-900 dark:bg-gray-200' : 'bg-gray-300 dark:bg-gray-700'} relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition`}
+            className={`group relative inline-flex h-7 w-14 cursor-pointer items-center rounded-full p-1 transition-colors duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 ${
+              isHidden ? 'bg-gray-900 dark:bg-gray-100' : 'bg-gray-300/70 dark:bg-gray-700/70'
+            }`}
           >
             <span className="sr-only">Hide commission from public list</span>
             <span
               aria-hidden="true"
-              className={`${isHidden ? 'translate-x-5' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white shadow transition`}
+              className={`pointer-events-none inline-block h-5 w-5 translate-x-0 rounded-full bg-white shadow-lg transition duration-200 ease-out ${
+                isHidden ? 'translate-x-7' : 'translate-x-0'
+              } group-data-[checked]:translate-x-7 dark:bg-gray-900/80`}
             />
           </Switch>
           <Switch.Label className="text-sm font-medium text-gray-700 dark:text-gray-200">

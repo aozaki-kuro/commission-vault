@@ -96,13 +96,16 @@ const CommissionManager = ({ characters, commissions }: CommissionManagerProps) 
                   <Transition
                     as={Fragment}
                     enter="transition ease-out duration-150"
-                    enterFrom="transform opacity-0 -translate-y-1"
-                    enterTo="transform opacity-100 translate-y-0"
-                    leave="transition ease-in duration-100"
-                    leaveFrom="transform opacity-100 translate-y-0"
-                    leaveTo="transform opacity-0 -translate-y-1"
+                    enterFrom="opacity-0 -translate-y-1"
+                    enterTo="opacity-100 translate-y-0"
+                    leave="transition ease-in-out duration-150"
+                    leaveFrom="opacity-100 translate-y-0"
+                    leaveTo="opacity-0 -translate-y-1"
                   >
-                    <Disclosure.Panel className="space-y-4 border-t border-gray-200 bg-white/85 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/30">
+                    <Disclosure.Panel
+                      static
+                      className="space-y-4 border-t border-gray-200 bg-white/85 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/30"
+                    >
                       {characterCommissions.length === 0 ? (
                         <p className="text-sm text-gray-500 dark:text-gray-300">
                           No commissions recorded yet.

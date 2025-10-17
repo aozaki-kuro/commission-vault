@@ -63,7 +63,7 @@ const AdminDashboard = ({ characters, commissions }: AdminDashboardProps) => {
             <Tab
               key={tab}
               className={({ selected }) =>
-                `flex-1 rounded-lg px-4 py-2.5 text-center transition focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:focus-visible:ring-offset-gray-900 ${
+                `flex-1 rounded-lg px-4 py-2.5 text-center transition-colors duration-200 ease-out focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:focus-visible:ring-offset-gray-900 ${
                   selected
                     ? 'bg-gray-900 text-white shadow-sm dark:bg-gray-100 dark:text-gray-900'
                     : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800/60'
@@ -76,18 +76,18 @@ const AdminDashboard = ({ characters, commissions }: AdminDashboardProps) => {
         </TabList>
 
         <TabPanels className="mt-6 space-y-8">
-          <TabPanel>
+          <TabPanel className="animate-[tabFade_260ms_ease-out] focus:outline-none">
             <div className="space-y-4">
               <AddCharacterForm />
               <AddCommissionForm characters={characterOptions} />
             </div>
           </TabPanel>
 
-          <TabPanel className="space-y-6">
+          <TabPanel className="animate-[tabFade_260ms_ease-out] space-y-6 focus:outline-none">
             <CharacterManager characters={characters} />
           </TabPanel>
 
-          <TabPanel>
+          <TabPanel className="animate-[tabFade_260ms_ease-out] focus:outline-none">
             <CommissionManager characters={characters} commissions={commissions} />
           </TabPanel>
         </TabPanels>

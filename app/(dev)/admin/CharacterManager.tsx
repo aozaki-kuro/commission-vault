@@ -204,7 +204,7 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
     <Disclosure defaultOpen>
       {({ open }) => (
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white/95 shadow-sm ring-1 ring-gray-900/5 dark:border-gray-700 dark:bg-gray-900/40 dark:ring-white/10">
-          <Disclosure.Button className="flex w-full items-center justify-between bg-white/90 px-5 py-3 text-left text-sm font-semibold text-gray-800 transition hover:bg-blue-50/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:bg-gray-900/40 dark:text-gray-100 dark:hover:bg-gray-800/60 dark:focus-visible:ring-offset-gray-900">
+          <Disclosure.Button className="flex w-full items-center justify-between bg-white/90 px-5 py-3 text-left text-sm font-semibold text-gray-800 transition hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:bg-gray-900/40 dark:text-gray-100 dark:hover:bg-gray-800/60 dark:focus-visible:ring-offset-gray-900">
             <span>{title}</span>
             <svg
               viewBox="0 0 20 20"
@@ -221,148 +221,161 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
               />
             </svg>
           </Disclosure.Button>
-          <Disclosure.Panel className="space-y-3 border-t border-gray-200 bg-white/85 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/30">
-            {list.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-300">
-                No characters in this group.
-              </p>
-            ) : (
-              list.map((character, index) => {
-                const isEditing = editing?.id === character.id
-                const editingValue = isEditing ? editing!.value : character.name
+          <Transition
+            as={Fragment}
+            enter="transition ease-out duration-150"
+            enterFrom="opacity-0 -translate-y-1"
+            enterTo="opacity-100 translate-y-0"
+            leave="transition ease-in-out duration-150"
+            leaveFrom="opacity-100 translate-y-0"
+            leaveTo="opacity-0 -translate-y-1"
+          >
+            <Disclosure.Panel
+              static
+              className="space-y-3 border-t border-gray-200 bg-white/85 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/30"
+            >
+              {list.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-300">
+                  No characters in this group.
+                </p>
+              ) : (
+                list.map((character, index) => {
+                  const isEditing = editing?.id === character.id
+                  const editingValue = isEditing ? editing!.value : character.name
 
-                return (
-                  <div
-                    key={character.id}
-                    className="flex items-center justify-between gap-6 rounded-xl border border-gray-200/80 bg-white/95 p-4 text-sm shadow-sm ring-1 ring-gray-900/5 transition dark:border-gray-700/80 dark:bg-gray-900/50 dark:ring-white/10"
-                  >
-                    <div className="flex flex-1 items-center gap-3">
-                      <span
-                        aria-hidden="true"
-                        className={`h-2.5 w-2.5 rounded-full ${group === 'active' ? 'bg-blue-500/90' : 'bg-gray-400/80'}`}
-                      />
-                      <button
-                        type="button"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-xs text-gray-500 transition hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:text-gray-300 dark:hover:text-gray-100 dark:focus-visible:ring-offset-gray-900"
-                        onClick={() => startEditingName(character, group)}
-                        aria-label={`Rename ${character.name}`}
-                      >
-                        ✎
-                      </button>
-                      {isEditing ? (
-                        <form
-                          className="flex-1"
-                          onSubmit={(event: FormEvent<HTMLFormElement>) => {
-                            event.preventDefault()
-                            submitRename()
-                          }}
+                  return (
+                    <div
+                      key={character.id}
+                      className="flex items-center justify-between gap-6 rounded-xl border border-gray-200/80 bg-white/95 p-4 text-sm shadow-sm ring-1 ring-gray-900/5 transition dark:border-gray-700/80 dark:bg-gray-900/50 dark:ring-white/10"
+                    >
+                      <div className="flex flex-1 items-center gap-3">
+                        <span
+                          aria-hidden="true"
+                          className={`h-2.5 w-2.5 rounded-full ${group === 'active' ? 'bg-blue-500/90' : 'bg-gray-400/80'}`}
+                        />
+                        <button
+                          type="button"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-xs text-gray-500 transition hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:text-gray-300 dark:hover:text-gray-100 dark:focus-visible:ring-offset-gray-900"
+                          onClick={() => startEditingName(character, group)}
+                          aria-label={`Rename ${character.name}`}
                         >
-                          <Input
-                            autoFocus
-                            value={editingValue}
-                            onChange={event => handleRenameChange(event.target.value)}
-                            onBlur={cancelEditing}
-                            onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-                              if (event.key === 'Enter') {
-                                event.preventDefault()
-                                submitRename()
-                              }
-                              if (event.key === 'Escape') {
-                                event.preventDefault()
-                                cancelEditing()
-                              }
+                          ✎
+                        </button>
+                        {isEditing ? (
+                          <form
+                            className="flex-1"
+                            onSubmit={(event: FormEvent<HTMLFormElement>) => {
+                              event.preventDefault()
+                              submitRename()
                             }}
-                            className={controlStyles}
-                          />
-                        </form>
-                      ) : (
-                        <span className="text-base font-medium text-gray-900 dark:text-gray-100">
-                          {character.name}
-                        </span>
-                      )}
-                    </div>
+                          >
+                            <Input
+                              autoFocus
+                              value={editingValue}
+                              onChange={event => handleRenameChange(event.target.value)}
+                              onBlur={cancelEditing}
+                              onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+                                if (event.key === 'Enter') {
+                                  event.preventDefault()
+                                  submitRename()
+                                }
+                                if (event.key === 'Escape') {
+                                  event.preventDefault()
+                                  cancelEditing()
+                                }
+                              }}
+                              className={controlStyles}
+                            />
+                          </form>
+                        ) : (
+                          <span className="text-base font-medium text-gray-900 dark:text-gray-100">
+                            {character.name}
+                          </span>
+                        )}
+                      </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200/80 bg-white/80 text-xs font-semibold text-gray-600 transition hover:border-gray-400 hover:text-gray-900 disabled:opacity-40 dark:border-gray-600/80 dark:bg-gray-900/60 dark:text-gray-200 dark:hover:border-gray-400/60 dark:hover:text-gray-50"
-                        onClick={() => moveWithinGroup(group, index, -1)}
-                        disabled={index === 0 || isEditing}
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200/80 bg-white/80 text-xs font-semibold text-gray-600 transition hover:border-gray-400 hover:text-gray-900 disabled:opacity-40 dark:border-gray-600/80 dark:bg-gray-900/60 dark:text-gray-200 dark:hover:border-gray-400/60 dark:hover:text-gray-50"
-                        onClick={() => moveWithinGroup(group, index, 1)}
-                        disabled={index === list.length - 1 || isEditing}
-                      >
-                        ↓
-                      </button>
-
-                      <Menu as="div" className="relative inline-block text-left">
-                        <Menu.Button className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200/80 bg-white/80 px-3 text-xs font-semibold text-gray-600 transition hover:border-gray-400 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:border-gray-600/80 dark:bg-gray-900/60 dark:text-gray-200 dark:hover:border-gray-400/60 dark:hover:text-gray-50 dark:focus-visible:ring-offset-gray-900">
-                          Move
-                        </Menu.Button>
-                        <Transition
-                          as={Fragment}
-                          enter="transition ease-out duration-100"
-                          enterFrom="transform opacity-0 scale-95"
-                          enterTo="transform opacity-100 scale-100"
-                          leave="transition ease-in duration-75"
-                          leaveFrom="transform opacity-100 scale-100"
-                          leaveTo="transform opacity-0 scale-95"
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200/80 bg-white/80 text-xs font-semibold text-gray-600 transition hover:border-gray-400 hover:text-gray-900 disabled:opacity-40 dark:border-gray-600/80 dark:bg-gray-900/60 dark:text-gray-200 dark:hover:border-gray-400/60 dark:hover:text-gray-50"
+                          onClick={() => moveWithinGroup(group, index, -1)}
+                          disabled={index === 0 || isEditing}
                         >
-                          <Menu.Items className="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-lg border border-gray-200 bg-white/95 p-1 shadow-lg ring-1 ring-black/5 focus:outline-none dark:border-gray-600 dark:bg-gray-900/90 dark:ring-white/10">
-                            {group === 'active' ? (
-                              <Menu.Item>
-                                {({ active }) => (
-                                  <button
-                                    type="button"
-                                    className={`w-full rounded-md px-3 py-2 text-left text-sm ${
-                                      active
-                                        ? 'bg-gray-900/5 text-gray-900 dark:bg-white/15 dark:text-gray-100'
-                                        : 'text-gray-600 dark:text-gray-200'
-                                    }`}
-                                    onClick={() =>
-                                      moveCharacterToGroup(character.id, 'active', 'stale')
-                                    }
-                                  >
-                                    Move to Stale
-                                  </button>
-                                )}
-                              </Menu.Item>
-                            ) : (
-                              <Menu.Item>
-                                {({ active }) => (
-                                  <button
-                                    type="button"
-                                    className={`w-full rounded-md px-3 py-2 text-left text-sm ${
-                                      active
-                                        ? 'bg-gray-900/5 text-gray-900 dark:bg-white/15 dark:text-gray-100'
-                                        : 'text-gray-600 dark:text-gray-200'
-                                    }`}
-                                    onClick={() =>
-                                      moveCharacterToGroup(character.id, 'stale', 'active')
-                                    }
-                                  >
-                                    Move to Active
-                                  </button>
-                                )}
-                              </Menu.Item>
-                            )}
-                          </Menu.Items>
-                        </Transition>
-                      </Menu>
-                      <span className="w-24 text-right font-mono text-xs tracking-wide text-gray-500 uppercase dark:text-gray-300">
-                        {character.commissionCount.toString().padStart(3, ' ')} entries
-                      </span>
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200/80 bg-white/80 text-xs font-semibold text-gray-600 transition hover:border-gray-400 hover:text-gray-900 disabled:opacity-40 dark:border-gray-600/80 dark:bg-gray-900/60 dark:text-gray-200 dark:hover:border-gray-400/60 dark:hover:text-gray-50"
+                          onClick={() => moveWithinGroup(group, index, 1)}
+                          disabled={index === list.length - 1 || isEditing}
+                        >
+                          ↓
+                        </button>
+
+                        <Menu as="div" className="relative inline-block text-left">
+                          <Menu.Button className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200/80 bg-white/80 px-3 text-xs font-semibold text-gray-600 transition hover:border-gray-400 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:border-gray-600/80 dark:bg-gray-900/60 dark:text-gray-200 dark:hover:border-gray-400/60 dark:hover:text-gray-50 dark:focus-visible:ring-offset-gray-900">
+                            Move
+                          </Menu.Button>
+                          <Transition
+                            as={Fragment}
+                            enter="transition ease-out duration-100"
+                            enterFrom="transform opacity-0 scale-95"
+                            enterTo="transform opacity-100 scale-100"
+                            leave="transition ease-in duration-75"
+                            leaveFrom="transform opacity-100 scale-100"
+                            leaveTo="transform opacity-0 scale-95"
+                          >
+                            <Menu.Items className="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-lg border border-gray-200 bg-white/95 p-1 shadow-lg ring-1 ring-black/5 focus:outline-none dark:border-gray-600 dark:bg-gray-900/90 dark:ring-white/10">
+                              {group === 'active' ? (
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      type="button"
+                                      className={`w-full rounded-md px-3 py-2 text-left text-sm ${
+                                        active
+                                          ? 'bg-gray-900/5 text-gray-900 dark:bg-white/15 dark:text-gray-100'
+                                          : 'text-gray-600 dark:text-gray-200'
+                                      }`}
+                                      onClick={() =>
+                                        moveCharacterToGroup(character.id, 'active', 'stale')
+                                      }
+                                    >
+                                      Move to Stale
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                              ) : (
+                                <Menu.Item>
+                                  {({ active }) => (
+                                    <button
+                                      type="button"
+                                      className={`w-full rounded-md px-3 py-2 text-left text-sm ${
+                                        active
+                                          ? 'bg-gray-900/5 text-gray-900 dark:bg-white/15 dark:text-gray-100'
+                                          : 'text-gray-600 dark:text-gray-200'
+                                      }`}
+                                      onClick={() =>
+                                        moveCharacterToGroup(character.id, 'stale', 'active')
+                                      }
+                                    >
+                                      Move to Active
+                                    </button>
+                                  )}
+                                </Menu.Item>
+                              )}
+                            </Menu.Items>
+                          </Transition>
+                        </Menu>
+                        <span className="w-24 text-right font-mono text-xs tracking-wide text-gray-500 uppercase dark:text-gray-300">
+                          {character.commissionCount.toString().padStart(3, ' ')} entries
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )
-              })
-            )}
-          </Disclosure.Panel>
+                  )
+                })
+              )}
+            </Disclosure.Panel>
+          </Transition>
         </div>
       )}
     </Disclosure>
