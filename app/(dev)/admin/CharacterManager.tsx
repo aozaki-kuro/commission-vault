@@ -1,6 +1,6 @@
 'use client'
 
-import { Disclosure, Menu, Transition } from '@headlessui/react'
+import { Disclosure, Input, Menu, Transition } from '@headlessui/react'
 import {
   Fragment,
   useEffect,
@@ -25,6 +25,9 @@ type CharacterGroup = 'active' | 'stale'
 type EditingState = { id: number; value: string; group: CharacterGroup } | null
 
 type FormFeedback = { type: 'success' | 'error'; text: string } | null
+
+const controlStyles =
+  'w-full rounded-lg border border-gray-200 bg-white/80 px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-100 dark:focus-visible:ring-offset-gray-900'
 
 const arrayMove = <T,>(list: T[], from: number, to: number): T[] => {
   if (from === to || from < 0 || to < 0 || from >= list.length || to >= list.length) return list
@@ -200,12 +203,25 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
   const renderList = (title: string, group: CharacterGroup, list: CharacterRow[]) => (
     <Disclosure defaultOpen>
       {({ open }) => (
-        <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900/40">
-          <Disclosure.Button className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white/95 shadow-sm ring-1 ring-gray-900/5 dark:border-gray-700 dark:bg-gray-900/40 dark:ring-white/10">
+          <Disclosure.Button className="flex w-full items-center justify-between bg-white/90 px-5 py-3 text-left text-sm font-semibold text-gray-800 transition hover:bg-blue-50/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:bg-gray-900/40 dark:text-gray-100 dark:hover:bg-gray-800/60 dark:focus-visible:ring-offset-gray-900">
             <span>{title}</span>
-            <span className={`transition-transform ${open ? 'rotate-180' : ''}`}>⌃</span>
+            <svg
+              viewBox="0 0 20 20"
+              fill="none"
+              aria-hidden="true"
+              className={`h-4 w-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
+            >
+              <path
+                d="M6 8l4 4 4-4"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </Disclosure.Button>
-          <Disclosure.Panel className="space-y-3 border-t border-gray-200 px-4 py-4 dark:border-gray-700">
+          <Disclosure.Panel className="space-y-3 border-t border-gray-200 bg-white/85 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/30">
             {list.length === 0 ? (
               <p className="text-sm text-gray-500 dark:text-gray-300">
                 No characters in this group.
@@ -218,18 +234,16 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
                 return (
                   <div
                     key={character.id}
-                    className="flex items-center justify-between gap-6 rounded-md border border-gray-300 bg-white px-4 py-4 text-sm transition dark:border-gray-700 dark:bg-gray-900"
+                    className="flex items-center justify-between gap-6 rounded-xl border border-gray-200/80 bg-white/95 p-4 text-sm shadow-sm ring-1 ring-gray-900/5 transition dark:border-gray-700/80 dark:bg-gray-900/50 dark:ring-white/10"
                   >
                     <div className="flex flex-1 items-center gap-3">
                       <span
-                        className="w-4 text-center text-lg text-gray-400 select-none"
                         aria-hidden="true"
-                      >
-                        •
-                      </span>
+                        className={`h-2.5 w-2.5 rounded-full ${group === 'active' ? 'bg-blue-500/90' : 'bg-gray-400/80'}`}
+                      />
                       <button
                         type="button"
-                        className="text-xs text-gray-500 transition hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-100"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-xs text-gray-500 transition hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:text-gray-300 dark:hover:text-gray-100 dark:focus-visible:ring-offset-gray-900"
                         onClick={() => startEditingName(character, group)}
                         aria-label={`Rename ${character.name}`}
                       >
@@ -243,7 +257,7 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
                             submitRename()
                           }}
                         >
-                          <input
+                          <Input
                             autoFocus
                             value={editingValue}
                             onChange={event => handleRenameChange(event.target.value)}
@@ -258,7 +272,7 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
                                 cancelEditing()
                               }
                             }}
-                            className="w-full rounded border border-gray-300 px-2 py-1 text-sm text-gray-900 focus:border-blue-500 focus:ring focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                            className={controlStyles}
                           />
                         </form>
                       ) : (
@@ -271,7 +285,7 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-xs text-gray-600 transition hover:bg-gray-100 disabled:opacity-40 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200/80 bg-white/80 text-xs font-semibold text-gray-600 transition hover:border-gray-400 hover:text-gray-900 disabled:opacity-40 dark:border-gray-600/80 dark:bg-gray-900/60 dark:text-gray-200 dark:hover:border-gray-400/60 dark:hover:text-gray-50"
                         onClick={() => moveWithinGroup(group, index, -1)}
                         disabled={index === 0 || isEditing}
                       >
@@ -279,7 +293,7 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
                       </button>
                       <button
                         type="button"
-                        className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-300 text-xs text-gray-600 transition hover:bg-gray-100 disabled:opacity-40 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200/80 bg-white/80 text-xs font-semibold text-gray-600 transition hover:border-gray-400 hover:text-gray-900 disabled:opacity-40 dark:border-gray-600/80 dark:bg-gray-900/60 dark:text-gray-200 dark:hover:border-gray-400/60 dark:hover:text-gray-50"
                         onClick={() => moveWithinGroup(group, index, 1)}
                         disabled={index === list.length - 1 || isEditing}
                       >
@@ -287,7 +301,7 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
                       </button>
 
                       <Menu as="div" className="relative inline-block text-left">
-                        <Menu.Button className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800">
+                        <Menu.Button className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200/80 bg-white/80 px-3 text-xs font-semibold text-gray-600 transition hover:border-gray-400 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:border-gray-600/80 dark:bg-gray-900/60 dark:text-gray-200 dark:hover:border-gray-400/60 dark:hover:text-gray-50 dark:focus-visible:ring-offset-gray-900">
                           Move
                         </Menu.Button>
                         <Transition
@@ -299,15 +313,15 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
                           leaveFrom="transform opacity-100 scale-100"
                           leaveTo="transform opacity-0 scale-95"
                         >
-                          <Menu.Items className="absolute right-0 z-10 mt-2 w-36 origin-top-right rounded-md border border-gray-200 bg-white shadow-lg focus:outline-none dark:border-gray-600 dark:bg-gray-800">
+                          <Menu.Items className="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-lg border border-gray-200 bg-white/95 p-1 shadow-lg ring-1 ring-black/5 focus:outline-none dark:border-gray-600 dark:bg-gray-900/90 dark:ring-white/10">
                             {group === 'active' ? (
                               <Menu.Item>
                                 {({ active }) => (
                                   <button
                                     type="button"
-                                    className={`w-full px-3 py-2 text-left text-sm ${
+                                    className={`w-full rounded-md px-3 py-2 text-left text-sm ${
                                       active
-                                        ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100'
+                                        ? 'bg-gray-900/5 text-gray-900 dark:bg-white/15 dark:text-gray-100'
                                         : 'text-gray-600 dark:text-gray-200'
                                     }`}
                                     onClick={() =>
@@ -323,9 +337,9 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
                                 {({ active }) => (
                                   <button
                                     type="button"
-                                    className={`w-full px-3 py-2 text-left text-sm ${
+                                    className={`w-full rounded-md px-3 py-2 text-left text-sm ${
                                       active
-                                        ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100'
+                                        ? 'bg-gray-900/5 text-gray-900 dark:bg-white/15 dark:text-gray-100'
                                         : 'text-gray-600 dark:text-gray-200'
                                     }`}
                                     onClick={() =>
@@ -340,7 +354,7 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
                           </Menu.Items>
                         </Transition>
                       </Menu>
-                      <span className="w-20 text-right font-mono text-xs text-gray-500 dark:text-gray-300">
+                      <span className="w-24 text-right font-mono text-xs tracking-wide text-gray-500 uppercase dark:text-gray-300">
                         {character.commissionCount.toString().padStart(3, ' ')} entries
                       </span>
                     </div>
@@ -354,18 +368,20 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
     </Disclosure>
   )
 
+  const statusText = feedback?.text ?? (isSaving || isRenaming ? 'Saving…' : null)
+  const statusClass =
+    feedback?.type === 'error'
+      ? 'text-red-500 dark:text-red-400'
+      : feedback?.type === 'success'
+        ? 'text-gray-700 dark:text-gray-200'
+        : 'text-gray-500 dark:text-gray-300'
+
   return (
     <section className="space-y-6">
       {renderList('Active', 'active', activeOrder)}
       {renderList('Stale', 'stale', staleOrder)}
 
-      {(feedback || isSaving || isRenaming) && (
-        <div
-          className={`text-xs ${feedback?.type === 'error' ? 'text-red-500' : 'text-gray-500'} dark:text-gray-300`}
-        >
-          {feedback?.text ?? (isSaving || isRenaming ? 'Saving…' : null)}
-        </div>
-      )}
+      {statusText && <div className={`text-sm ${statusClass}`}>{statusText}</div>}
     </section>
   )
 }

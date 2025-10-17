@@ -47,41 +47,52 @@ const AdminDashboard = ({ characters, commissions }: AdminDashboardProps) => {
   }))
 
   return (
-    <TabGroup selectedIndex={selectedIndex} onChange={handleChange}>
-      <TabList className="flex gap-3 rounded-lg border border-gray-200 bg-white p-1 text-sm font-medium dark:border-gray-700 dark:bg-gray-900/50">
-        {tabs.map(tab => (
-          <Tab
-            key={tab}
-            className={({ selected }) =>
-              `flex-1 rounded-md px-3 py-2 text-center transition ${
-                selected
-                  ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
-              }`
-            }
-          >
-            {tab}
-          </Tab>
-        ))}
-      </TabList>
+    <div className="mx-auto max-w-5xl space-y-6 px-4 pt-6 pb-10 lg:px-0">
+      <header className="space-y-2">
+        <h1 className="text-2xl leading-tight font-semibold text-gray-900 dark:text-gray-100">
+          Commission Vault Admin
+        </h1>
+        <p className="text-sm text-gray-600 dark:text-gray-300">
+          Create new entries, reprioritize characters, and curate the commission archive.
+        </p>
+      </header>
 
-      <TabPanels className="mt-4 space-y-6">
-        <TabPanel>
-          <div className="flex flex-col gap-4">
-            <AddCharacterForm />
-            <AddCommissionForm characters={characterOptions} />
-          </div>
-        </TabPanel>
+      <TabGroup selectedIndex={selectedIndex} onChange={handleChange}>
+        <TabList className="flex gap-2 rounded-xl border border-gray-200 bg-white/80 p-1 text-sm font-medium shadow-sm backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/60">
+          {tabs.map(tab => (
+            <Tab
+              key={tab}
+              className={({ selected }) =>
+                `flex-1 rounded-lg px-4 py-2.5 text-center transition focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:focus-visible:ring-offset-gray-900 ${
+                  selected
+                    ? 'bg-gray-900 text-white shadow-sm dark:bg-gray-100 dark:text-gray-900'
+                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800/60'
+                }`
+              }
+            >
+              {tab}
+            </Tab>
+          ))}
+        </TabList>
 
-        <TabPanel className="space-y-8">
-          <CharacterManager characters={characters} />
-        </TabPanel>
+        <TabPanels className="mt-6 space-y-8">
+          <TabPanel>
+            <div className="space-y-4">
+              <AddCharacterForm />
+              <AddCommissionForm characters={characterOptions} />
+            </div>
+          </TabPanel>
 
-        <TabPanel>
-          <CommissionManager characters={characters} commissions={commissions} />
-        </TabPanel>
-      </TabPanels>
-    </TabGroup>
+          <TabPanel className="space-y-6">
+            <CharacterManager characters={characters} />
+          </TabPanel>
+
+          <TabPanel>
+            <CommissionManager characters={characters} commissions={commissions} />
+          </TabPanel>
+        </TabPanels>
+      </TabGroup>
+    </div>
   )
 }
 

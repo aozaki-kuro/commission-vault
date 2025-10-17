@@ -1,6 +1,19 @@
 'use client'
 
-import { useActionState, useMemo } from 'react'
+import {
+  Description,
+  Field,
+  Input,
+  Label,
+  Listbox,
+  ListboxButton,
+  ListboxOption,
+  ListboxOptions,
+  Switch,
+  Textarea,
+  Transition,
+} from '@headlessui/react'
+import { Fragment, useActionState, useMemo, useState } from 'react'
 
 import type { CharacterStatus } from '#lib/admin/db'
 import { addCommissionAction } from '#admin/actions'
@@ -18,119 +31,216 @@ interface AddCommissionFormProps {
   characters: CharacterOption[]
 }
 
+const statusLabels: Record<CharacterStatus, string> = {
+  active: 'Active',
+  stale: 'Stale',
+}
+
+const controlStyles =
+  'w-full rounded-lg border border-gray-200 bg-white/80 px-3 py-2.5 text-sm text-gray-900 shadow-sm transition placeholder:text-gray-400 focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-100 dark:focus-visible:ring-offset-gray-900'
+
 const AddCommissionForm = ({ characters }: AddCommissionFormProps) => {
   const [state, formAction] = useActionState(addCommissionAction, INITIAL_FORM_STATE)
+  const [characterId, setCharacterId] = useState<number | null>(null)
+  const [isHidden, setIsHidden] = useState(false)
 
   const options = useMemo(
     () => [...characters].sort((a, b) => a.sortOrder - b.sortOrder),
     [characters],
   )
 
+  const selectedCharacter = useMemo(
+    () => options.find(option => option.id === characterId) ?? null,
+    [options, characterId],
+  )
+
+  const hasCharacters = options.length > 0
+
   return (
     <form
       action={formAction}
-      className="h-full space-y-4 rounded-lg border border-gray-200 p-4 shadow-sm dark:border-gray-700"
+      className="flex min-w-[20rem] flex-1 flex-col gap-5 rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-sm ring-1 ring-gray-900/5 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/40 dark:ring-white/10"
     >
-      <div>
-        <h2 className="text-lg font-medium">Add Commission Entry</h2>
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          Add Commission Entry
+        </h2>
         <p className="text-sm text-gray-600 dark:text-gray-300">
           Append a new commission record to an existing character. Links accept multiple lines.
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <label>
-          <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+        <Field className="space-y-1">
+          <Label className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-300">
             Character
-          </span>
-          <select
-            name="characterId"
-            required
-            defaultValue=""
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:ring focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-          >
-            <option value="" disabled>
-              Select character
-            </option>
-            {options.map(option => (
-              <option key={option.id} value={option.id}>
-                {option.name} ({option.status})
-              </option>
-            ))}
-          </select>
-        </label>
+          </Label>
+          <Listbox value={characterId} onChange={setCharacterId} disabled={!hasCharacters}>
+            <div className="relative">
+              <ListboxButton
+                className={`${controlStyles} flex items-center justify-between ${!hasCharacters ? 'cursor-not-allowed opacity-70' : ''}`}
+              >
+                <span
+                  className={`truncate ${selectedCharacter ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}
+                >
+                  {selectedCharacter
+                    ? `${selectedCharacter.name} • ${statusLabels[selectedCharacter.status]}`
+                    : hasCharacters
+                      ? 'Select character'
+                      : 'No characters available'}
+                </span>
+                <svg
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  aria-hidden="true"
+                  className="h-4 w-4 text-gray-400"
+                >
+                  <path
+                    d="M6 8l4 4 4-4"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </ListboxButton>
 
-        <label>
-          <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+              {hasCharacters && (
+                <Transition
+                  as={Fragment}
+                  leave="transition ease-in duration-100"
+                  leaveFrom="opacity-100 translate-y-0"
+                  leaveTo="opacity-0 -translate-y-1"
+                >
+                  <ListboxOptions className="absolute z-10 mt-2 max-h-64 w-full overflow-auto rounded-lg border border-gray-200 bg-white/95 p-1 shadow-lg ring-1 ring-black/5 focus:outline-none dark:border-gray-700 dark:bg-gray-900/90 dark:ring-white/10">
+                    {options.map(option => (
+                      <ListboxOption
+                        key={option.id}
+                        value={option.id}
+                        className={({ active, selected }) =>
+                          `flex cursor-pointer items-start justify-between gap-3 rounded-md px-3 py-2 text-sm transition ${
+                            active
+                              ? 'bg-gray-900/5 text-gray-900 dark:bg-white/10 dark:text-gray-100'
+                              : 'text-gray-700 dark:text-gray-100'
+                          } ${selected ? 'ring-1 ring-gray-400/60 ring-inset' : ''}`
+                        }
+                      >
+                        {({ selected }) => (
+                          <>
+                            <div className="space-y-0.5">
+                              <p className="font-medium">{option.name}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-300">
+                                {statusLabels[option.status]}
+                              </p>
+                            </div>
+                            <span
+                              aria-hidden="true"
+                              className={`mt-1 text-base ${selected ? 'text-gray-900 dark:text-gray-100' : 'text-transparent'}`}
+                            >
+                              ✓
+                            </span>
+                          </>
+                        )}
+                      </ListboxOption>
+                    ))}
+                  </ListboxOptions>
+                </Transition>
+              )}
+            </div>
+          </Listbox>
+          <Description className="text-xs text-gray-500 dark:text-gray-400">
+            Choose the character this commission belongs to.
+          </Description>
+        </Field>
+
+        <Field className="space-y-1">
+          <Label className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-300">
             File name
-          </span>
-          <input
+          </Label>
+          <Input
             type="text"
             name="fileName"
             placeholder="20250302_Artist"
             required
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:ring focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            className={controlStyles}
           />
-        </label>
+        </Field>
       </div>
 
-      <label className="block">
-        <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+      <Field className="space-y-1">
+        <Label className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-300">
           Links (one per line)
-        </span>
-        <textarea
+        </Label>
+        <Textarea
           name="links"
           placeholder="https://example.com"
           rows={4}
           required
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:ring focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+          className={controlStyles}
         />
-      </label>
+        <Description className="text-xs text-gray-500 dark:text-gray-400">
+          Paste each URL on a separate line.
+        </Description>
+      </Field>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <label>
-          <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+        <Field className="space-y-1">
+          <Label className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-300">
             Design (optional)
-          </span>
-          <input
+          </Label>
+          <Input
             type="text"
             name="design"
             placeholder="Design reference"
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:ring focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            className={controlStyles}
           />
-        </label>
+        </Field>
 
-        <label>
-          <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+        <Field className="space-y-1">
+          <Label className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-300">
             Description (optional)
-          </span>
-          <input
+          </Label>
+          <Input
             type="text"
             name="description"
             placeholder="Short description"
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-500 focus:ring focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            className={controlStyles}
           />
-        </label>
+        </Field>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-        <input
-          type="checkbox"
-          name="hidden"
-          className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-500 dark:border-gray-700 dark:text-gray-100"
-        />
-        Hidden
-      </label>
-
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-4">
         <SubmitButton pendingLabel="Saving commission...">Save commission</SubmitButton>
+
+        <Switch.Group as="div" className="flex items-center gap-3">
+          <Switch
+            checked={isHidden}
+            onChange={setIsHidden}
+            className={`${isHidden ? 'bg-gray-900 dark:bg-gray-200' : 'bg-gray-300 dark:bg-gray-700'} relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition`}
+          >
+            <span className="sr-only">Hide commission from public list</span>
+            <span
+              aria-hidden="true"
+              className={`${isHidden ? 'translate-x-5' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white shadow transition`}
+            />
+          </Switch>
+          <Switch.Label className="text-sm font-medium text-gray-700 dark:text-gray-200">
+            Hidden
+          </Switch.Label>
+        </Switch.Group>
+
         {state.status === 'error' && (
           <p className="text-sm text-red-500">{state.message ?? 'Unable to save commission.'}</p>
         )}
         {state.status === 'success' && (
-          <p className="text-sm text-green-600">{state.message ?? 'Commission saved.'}</p>
+          <p className="text-sm text-gray-700 dark:text-gray-200">
+            {state.message ?? 'Commission saved.'}
+          </p>
         )}
       </div>
+
+      {characterId !== null && <input type="hidden" name="characterId" value={characterId} />}
+      {isHidden && <input type="hidden" name="hidden" value="on" />}
     </form>
   )
 }

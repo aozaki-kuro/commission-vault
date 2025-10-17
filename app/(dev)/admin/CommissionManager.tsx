@@ -63,15 +63,17 @@ const CommissionManager = ({ characters, commissions }: CommissionManagerProps) 
   }, [])
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-5">
       <header className="space-y-1">
-        <h2 className="text-lg font-medium">Existing commissions</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          Existing commissions
+        </h2>
         <p className="text-sm text-gray-600 dark:text-gray-300">
           Review, edit, or delete entries per character. Changes apply immediately.
         </p>
       </header>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {sortedCharacters.map(character => {
           const characterCommissions = commissionMap.get(character.id) ?? []
           const isOpen = openId === character.id
@@ -79,12 +81,12 @@ const CommissionManager = ({ characters, commissions }: CommissionManagerProps) 
           return (
             <Disclosure key={`${character.id}-${isOpen ? 'open' : 'closed'}`} defaultOpen={isOpen}>
               {({ open }) => (
-                <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm dark:border-gray-700">
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white/95 shadow-sm ring-1 ring-gray-900/5 dark:border-gray-700 dark:bg-gray-900/40 dark:ring-white/10">
                   <Disclosure.Button
                     onClick={() =>
                       setOpenId(prev => (prev === character.id && open ? null : character.id))
                     }
-                    className="flex w-full items-center justify-between bg-gray-50 px-4 py-3 text-left text-base font-medium text-gray-800 transition hover:bg-gray-100 dark:bg-gray-900/40 dark:text-gray-100 dark:hover:bg-gray-900"
+                    className="flex w-full items-center justify-between bg-white/90 px-5 py-3 text-left text-base font-semibold text-gray-800 transition hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:bg-gray-900/40 dark:text-gray-100 dark:hover:bg-gray-800/60 dark:focus-visible:ring-offset-gray-900"
                   >
                     <span>{character.name}</span>
                     <span className="text-sm text-gray-500 dark:text-gray-300">
@@ -100,7 +102,7 @@ const CommissionManager = ({ characters, commissions }: CommissionManagerProps) 
                     leaveFrom="transform opacity-100 translate-y-0"
                     leaveTo="transform opacity-0 -translate-y-1"
                   >
-                    <Disclosure.Panel className="space-y-4 bg-white p-4 dark:bg-gray-900/30">
+                    <Disclosure.Panel className="space-y-4 border-t border-gray-200 bg-white/85 px-5 py-4 dark:border-gray-700 dark:bg-gray-900/30">
                       {characterCommissions.length === 0 ? (
                         <p className="text-sm text-gray-500 dark:text-gray-300">
                           No commissions recorded yet.
