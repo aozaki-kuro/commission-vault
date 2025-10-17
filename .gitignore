@@ -46,6 +46,10 @@ public/robots.txt
 # imageMap
 data/imageMap.ts
 
+# sqlite wal files
+data/commissions.db-wal
+data/commissions.db-shm
+
 # .env
 .env
 
