@@ -31,17 +31,18 @@ export interface AdminData {
 type BetterSqlite3Database = Database.Database
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
+const databasePath = path.join(process.cwd(), 'data', 'commissions.db')
 
-let readOnlyDb: BetterSqlite3Database | null = null
-let readWriteDb: BetterSqlite3Database | null = null
-
-const createDatabase = (readonly: boolean) => {
-  const databasePath = path.join(process.cwd(), 'data', 'commissions.db')
+const ensureDatabaseExists = () => {
   if (!fs.existsSync(databasePath)) {
     throw new Error(
       `SQLite database not found at ${databasePath}. Run "bun run db:seed" to generate it.`,
     )
   }
+}
+
+const openDatabase = (readonly: boolean) => {
+  ensureDatabaseExists()
 
   const db = new Database(databasePath, {
     readonly,
@@ -49,40 +50,38 @@ const createDatabase = (readonly: boolean) => {
   })
 
   db.pragma('busy_timeout = 5000')
+
   if (!readonly) {
     db.pragma('foreign_keys = ON')
-    db.pragma('journal_mode = WAL')
+    db.pragma('journal_mode = DELETE')
   }
 
   return db
 }
 
-const getDatabase = (options?: { readonly?: boolean }) => {
-  const useReadonly = options?.readonly ?? !isDevelopment
-
-  if (useReadonly) {
-    if (!readOnlyDb) {
-      readOnlyDb = createDatabase(true)
-    }
-    return readOnlyDb
+const withDatabase = <TReturn>(
+  options: { readonly: boolean },
+  handler: (db: BetterSqlite3Database) => TReturn,
+): TReturn => {
+  const db = openDatabase(options.readonly)
+  try {
+    return handler(db)
+  } finally {
+    db.close()
   }
-
-  if (!isDevelopment) {
-    throw new Error('Writable database operations are only allowed in development mode.')
-  }
-
-  if (!readWriteDb) {
-    readWriteDb = createDatabase(false)
-  }
-  return readWriteDb
 }
 
-export const getAdminData = (): AdminData => {
-  const db = getDatabase({ readonly: true })
+const withReadOnlyDatabase = <TReturn>(handler: (db: BetterSqlite3Database) => TReturn) =>
+  withDatabase({ readonly: true }, handler)
 
-  const rawCharacters = db
-    .prepare(
-      `
+const withWritableDatabase = <TReturn>(handler: (db: BetterSqlite3Database) => TReturn) =>
+  withDatabase({ readonly: false }, handler)
+
+export const getAdminData = (): AdminData =>
+  withReadOnlyDatabase(db => {
+    const rawCharacters = db
+      .prepare(
+        `
         SELECT
           characters.id as id,
           characters.name as name,
@@ -94,23 +93,23 @@ export const getAdminData = (): AdminData => {
         GROUP BY characters.id
         ORDER BY characters.sort_order ASC
       `,
-    )
-    .all() as Array<{
-    id: number
-    name: string
-    status: CharacterStatus
-    sortOrder: number
-    commissionCount: number
-  }>
+      )
+      .all() as Array<{
+      id: number
+      name: string
+      status: CharacterStatus
+      sortOrder: number
+      commissionCount: number
+    }>
 
-  const characters: CharacterRow[] = rawCharacters.map(row => ({
-    ...row,
-    commissionCount: Number(row.commissionCount ?? 0),
-  }))
+    const characters: CharacterRow[] = rawCharacters.map(row => ({
+      ...row,
+      commissionCount: Number(row.commissionCount ?? 0),
+    }))
 
-  const rawCommissions = db
-    .prepare(
-      `
+    const rawCommissions = db
+      .prepare(
+        `
         SELECT
           commissions.id as id,
           commissions.character_id as characterId,
@@ -124,31 +123,31 @@ export const getAdminData = (): AdminData => {
         JOIN characters ON characters.id = commissions.character_id
         ORDER BY characters.sort_order ASC, commissions.file_name DESC
       `,
-    )
-    .all() as Array<{
-    id: number
-    characterId: number
-    characterName: string
-    fileName: string
-    links: string
-    design?: string | null
-    description?: string | null
-    hidden: number
-  }>
+      )
+      .all() as Array<{
+      id: number
+      characterId: number
+      characterName: string
+      fileName: string
+      links: string
+      design?: string | null
+      description?: string | null
+      hidden: number
+    }>
 
-  const commissions: CommissionRow[] = rawCommissions.map(row => ({
-    id: row.id,
-    characterId: row.characterId,
-    characterName: row.characterName,
-    fileName: row.fileName,
-    links: JSON.parse(row.links) as string[],
-    design: row.design ?? null,
-    description: row.description ?? null,
-    hidden: Boolean(row.hidden),
-  }))
+    const commissions: CommissionRow[] = rawCommissions.map(row => ({
+      id: row.id,
+      characterId: row.characterId,
+      characterName: row.characterName,
+      fileName: row.fileName,
+      links: JSON.parse(row.links) as string[],
+      design: row.design ?? null,
+      description: row.description ?? null,
+      hidden: Boolean(row.hidden),
+    }))
 
-  return { characters, commissions }
-}
+    return { characters, commissions }
+  })
 
 const ensureWritable = () => {
   if (!isDevelopment) {
@@ -164,17 +163,18 @@ export const createCharacter = (input: { name: string; status: CharacterStatus }
     throw new Error('Character name is required.')
   }
 
-  const db = getDatabase({ readonly: false })
-  const maxOrderRow = db
-    .prepare('SELECT COALESCE(MAX(sort_order), 0) as maxOrder FROM characters')
-    .get() as { maxOrder: number }
+  withWritableDatabase(db => {
+    const maxOrderRow = db
+      .prepare('SELECT COALESCE(MAX(sort_order), 0) as maxOrder FROM characters')
+      .get() as { maxOrder: number }
 
-  db.prepare(
-    'INSERT INTO characters (name, status, sort_order) VALUES (@name, @status, @sortOrder)',
-  ).run({
-    name,
-    status: input.status,
-    sortOrder: Number(maxOrderRow?.maxOrder ?? 0) + 1,
+    db.prepare(
+      'INSERT INTO characters (name, status, sort_order) VALUES (@name, @status, @sortOrder)',
+    ).run({
+      name,
+      status: input.status,
+      sortOrder: Number(maxOrderRow?.maxOrder ?? 0) + 1,
+    })
   })
 }
 
@@ -186,11 +186,12 @@ export const updateCharacter = (input: { id: number; name: string; status: Chara
     throw new Error('Character name is required.')
   }
 
-  const db = getDatabase({ readonly: false })
-  db.prepare('UPDATE characters SET name = @name, status = @status WHERE id = @id').run({
-    id: input.id,
-    name: trimmed,
-    status: input.status,
+  withWritableDatabase(db => {
+    db.prepare('UPDATE characters SET name = @name, status = @status WHERE id = @id').run({
+      id: input.id,
+      name: trimmed,
+      status: input.status,
+    })
   })
 }
 
@@ -211,23 +212,24 @@ export const updateCharactersOrder = ({ active, stale }: CharacterOrderPayload) 
     throw new Error('Invalid character order payload.')
   }
 
-  const db = getDatabase({ readonly: false })
-  const updateStatement = db.prepare(
-    'UPDATE characters SET sort_order = @sortOrder, status = @status WHERE id = @id',
-  )
+  withWritableDatabase(db => {
+    const updateStatement = db.prepare(
+      'UPDATE characters SET sort_order = @sortOrder, status = @status WHERE id = @id',
+    )
 
-  const transaction = db.transaction(() => {
-    const combined = [
-      ...active.map<[number, CharacterStatus]>(id => [id, 'active']),
-      ...stale.map<[number, CharacterStatus]>(id => [id, 'stale']),
-    ]
+    const transaction = db.transaction(() => {
+      const combined = [
+        ...active.map<[number, CharacterStatus]>(id => [id, 'active']),
+        ...stale.map<[number, CharacterStatus]>(id => [id, 'stale']),
+      ]
 
-    combined.forEach(([id, status], index) => {
-      updateStatement.run({ id, sortOrder: index + 1, status })
+      combined.forEach(([id, status], index) => {
+        updateStatement.run({ id, sortOrder: index + 1, status })
+      })
     })
-  })
 
-  transaction()
+    transaction()
+  })
 }
 
 export const createCommission = (input: {
@@ -240,17 +242,17 @@ export const createCommission = (input: {
 }): { characterName: string } => {
   ensureWritable()
 
-  const db = getDatabase({ readonly: false })
-  const characterRecord = db
-    .prepare('SELECT id, name FROM characters WHERE id = @id')
-    .get({ id: input.characterId }) as { id: number; name: string } | undefined
+  return withWritableDatabase(db => {
+    const characterRecord = db
+      .prepare('SELECT id, name FROM characters WHERE id = @id')
+      .get({ id: input.characterId }) as { id: number; name: string } | undefined
 
-  if (!characterRecord) {
-    throw new Error('Selected character does not exist.')
-  }
+    if (!characterRecord) {
+      throw new Error('Selected character does not exist.')
+    }
 
-  db.prepare(
-    `
+    db.prepare(
+      `
       INSERT INTO commissions (
         character_id,
         file_name,
@@ -267,16 +269,17 @@ export const createCommission = (input: {
         @hidden
       )
     `,
-  ).run({
-    characterId: characterRecord.id,
-    fileName: input.fileName.trim(),
-    links: JSON.stringify(input.links),
-    design: input.design ?? null,
-    description: input.description ?? null,
-    hidden: input.hidden ? 1 : 0,
-  })
+    ).run({
+      characterId: characterRecord.id,
+      fileName: input.fileName.trim(),
+      links: JSON.stringify(input.links),
+      design: input.design ?? null,
+      description: input.description ?? null,
+      hidden: input.hidden ? 1 : 0,
+    })
 
-  return { characterName: characterRecord.name }
+    return { characterName: characterRecord.name }
+  })
 }
 
 export const updateCommission = (input: {
@@ -290,17 +293,17 @@ export const updateCommission = (input: {
 }) => {
   ensureWritable()
 
-  const db = getDatabase({ readonly: false })
-  const characterRecord = db
-    .prepare('SELECT id FROM characters WHERE id = @id')
-    .get({ id: input.characterId }) as { id: number } | undefined
+  withWritableDatabase(db => {
+    const characterRecord = db
+      .prepare('SELECT id FROM characters WHERE id = @id')
+      .get({ id: input.characterId }) as { id: number } | undefined
 
-  if (!characterRecord) {
-    throw new Error('Selected character does not exist.')
-  }
+    if (!characterRecord) {
+      throw new Error('Selected character does not exist.')
+    }
 
-  db.prepare(
-    `
+    db.prepare(
+      `
       UPDATE commissions
       SET
         character_id = @characterId,
@@ -311,14 +314,15 @@ export const updateCommission = (input: {
         hidden = @hidden
       WHERE id = @id
     `,
-  ).run({
-    id: input.id,
-    characterId: characterRecord.id,
-    fileName: input.fileName.trim(),
-    links: JSON.stringify(input.links),
-    design: input.design ?? null,
-    description: input.description ?? null,
-    hidden: input.hidden ? 1 : 0,
+    ).run({
+      id: input.id,
+      characterId: characterRecord.id,
+      fileName: input.fileName.trim(),
+      links: JSON.stringify(input.links),
+      design: input.design ?? null,
+      description: input.description ?? null,
+      hidden: input.hidden ? 1 : 0,
+    })
   })
 }
 
@@ -327,6 +331,7 @@ export type { CharacterRow, CommissionRow }
 export const deleteCommission = (id: number) => {
   ensureWritable()
 
-  const db = getDatabase({ readonly: false })
-  db.prepare('DELETE FROM commissions WHERE id = @id').run({ id })
+  withWritableDatabase(db => {
+    db.prepare('DELETE FROM commissions WHERE id = @id').run({ id })
+  })
 }
