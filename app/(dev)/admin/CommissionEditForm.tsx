@@ -197,7 +197,7 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
                               } ${selected ? 'ring-1 ring-gray-400/60 ring-inset' : ''}`
                             }
                           >
-                            {({ selected }) => (
+                            {() => (
                               <>
                                 <div className="flex w-full items-center justify-between gap-6">
                                   <p className="font-medium">{character.name}</p>
