@@ -201,16 +201,7 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
                               <>
                                 <div className="flex w-full items-center justify-between gap-6">
                                   <p className="font-medium">{character.name}</p>
-                                  <span className="text-xs font-semibold tracking-[0.35em] text-gray-500 uppercase dark:text-gray-300">
-                                    {statusLabels[character.status].toUpperCase()}
-                                  </span>
                                 </div>
-                                <span
-                                  aria-hidden="true"
-                                  className={`text-base ${selected ? 'text-gray-900 dark:text-gray-100' : 'text-transparent'}`}
-                                >
-                                  ✓
-                                </span>
                               </>
                             )}
                           </ListboxOption>
