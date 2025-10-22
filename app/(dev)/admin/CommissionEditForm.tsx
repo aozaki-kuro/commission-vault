@@ -36,7 +36,7 @@ interface CommissionEditFormProps {
   onDelete?: () => void
 }
 
-const buildImageSrc = (fileName: string) => `/images/webp/${encodeURIComponent(fileName)}.webp`
+const buildImageSrc = (fileName: string) => `/images/${encodeURIComponent(fileName)}.jpg`
 
 const statusLabels: Record<CharacterRow['status'], string> = {
   active: 'Active',
@@ -51,28 +51,28 @@ const surfaceStyles =
 
 const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEditFormProps) => {
   const [state, formAction] = useActionState(updateCommissionAction, INITIAL_FORM_STATE)
-  const [imageError, setImageError] = useState(false)
+
+  // ✅ 改为记录“出错的那一张 src”，避免在 effect 中同步 setState
+  const [errorSrc, setErrorSrc] = useState<string | null>(null)
+
   const [isDeleting, startDelete] = useTransition()
   const [deleteStatus, setDeleteStatus] = useState<{
     type: 'success' | 'error'
     text: string
   } | null>(null)
-  const [selectedCharacterId, setSelectedCharacterId] = useState<number>(commission.characterId)
-  const [isHidden, setIsHidden] = useState<boolean>(commission.hidden)
 
   const sortedCharacters = useMemo(
     () => [...characters].sort((a, b) => a.sortOrder - b.sortOrder),
     [characters],
   )
 
-  useEffect(() => {
-    if (!sortedCharacters.some(character => character.id === selectedCharacterId)) {
-      const fallbackId = sortedCharacters[0]?.id
-      if (fallbackId) {
-        setSelectedCharacterId(fallbackId)
-      }
-    }
-  }, [sortedCharacters, selectedCharacterId])
+  const initialCharacterId = useMemo(() => {
+    const exists = characters.some(character => character.id === commission.characterId)
+    return exists ? commission.characterId : (sortedCharacters[0]?.id ?? commission.characterId)
+  }, [characters, commission.characterId, sortedCharacters])
+
+  const [selectedCharacterId, setSelectedCharacterId] = useState<number>(initialCharacterId)
+  const [isHidden, setIsHidden] = useState<boolean>(commission.hidden)
 
   const selectedCharacter = useMemo(
     () => sortedCharacters.find(character => character.id === selectedCharacterId) ?? null,
@@ -82,10 +82,8 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
   const linkValue = useMemo(() => commission.links.join('\n'), [commission.links])
   const imageSrc = useMemo(() => buildImageSrc(commission.fileName), [commission.fileName])
 
-  useEffect(() => {
-    setImageError(false)
-  }, [imageSrc])
-
+  // ❌ 移除了 setImageError(false) 的 effect
+  // ✅ 仅保留与“外部系统/副作用”相关的定时清除提示
   useEffect(() => {
     if (!deleteStatus) return
     const timer = setTimeout(() => setDeleteStatus(null), 2000)
@@ -120,8 +118,8 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
 
       <div className="space-y-4">
         <div className="space-y-3">
-          <div className="relative aspect-[1280/525] w-full overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-900/30">
-            {imageError ? (
+          <div className="relative aspect-1280/525 w-full overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-900/30">
+            {errorSrc === imageSrc ? (
               <div className="flex h-full w-full items-center justify-center text-xs text-gray-500 dark:text-gray-300">
                 Image not found
               </div>
@@ -133,10 +131,11 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
                 className="object-contain"
                 sizes="(max-width: 1024px) 100vw, 480px"
                 unoptimized
-                onError={() => setImageError(true)}
+                onError={() => setErrorSrc(imageSrc)}
               />
             )}
           </div>
+
           <div className="space-y-4">
             <div>
               <p className="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-300">
@@ -290,7 +289,7 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
               aria-hidden="true"
               className={`pointer-events-none inline-block h-5 w-5 translate-x-0 rounded-full bg-white shadow-lg transition duration-200 ease-out ${
                 isHidden ? 'translate-x-7' : 'translate-x-0'
-              } group-data-[checked]:translate-x-7 dark:bg-gray-900/80`}
+              } group-data-checked:translate-x-7 dark:bg-gray-900/80`}
             />
           </Switch>
           <Switch.Label className="text-sm font-medium text-gray-700 dark:text-gray-200">

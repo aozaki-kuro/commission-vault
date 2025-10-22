@@ -220,7 +220,7 @@ const AddCommissionForm = ({ characters }: AddCommissionFormProps) => {
               aria-hidden="true"
               className={`pointer-events-none inline-block h-5 w-5 translate-x-0 rounded-full bg-white shadow-lg transition duration-200 ease-out ${
                 isHidden ? 'translate-x-7' : 'translate-x-0'
-              } group-data-[checked]:translate-x-7 dark:bg-gray-900/80`}
+              } group-data-checked:translate-x-7 dark:bg-gray-900/80`}
             />
           </Switch>
           <Switch.Label className="text-sm font-medium text-gray-700 dark:text-gray-200">
