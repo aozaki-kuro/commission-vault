@@ -23,7 +23,6 @@ const nextConfig = (phase: string): NextConfig => {
     reactStrictMode: true,
     cleanDistDir: true,
     images: { unoptimized: true, minimumCacheTTL: 604800 },
-    eslint: { ignoreDuringBuilds: true },
     output: 'export',
 
     // ⚠️ 只保留 Turbopack 的 alias，避免和 webpack 重复配置打架
