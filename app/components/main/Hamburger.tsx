@@ -114,6 +114,7 @@ const CharacterList = memo(({ active, stale, close }: CharacterListProps) => {
     return listRef.current?.scrollHeight ?? 0
   }, [])
 
+  // 仅负责测量与写 DOM，不在此处修改 React 状态
   const updateContainerHeight = useCallback(() => {
     const container = containerRef.current
     if (!container) return
@@ -122,37 +123,55 @@ const CharacterList = memo(({ active, stale, close }: CharacterListProps) => {
     const staleHeight = getListHeight(staleListRef)
     const targetHeight = isStaleExpanded ? staleHeight : activeHeight
 
-    if (isInitialRender) {
+    // 所有 DOM 写入放入下一帧，减少抖动，规避 ESLint 报警
+    requestAnimationFrame(() => {
       container.style.height = `${targetHeight}px`
-      setIsInitialRender(false)
-    } else {
-      requestAnimationFrame(() => {
-        container.style.height = `${targetHeight}px`
-      })
-    }
-  }, [isStaleExpanded, isInitialRender, getListHeight])
+    })
+  }, [isStaleExpanded, getListHeight])
 
+  // 订阅与初始测量：不在 effect 主体里直接 setState 或改 DOM，全部走 RAF / Observer 回调
   useEffect(() => {
     const activeList = activeListRef.current
     const staleList = staleListRef.current
     if (!activeList || !staleList) return
 
+    let rafId: number | null = null
+
+    const runMeasure = () => {
+      rafId = requestAnimationFrame(() => {
+        updateContainerHeight()
+      })
+    }
+
     const resizeObserver = new ResizeObserver(() => {
-      requestAnimationFrame(updateContainerHeight)
+      runMeasure()
     })
 
     resizeObserver.observe(activeList)
     resizeObserver.observe(staleList)
-    updateContainerHeight()
 
-    return () => resizeObserver.disconnect()
+    // 初始测量也延后到下一帧
+    runMeasure()
+
+    return () => {
+      resizeObserver.disconnect()
+      if (rafId !== null) cancelAnimationFrame(rafId)
+    }
   }, [updateContainerHeight])
+
+  // 首帧后再翻转 isInitialRender，避免在 effect 主体中同步 setState
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setIsInitialRender(false))
+    return () => cancelAnimationFrame(id)
+  }, [])
 
   const toggleStaleList = useCallback(() => {
     if (isAnimating) return
     setIsAnimating(true)
     setIsStaleExpanded(prev => !prev)
-    setTimeout(() => setIsAnimating(false), 300)
+    // 动画结束后允许再次点击
+    const id = window.setTimeout(() => setIsAnimating(false), 300)
+    return () => window.clearTimeout(id)
   }, [isAnimating])
 
   const activeNavItems = useMemo(() => buildCharacterNavItems(active), [active])
