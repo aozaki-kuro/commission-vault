@@ -21,7 +21,7 @@ import { useEffect, useMemo, useState, useTransition, type KeyboardEvent } from 
 
 import type { CharacterRow } from '#lib/admin/db'
 
-import { renameCharacter, saveCharacterOrder } from '#admin/actions'
+import { deleteCharacterAction, renameCharacter, saveCharacterOrder } from '#admin/actions'
 import type { FormState } from './types'
 
 interface CharacterManagerProps {
@@ -51,6 +51,8 @@ interface SortableCharacterItemProps {
   onRenameChange: (value: string) => void
   onCancelEdit: () => void
   onSubmitRename: () => void
+  onDelete: () => void
+  isDeleting: boolean
 }
 
 const SortableCharacterItem = ({
@@ -62,6 +64,8 @@ const SortableCharacterItem = ({
   onRenameChange,
   onCancelEdit,
   onSubmitRename,
+  onDelete,
+  isDeleting,
 }: SortableCharacterItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: character.id,
@@ -70,7 +74,7 @@ const SortableCharacterItem = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging || isDeleting ? 0.5 : 1,
   }
 
   return (
@@ -83,7 +87,8 @@ const SortableCharacterItem = ({
         {/* 拖动手柄 */}
         <button
           type="button"
-          className="inline-flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-lg border border-transparent text-gray-400 transition hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white active:cursor-grabbing dark:hover:text-gray-200 dark:focus-visible:ring-offset-gray-900"
+          className="inline-flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-lg border border-transparent text-gray-400 transition hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white active:cursor-grabbing disabled:cursor-not-allowed disabled:text-gray-300 dark:hover:text-gray-200 dark:focus-visible:ring-offset-gray-900 dark:disabled:text-gray-600"
+          disabled={isDeleting}
           {...attributes}
           {...listeners}
           aria-label={`Drag ${character.name}`}
@@ -104,8 +109,9 @@ const SortableCharacterItem = ({
         />
         <button
           type="button"
-          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent text-gray-400 transition hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none dark:text-gray-400 dark:hover:text-gray-200 dark:focus-visible:ring-offset-gray-900"
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent text-gray-400 transition hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none disabled:cursor-not-allowed disabled:text-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:focus-visible:ring-offset-gray-900 dark:disabled:text-gray-600"
           onClick={onStartEdit}
+          disabled={isDeleting}
           aria-label={`Rename ${character.name}`}
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -117,6 +123,7 @@ const SortableCharacterItem = ({
             />
           </svg>
         </button>
+
         {isEditing ? (
           <div className="relative min-w-0 flex-1">
             <input
@@ -136,6 +143,7 @@ const SortableCharacterItem = ({
                 }
               }}
               className={inlineEditStyles}
+              disabled={isDeleting}
               style={{ minWidth: '200px' }}
             />
           </div>
@@ -151,6 +159,23 @@ const SortableCharacterItem = ({
           {character.commissionCount.toString().padStart(3, ' ')} entries
         </span>
       </div>
+
+      <button
+        type="button"
+        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent text-gray-400 transition hover:text-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:text-gray-300 dark:text-gray-400 dark:hover:text-red-300 dark:focus-visible:ring-red-300 dark:focus-visible:ring-offset-gray-900 dark:disabled:text-gray-600"
+        onClick={onDelete}
+        disabled={isDeleting}
+        aria-label={`Remove ${character.name}`}
+      >
+        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path
+            d="M18 6L6 18M6 6l12 12"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
     </div>
   )
 }
@@ -201,6 +226,8 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
   const [feedback, setFeedback] = useState<FormFeedback>(null)
   const [isSaving, startSaveTransition] = useTransition()
   const [isRenaming, startRenameTransition] = useTransition()
+  const [isDeleting, startDeleteTransition] = useTransition()
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   // 配置拖放传感器
   const sensors = useSensors(
@@ -247,6 +274,42 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
       })
         .then(result => setFeedback(toFeedback(result)))
         .catch(() => setFeedback({ type: 'error', text: 'Failed to update character order.' }))
+    })
+  }
+
+  const handleDeleteCharacter = (character: CharacterRow) => {
+    const confirmed = window.confirm(
+      `Remove ${character.name}? This will also delete all ${character.commissionCount} associated commission${character.commissionCount === 1 ? '' : 's'}.`,
+    )
+    if (!confirmed) return
+
+    setFeedback({ type: 'success', text: 'Deleting…' })
+    setDeletingId(character.id)
+    setEditing(current => (current?.id === character.id ? null : current))
+
+    startDeleteTransition(() => {
+      deleteCharacterAction(character.id)
+        .then(result => {
+          if (result.status === 'error') {
+            setFeedback({
+              type: 'error',
+              text: result.message ?? 'Unable to delete character.',
+            })
+            return
+          }
+
+          setList(prev =>
+            prev.filter(item => !(item.type === 'character' && item.id === character.id)),
+          )
+
+          setFeedback(toFeedback(result))
+        })
+        .catch(() => {
+          setFeedback({ type: 'error', text: 'Unable to delete character.' })
+        })
+        .finally(() => {
+          setDeletingId(null)
+        })
     })
   }
 
@@ -353,7 +416,7 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
     return list.map(i => i.id)
   }, [list])
 
-  const statusText = feedback?.text ?? (isSaving || isRenaming ? 'Saving…' : null)
+  const statusText = feedback?.text ?? (isSaving || isRenaming || isDeleting ? 'Saving…' : null)
   const statusClass =
     feedback?.type === 'error'
       ? 'text-red-500 dark:text-red-400'
@@ -404,6 +467,8 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
                     onRenameChange={handleRenameChange}
                     onCancelEdit={cancelEditing}
                     onSubmitRename={submitRename}
+                    onDelete={() => handleDeleteCharacter(character)}
+                    isDeleting={deletingId === character.id}
                   />
                 )
               })}

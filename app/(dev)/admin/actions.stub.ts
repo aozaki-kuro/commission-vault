@@ -53,3 +53,8 @@ export async function deleteCommissionAction(_id: number): Promise<FormState> {
   void _id
   return disabledState
 }
+
+export async function deleteCharacterAction(_id: number): Promise<FormState> {
+  void _id
+  return disabledState
+}

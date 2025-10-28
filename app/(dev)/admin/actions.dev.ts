@@ -8,6 +8,7 @@ import {
   updateCharacter,
   updateCharactersOrder,
   updateCommission,
+  deleteCharacter,
   deleteCommission,
   type CharacterStatus,
 } from '#lib/admin/db'
@@ -232,6 +233,21 @@ export async function deleteCommissionAction(id: number): Promise<FormState> {
     return {
       status: 'error',
       message: error instanceof Error ? error.message : 'Failed to delete commission.',
+    }
+  }
+}
+
+export async function deleteCharacterAction(id: number): Promise<FormState> {
+  ensureWritable()
+
+  try {
+    deleteCharacter(id)
+    revalidatePath('/admin')
+    return { status: 'success', message: 'Character deleted.' }
+  } catch (error) {
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Failed to delete character.',
     }
   }
 }

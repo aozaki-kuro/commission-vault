@@ -328,6 +328,29 @@ export const updateCommission = (input: {
 
 export type { CharacterRow, CommissionRow }
 
+export const deleteCharacter = (id: number) => {
+  ensureWritable()
+
+  withWritableDatabase(db => {
+    const existing = db.prepare('SELECT name FROM characters WHERE id = @id').get({ id }) as
+      | { name: string }
+      | undefined
+
+    if (!existing) {
+      throw new Error('Character not found.')
+    }
+
+    const transaction = db.transaction(() => {
+      db.prepare('DELETE FROM commissions WHERE character_id = @characterId').run({
+        characterId: id,
+      })
+      db.prepare('DELETE FROM characters WHERE id = @id').run({ id })
+    })
+
+    transaction()
+  })
+}
+
 export const deleteCommission = (id: number) => {
   ensureWritable()
 
