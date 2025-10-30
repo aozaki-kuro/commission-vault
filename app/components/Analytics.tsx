@@ -7,8 +7,8 @@ const Analytics = () => {
 
   return (
     <Script
-      data-domain="crystallize.cc"
-      src="https://sight.crystallize.cc/app-links.js"
+      src="https://sight.crystallize.cc/api/script.js"
+      data-site-id="4d95bd3dc21f"
       strategy="lazyOnload"
     />
   )
