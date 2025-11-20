@@ -48,6 +48,22 @@ export const getSections = (characters: { DisplayName: string }[]): Section[] =>
     .filter((section): section is Section => section !== null)
 
 /**
+ * Collect visibility info for a set of element ids.
+ */
+export const getSectionsByIds = (ids: string[]): Section[] =>
+  ids
+    .map(id => {
+      const element = document.getElementById(id)
+      if (!element?.parentElement) return null
+
+      const rect = element.getBoundingClientRect()
+      const contentHeight = element.parentElement.offsetHeight
+
+      return { id, ...calculateVisibility(rect, contentHeight) }
+    })
+    .filter((section): section is Section => section !== null)
+
+/**
  * Determine the active section based on visibility.
  */
 export const findActiveSection = (sections: Section[]): string => {

@@ -1,46 +1,46 @@
 'use client'
 import { buildCharacterNavItems } from '#lib/characters'
-import { getSections, findActiveSection } from '#lib/visibility'
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { findActiveSection, getSectionsByIds } from '#lib/visibility'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 interface CharacterListProps {
   characters: { DisplayName: string }[]
 }
 
 const CharacterList = ({ characters }: CharacterListProps) => {
-  const allCharacters = useMemo(() => characters, [characters])
+  const navItems = useMemo(() => buildCharacterNavItems(characters), [characters])
+  const titleIds = useMemo(() => navItems.map(item => item.titleId), [navItems])
   const [activeId, setActiveId] = useState<string>('')
   const rafId = useRef<number | null>(null)
   const introductionElementRef = useRef<HTMLElement | null>(null)
 
-  // 缓存 DOM 查询
   useEffect(() => {
     introductionElementRef.current = document.getElementById('title-introduction')
   }, [])
 
-  // 计算最佳阈值：桌面端25%，移动端20%，最小80px（考虑导航栏）
   const getOptimalThreshold = useCallback(() => {
     const isMobile = window.innerWidth < 768
     const viewportRatio = isMobile ? 0.2 : 0.25
     const calculatedThreshold = window.innerHeight * viewportRatio
-    const minThreshold = 80 // 考虑导航栏高度
+    const minThreshold = 80
 
     return Math.max(minThreshold, calculatedThreshold)
   }, [])
 
   const handleScroll = useCallback(() => {
-    if (rafId.current !== null) {
-      cancelAnimationFrame(rafId.current)
-    }
+    if (rafId.current !== null) cancelAnimationFrame(rafId.current)
 
     rafId.current = requestAnimationFrame(() => {
-      const sections = getSections(allCharacters)
+      if (!titleIds.length) return
+
+      const sections = getSectionsByIds(titleIds)
+      if (!sections.length) return
+
       const newActiveId = findActiveSection(sections)
 
       const introductionElement = introductionElementRef.current
       const isAtTop = window.scrollY === 0
 
-      // 使用优化后的阈值
       const threshold = getOptimalThreshold()
       const isAtIntroduction =
         introductionElement &&
@@ -51,19 +51,20 @@ const CharacterList = ({ characters }: CharacterListProps) => {
 
       setActiveId(isAtTop || isAtIntroduction ? '' : newActiveId)
 
-      // 优化 hash 处理
       const hash = window.location.hash
       if (hash) {
         const element = document.querySelector(hash)
-        if (element) {
-          const rect = element.getBoundingClientRect()
-          if (rect.bottom < 0 || rect.top > window.innerHeight) {
-            history.replaceState(null, '', ' ')
-          }
+        if (!element) {
+          history.replaceState(null, '', ' ')
+          return
         }
+
+        const rect = element.getBoundingClientRect()
+        const isOffscreen = rect.bottom < 0 || rect.top > window.innerHeight
+        if (isOffscreen) history.replaceState(null, '', ' ')
       }
     })
-  }, [allCharacters, getOptimalThreshold])
+  }, [getOptimalThreshold, titleIds])
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true })
@@ -77,9 +78,6 @@ const CharacterList = ({ characters }: CharacterListProps) => {
     }
   }, [handleScroll])
 
-  // 预计算字符数据
-  const characterItems = useMemo(() => buildCharacterNavItems(allCharacters), [allCharacters])
-
   return (
     <aside
       id="Character List"
@@ -87,7 +85,7 @@ const CharacterList = ({ characters }: CharacterListProps) => {
     >
       <nav className="sticky top-4 ml-8">
         <ul className="space-y-2">
-          {characterItems.map(({ displayName, sectionId, sectionHash, titleId }) => {
+          {navItems.map(({ displayName, sectionId, sectionHash, titleId }) => {
             const isActive = activeId === titleId
 
             return (

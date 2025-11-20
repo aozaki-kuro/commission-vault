@@ -105,61 +105,40 @@ const CharacterList = memo(({ active, stale, close }: CharacterListProps) => {
   const [isStaleExpanded, setIsStaleExpanded] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isInitialRender, setIsInitialRender] = useState(true)
+  const [containerHeight, setContainerHeight] = useState(0)
 
   const activeListRef = useRef<HTMLDivElement>(null)
   const staleListRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const getListHeight = useCallback((listRef: React.MutableRefObject<HTMLDivElement | null>) => {
-    return listRef.current?.scrollHeight ?? 0
-  }, [])
+  const measureContainer = useCallback(() => {
+    const target = (isStaleExpanded ? staleListRef : activeListRef).current
+    setContainerHeight(target?.scrollHeight ?? 0)
+  }, [isStaleExpanded])
 
-  // 仅负责测量与写 DOM，不在此处修改 React 状态
-  const updateContainerHeight = useCallback(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    const activeHeight = getListHeight(activeListRef)
-    const staleHeight = getListHeight(staleListRef)
-    const targetHeight = isStaleExpanded ? staleHeight : activeHeight
-
-    // 所有 DOM 写入放入下一帧，减少抖动，规避 ESLint 报警
-    requestAnimationFrame(() => {
-      container.style.height = `${targetHeight}px`
-    })
-  }, [isStaleExpanded, getListHeight])
-
-  // 订阅与初始测量：不在 effect 主体里直接 setState 或改 DOM，全部走 RAF / Observer 回调
+  // Keep height in sync with content size changes
   useEffect(() => {
     const activeList = activeListRef.current
     const staleList = staleListRef.current
     if (!activeList || !staleList) return
 
-    let rafId: number | null = null
-
-    const runMeasure = () => {
-      rafId = requestAnimationFrame(() => {
-        updateContainerHeight()
-      })
-    }
-
-    const resizeObserver = new ResizeObserver(() => {
-      runMeasure()
-    })
-
+    const resizeObserver = new ResizeObserver(() => measureContainer())
     resizeObserver.observe(activeList)
     resizeObserver.observe(staleList)
 
-    // 初始测量也延后到下一帧
-    runMeasure()
+    const rafId = requestAnimationFrame(measureContainer)
 
     return () => {
       resizeObserver.disconnect()
-      if (rafId !== null) cancelAnimationFrame(rafId)
+      cancelAnimationFrame(rafId)
     }
-  }, [updateContainerHeight])
+  }, [measureContainer])
 
-  // 首帧后再翻转 isInitialRender，避免在 effect 主体中同步 setState
+  useEffect(() => {
+    const id = requestAnimationFrame(measureContainer)
+    return () => cancelAnimationFrame(id)
+  }, [measureContainer])
+
   useEffect(() => {
     const id = requestAnimationFrame(() => setIsInitialRender(false))
     return () => cancelAnimationFrame(id)
@@ -169,7 +148,10 @@ const CharacterList = memo(({ active, stale, close }: CharacterListProps) => {
     if (isAnimating) return
     setIsAnimating(true)
     setIsStaleExpanded(prev => !prev)
-    // 动画结束后允许再次点击
+  }, [isAnimating])
+
+  useEffect(() => {
+    if (!isAnimating) return
     const id = window.setTimeout(() => setIsAnimating(false), 300)
     return () => window.clearTimeout(id)
   }, [isAnimating])
@@ -220,6 +202,7 @@ const CharacterList = memo(({ active, stale, close }: CharacterListProps) => {
         className={`relative overflow-hidden will-change-[height] ${
           isInitialRender ? '' : 'transition-[height] duration-300 ease-out'
         }`}
+        style={{ height: containerHeight ? `${containerHeight}px` : undefined }}
       >
         <div
           ref={activeListRef}
