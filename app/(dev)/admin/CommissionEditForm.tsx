@@ -224,17 +224,11 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
 
         <Field className="space-y-1">
           <Label className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-300">
-            Links (one per line)
+            Links (optional, one per line)
           </Label>
-          <Textarea
-            name="links"
-            defaultValue={linkValue}
-            rows={3}
-            required
-            className={controlStyles}
-          />
+          <Textarea name="links" defaultValue={linkValue} rows={3} className={controlStyles} />
           <Description className="text-xs text-gray-500 dark:text-gray-400">
-            Paste each URL on a separate line.
+            Paste each URL on a separate line, or leave blank if none.
           </Description>
         </Field>
 

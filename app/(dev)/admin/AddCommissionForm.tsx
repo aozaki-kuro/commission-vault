@@ -164,17 +164,16 @@ const AddCommissionForm = ({ characters }: AddCommissionFormProps) => {
 
       <Field className="space-y-1">
         <Label className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-300">
-          Links (one per line)
+          Links (optional, one per line)
         </Label>
         <Textarea
           name="links"
           placeholder="https://example.com"
           rows={4}
-          required
           className={controlStyles}
         />
         <Description className="text-xs text-gray-500 dark:text-gray-400">
-          Paste each URL on a separate line.
+          Paste each URL on a separate line, or leave blank if none.
         </Description>
       </Field>
 

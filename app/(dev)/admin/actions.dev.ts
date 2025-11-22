@@ -89,13 +89,6 @@ export const addCommissionAction = async (
     .map(link => link.trim())
     .filter(Boolean)
 
-  if (links.length === 0) {
-    return {
-      status: 'error',
-      message: 'At least one link is required (separate multiple links by newline).',
-    }
-  }
-
   try {
     const { characterName } = createCommission({
       characterId,
@@ -193,13 +186,6 @@ export const updateCommissionAction = async (
     .split('\n')
     .map(link => link.trim())
     .filter(Boolean)
-
-  if (links.length === 0) {
-    return {
-      status: 'error',
-      message: 'At least one link is required (separate multiple links by newline).',
-    }
-  }
 
   try {
     updateCommission({
