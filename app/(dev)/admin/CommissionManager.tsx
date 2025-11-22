@@ -72,8 +72,8 @@ const CommissionManager = ({ characters, commissions }: CommissionManagerProps) 
 
       <div className="space-y-4">
         {sortedCharacters.map(character => {
-          const characterCommissions = [...(commissionMap.get(character.id) ?? [])].sort(
-            (a, b) => a.id - b.id,
+          const characterCommissions = [...(commissionMap.get(character.id) ?? [])].sort((a, b) =>
+            b.fileName.localeCompare(a.fileName),
           )
 
           const isOpenInitially = openId === character.id
