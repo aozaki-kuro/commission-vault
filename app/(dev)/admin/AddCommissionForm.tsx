@@ -18,6 +18,7 @@ import { Fragment, useActionState, useEffect, useMemo, useState } from 'react'
 import type { CharacterStatus } from '#lib/admin/db'
 import { addCommissionAction } from '#admin/actions'
 import { notifyDataUpdate } from './dataUpdateSignal'
+import FormStatusIndicator from './FormStatusIndicator'
 import SubmitButton from './SubmitButton'
 import { INITIAL_FORM_STATE } from './types'
 
@@ -209,9 +210,16 @@ const AddCommissionForm = ({ characters }: AddCommissionFormProps) => {
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
-        <SubmitButton pendingLabel="Saving commission...">Save commission</SubmitButton>
+        <div className="flex items-center gap-3">
+          <SubmitButton>Save commission</SubmitButton>
+          <FormStatusIndicator
+            status={state.status}
+            message={state.message}
+            errorFallback="Unable to save commission."
+          />
+        </div>
 
-        <Switch.Group as="div" className="flex items-center gap-3">
+        <Switch.Group as="div" className="ml-auto flex items-center gap-3">
           <Switch
             checked={isHidden}
             onChange={setIsHidden}
@@ -231,15 +239,6 @@ const AddCommissionForm = ({ characters }: AddCommissionFormProps) => {
             Hidden
           </Switch.Label>
         </Switch.Group>
-
-        {state.status === 'error' && (
-          <p className="text-sm text-red-500">{state.message ?? 'Unable to save commission.'}</p>
-        )}
-        {state.status === 'success' && (
-          <p className="text-sm text-gray-700 dark:text-gray-200">
-            {state.message ?? 'Commission saved.'}
-          </p>
-        )}
       </div>
 
       {characterId !== null && <input type="hidden" name="characterId" value={characterId} />}

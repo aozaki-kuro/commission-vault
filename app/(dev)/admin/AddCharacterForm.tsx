@@ -15,6 +15,7 @@ import { Fragment, useActionState, useEffect, useMemo, useState } from 'react'
 
 import { addCharacterAction } from '#admin/actions'
 import { notifyDataUpdate } from './dataUpdateSignal'
+import FormStatusIndicator from './FormStatusIndicator'
 import SubmitButton from './SubmitButton'
 import { INITIAL_FORM_STATE } from './types'
 
@@ -135,15 +136,14 @@ const AddCharacterForm = () => {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <SubmitButton pendingLabel="Saving character...">Save character</SubmitButton>
-        {state.status === 'error' && (
-          <p className="text-sm text-red-500">{state.message ?? 'Unable to save character.'}</p>
-        )}
-        {state.status === 'success' && (
-          <p className="text-sm text-gray-700 dark:text-gray-200">
-            {state.message ?? 'Character created.'}
-          </p>
-        )}
+        <div className="flex items-center gap-3">
+          <SubmitButton>Save character</SubmitButton>
+          <FormStatusIndicator
+            status={state.status}
+            message={state.message}
+            errorFallback="Unable to save character."
+          />
+        </div>
       </div>
 
       <input type="hidden" name="status" value={status} />

@@ -20,6 +20,7 @@ import type { CharacterRow } from '#lib/admin/db'
 
 import { updateCommissionAction, deleteCommissionAction } from '#admin/actions'
 import { notifyDataUpdate } from './dataUpdateSignal'
+import FormStatusIndicator from './FormStatusIndicator'
 import SubmitButton from './SubmitButton'
 import { INITIAL_FORM_STATE } from './types'
 
@@ -276,54 +277,55 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
-        <SubmitButton pendingLabel="Saving changes...">Save changes</SubmitButton>
+        <div className="flex items-center gap-3">
+          <SubmitButton>Save changes</SubmitButton>
+          <FormStatusIndicator
+            status={state.status}
+            message={state.message}
+            errorFallback="Unable to update commission."
+          />
+        </div>
 
-        <Switch.Group as="div" className="flex items-center gap-3">
-          <Switch
-            checked={isHidden}
-            onChange={setIsHidden}
-            className={`group relative inline-flex h-7 w-14 cursor-pointer items-center rounded-full p-1 transition-colors duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 ${
-              isHidden ? 'bg-gray-900 dark:bg-gray-100' : 'bg-gray-300/70 dark:bg-gray-700/70'
-            }`}
+        <div className="ml-auto flex flex-wrap items-center gap-4">
+          <Switch.Group as="div" className="flex items-center gap-3">
+            <Switch
+              checked={isHidden}
+              onChange={setIsHidden}
+              className={`group relative inline-flex h-7 w-14 cursor-pointer items-center rounded-full p-1 transition-colors duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 ${
+                isHidden ? 'bg-gray-900 dark:bg-gray-100' : 'bg-gray-300/70 dark:bg-gray-700/70'
+              }`}
+            >
+              <span className="sr-only">Hide commission from public list</span>
+              <span
+                aria-hidden="true"
+                className={`pointer-events-none inline-block h-5 w-5 translate-x-0 rounded-full bg-white shadow-lg transition duration-200 ease-out ${
+                  isHidden ? 'translate-x-7' : 'translate-x-0'
+                } group-data-checked:translate-x-7 dark:bg-gray-900/80`}
+              />
+            </Switch>
+            <Switch.Label className="text-sm font-medium text-gray-700 dark:text-gray-200">
+              Hidden
+            </Switch.Label>
+          </Switch.Group>
+
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="inline-flex h-10 items-center justify-center rounded-lg border border-red-200/70 px-4 text-sm font-medium text-red-600 transition hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none disabled:opacity-60 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10 dark:focus-visible:ring-offset-gray-900"
           >
-            <span className="sr-only">Hide commission from public list</span>
-            <span
-              aria-hidden="true"
-              className={`pointer-events-none inline-block h-5 w-5 translate-x-0 rounded-full bg-white shadow-lg transition duration-200 ease-out ${
-                isHidden ? 'translate-x-7' : 'translate-x-0'
-              } group-data-checked:translate-x-7 dark:bg-gray-900/80`}
-            />
-          </Switch>
-          <Switch.Label className="text-sm font-medium text-gray-700 dark:text-gray-200">
-            Hidden
-          </Switch.Label>
-        </Switch.Group>
-
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={isDeleting}
-          className="inline-flex h-10 items-center justify-center rounded-lg border border-red-200/70 px-4 text-sm font-medium text-red-600 transition hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none disabled:opacity-60 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10 dark:focus-visible:ring-offset-gray-900"
-        >
-          {isDeleting ? 'Deleting…' : 'Delete'}
-        </button>
-
-        {state.status === 'error' && (
-          <p className="text-sm text-red-500">{state.message ?? 'Unable to update commission.'}</p>
-        )}
-        {state.status === 'success' && (
-          <p className="text-sm text-gray-700 dark:text-gray-200">
-            {state.message ?? 'Commission updated successfully.'}
-          </p>
-        )}
-        {deleteStatus && (
-          <p
-            className={`text-sm ${deleteStatus.type === 'success' ? 'text-gray-700 dark:text-gray-200' : 'text-red-500'}`}
-          >
-            {deleteStatus.text}
-          </p>
-        )}
+            {isDeleting ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
       </div>
+
+      {deleteStatus && (
+        <p
+          className={`text-sm ${deleteStatus.type === 'success' ? 'text-gray-700 dark:text-gray-200' : 'text-red-500'}`}
+        >
+          {deleteStatus.text}
+        </p>
+      )}
     </form>
   )
 }
