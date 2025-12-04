@@ -45,11 +45,31 @@ const FormStatusIndicator = ({
   const isError = visibleStatus === 'error'
   const text = isError ? (message ?? errorFallback) : successLabel
 
+  if (isError) {
+    return (
+      <span className="text-sm text-red-500" aria-live="polite">
+        {text}
+      </span>
+    )
+  }
+
   return (
     <span
-      className={`text-sm ${isError ? 'text-red-500' : 'text-gray-700 dark:text-gray-200'}`}
+      className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 dark:text-emerald-400"
       aria-live="polite"
     >
+      <svg
+        className="h-3.5 w-3.5"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M3.5 8.5 6.5 11.5 12.5 4.5" />
+      </svg>
       {text}
     </span>
   )
