@@ -3,18 +3,17 @@
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react'
 import { useCallback, useSyncExternalStore } from 'react'
 import type { CharacterRow, CommissionRow } from '#lib/admin/db'
+import Link from 'next/link'
 import AddCharacterForm from './AddCharacterForm'
 import AddCommissionForm from './AddCommissionForm'
-import CharacterManager from './CharacterManager'
 import CommissionManager from './CommissionManager'
-import Link from 'next/link'
 
 interface AdminDashboardProps {
   characters: CharacterRow[]
   commissions: CommissionRow[]
 }
 
-const tabs = ['Create', 'Manage', 'Existing'] as const
+const tabs = ['Create', 'Existing'] as const
 const tabStorageKey = 'admin-dashboard-tab-index'
 
 // ---- 小型 localStorage store（客户端）----
@@ -108,10 +107,6 @@ const AdminDashboard = ({ characters, commissions }: AdminDashboardProps) => {
               <AddCharacterForm />
               <AddCommissionForm characters={characterOptions} />
             </div>
-          </TabPanel>
-
-          <TabPanel className="animate-[tabFade_260ms_ease-out] space-y-6 focus:outline-none">
-            <CharacterManager characters={characters} />
           </TabPanel>
 
           <TabPanel className="animate-[tabFade_260ms_ease-out] focus:outline-none">
