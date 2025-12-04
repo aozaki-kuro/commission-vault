@@ -7,6 +7,7 @@ import AddCharacterForm from './AddCharacterForm'
 import AddCommissionForm from './AddCommissionForm'
 import CharacterManager from './CharacterManager'
 import CommissionManager from './CommissionManager'
+import Link from 'next/link'
 
 interface AdminDashboardProps {
   characters: CharacterRow[]
@@ -78,6 +79,10 @@ const AdminDashboard = ({ characters, commissions }: AdminDashboardProps) => {
           Create new entries, reprioritize characters, and curate the commission archive.
         </p>
       </header>
+
+      <div className="flex justify-end">
+        <Link href="/">Home</Link>
+      </div>
 
       <TabGroup selectedIndex={selectedIndex} onChange={setSelectedIndex}>
         <TabList className="flex gap-2 rounded-xl border border-gray-200 bg-white/80 p-1 text-sm font-medium shadow-sm backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/60">

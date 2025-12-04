@@ -22,7 +22,7 @@ const Home: NextPage = () => {
     <>
       <Warning />
       <div className="relative mx-auto flex justify-center">
-        <div id="Main Contents" className="w-full max-w-[40rem]">
+        <div id="Main Contents" className="w-full max-w-160">
           <CommissionDescription />
           <Commission
             activeChars={status.active}
