@@ -11,9 +11,10 @@ import {
   ListboxOptions,
   Transition,
 } from '@headlessui/react'
-import { Fragment, useActionState, useMemo, useState } from 'react'
+import { Fragment, useActionState, useEffect, useMemo, useState } from 'react'
 
 import { addCharacterAction } from '#admin/actions'
+import { notifyDataUpdate } from './dataUpdateSignal'
 import SubmitButton from './SubmitButton'
 import { INITIAL_FORM_STATE } from './types'
 
@@ -36,6 +37,10 @@ const controlStyles =
 const AddCharacterForm = () => {
   const [state, formAction] = useActionState(addCharacterAction, INITIAL_FORM_STATE)
   const [status, setStatus] = useState<StatusValue>('active')
+
+  useEffect(() => {
+    if (state.status === 'success') notifyDataUpdate()
+  }, [state.status])
 
   const currentStatus = useMemo(
     () => statusOptions.find(option => option.value === status) ?? statusOptions[0],

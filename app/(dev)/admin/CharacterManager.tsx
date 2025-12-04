@@ -22,6 +22,7 @@ import { useEffect, useMemo, useState, useTransition, type KeyboardEvent } from 
 import type { CharacterRow } from '#lib/admin/db'
 
 import { deleteCharacterAction, renameCharacter, saveCharacterOrder } from '#admin/actions'
+import { notifyDataUpdate } from './dataUpdateSignal'
 import type { FormState } from './types'
 
 interface CharacterManagerProps {
@@ -272,7 +273,10 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
         active: activeIds,
         stale: staleIds,
       })
-        .then(result => setFeedback(toFeedback(result)))
+        .then(result => {
+          setFeedback(toFeedback(result))
+          if (result.status === 'success') notifyDataUpdate()
+        })
         .catch(() => setFeedback({ type: 'error', text: 'Failed to update character order.' }))
     })
   }
@@ -303,6 +307,7 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
           )
 
           setFeedback(toFeedback(result))
+          notifyDataUpdate()
         })
         .catch(() => {
           setFeedback({ type: 'error', text: 'Unable to delete character.' })
@@ -397,6 +402,7 @@ const CharacterManager = ({ characters }: CharacterManagerProps) => {
 
           setFeedback(toFeedback(result))
           setEditing(null)
+          notifyDataUpdate()
         })
         .catch(() => {
           setFeedback({ type: 'error', text: 'Unable to update character.' })

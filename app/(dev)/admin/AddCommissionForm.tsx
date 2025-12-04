@@ -13,10 +13,11 @@ import {
   Textarea,
   Transition,
 } from '@headlessui/react'
-import { Fragment, useActionState, useMemo, useState } from 'react'
+import { Fragment, useActionState, useEffect, useMemo, useState } from 'react'
 
 import type { CharacterStatus } from '#lib/admin/db'
 import { addCommissionAction } from '#admin/actions'
+import { notifyDataUpdate } from './dataUpdateSignal'
 import SubmitButton from './SubmitButton'
 import { INITIAL_FORM_STATE } from './types'
 
@@ -38,6 +39,10 @@ const AddCommissionForm = ({ characters }: AddCommissionFormProps) => {
   const [state, formAction] = useActionState(addCommissionAction, INITIAL_FORM_STATE)
   const [characterId, setCharacterId] = useState<number | null>(null)
   const [isHidden, setIsHidden] = useState(false)
+
+  useEffect(() => {
+    if (state.status === 'success') notifyDataUpdate()
+  }, [state.status])
 
   const options = useMemo(
     () => [...characters].sort((a, b) => a.sortOrder - b.sortOrder),

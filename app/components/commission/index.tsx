@@ -1,14 +1,22 @@
 import Listing from '#components/commission/Listing'
-import { characterStatus } from '#data/commissionStatus'
+import type { CharacterCommissions } from '#data/types'
 
-const Commission = () => {
-  const { active: activeChars, stale: staleChars } = characterStatus
+interface CommissionProps {
+  activeChars: { DisplayName: string }[]
+  staleChars: { DisplayName: string }[]
+  commissionMap: Map<string, CharacterCommissions>
+}
 
+const Commission = ({ activeChars, staleChars, commissionMap }: CommissionProps) => {
   return (
     <div id="--------Commissions--------">
       {/* Display Active Commissions */}
       {activeChars.map(chara => (
-        <Listing Character={chara.DisplayName} key={chara.DisplayName} />
+        <Listing
+          Character={chara.DisplayName}
+          commissionMap={commissionMap}
+          key={chara.DisplayName}
+        />
       ))}
 
       {/* Divider between Active and Stale Commissions */}
@@ -20,7 +28,11 @@ const Commission = () => {
 
       {/* Display Stale Commissions */}
       {staleChars.map(chara => (
-        <Listing Character={chara.DisplayName} key={chara.DisplayName} />
+        <Listing
+          Character={chara.DisplayName}
+          commissionMap={commissionMap}
+          key={chara.DisplayName}
+        />
       ))}
     </div>
   )

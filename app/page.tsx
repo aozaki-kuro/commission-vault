@@ -6,24 +6,35 @@ import CommissionDescription from '#components/main/Description'
 import Footer from '#components/main/Footer'
 
 import CharacterList from '#components/main/CharacterList'
+import DevLiveRefresh from '#components/main/DevLiveRefresh'
 
 import Hamburger from '#components/main/Hamburger'
 import Warning from '#components/main/Warning'
-import { characterStatus } from '#data/commissionStatus'
+import { getCommissionDataMap } from '#data/commissionData'
+import { getCharacterStatus } from '#lib/characterStatus'
 
 const Home: NextPage = () => {
+  const status = getCharacterStatus()
+  const commissionMap = getCommissionDataMap()
+  const characters = [...status.active, ...status.stale]
+
   return (
     <>
       <Warning />
       <div className="relative mx-auto flex justify-center">
         <div id="Main Contents" className="w-full max-w-[40rem]">
           <CommissionDescription />
-          <Commission />
+          <Commission
+            activeChars={status.active}
+            staleChars={status.stale}
+            commissionMap={commissionMap}
+          />
           <Footer />
         </div>
-        <CharacterList characters={[...characterStatus.active, ...characterStatus.stale]} />
+        <CharacterList characters={characters} />
       </div>
-      <Hamburger active={characterStatus.active} stale={characterStatus.stale} />
+      <Hamburger active={status.active} stale={status.stale} />
+      {process.env.NODE_ENV === 'development' ? <DevLiveRefresh /> : null}
     </>
   )
 }

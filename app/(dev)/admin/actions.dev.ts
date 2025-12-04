@@ -16,6 +16,11 @@ import type { FormState } from './types'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
+const revalidatePublicViews = () => {
+  revalidatePath('/')
+  revalidatePath('/rss.xml')
+}
+
 const devGuard = (): FormState | null => {
   if (!isDevelopment) {
     return {
@@ -51,6 +56,7 @@ export const addCharacterAction = async (
 
   try {
     createCharacter({ name, status })
+    revalidatePublicViews()
     revalidatePath('/admin')
     return { status: 'success', message: `Character "${name}" created.` }
   } catch (error) {
@@ -98,6 +104,7 @@ export const addCommissionAction = async (
       description,
       hidden,
     })
+    revalidatePublicViews()
     revalidatePath('/admin')
     return {
       status: 'success',
@@ -120,6 +127,7 @@ export async function saveCharacterOrder(payload: {
 
   try {
     updateCharactersOrder(payload)
+    revalidatePublicViews()
     revalidatePath('/admin')
     return { status: 'success', message: 'Character order updated.' }
   } catch (error) {
@@ -144,6 +152,7 @@ export async function renameCharacter(payload: {
 
   try {
     updateCharacter({ id: payload.id, name: trimmed, status: payload.status })
+    revalidatePublicViews()
     revalidatePath('/admin')
     return { status: 'success', message: `Character "${trimmed}" updated.` }
   } catch (error) {
@@ -197,6 +206,7 @@ export const updateCommissionAction = async (
       description,
       hidden,
     })
+    revalidatePublicViews()
     revalidatePath('/admin')
     return { status: 'success', message: `Commission "${fileName}" updated.` }
   } catch (error) {
@@ -213,6 +223,7 @@ export async function deleteCommissionAction(id: number): Promise<FormState> {
 
   try {
     deleteCommission(id)
+    revalidatePublicViews()
     revalidatePath('/admin')
     return { status: 'success', message: 'Commission deleted.' }
   } catch (error) {
@@ -228,6 +239,7 @@ export async function deleteCharacterAction(id: number): Promise<FormState> {
 
   try {
     deleteCharacter(id)
+    revalidatePublicViews()
     revalidatePath('/admin')
     return { status: 'success', message: 'Character deleted.' }
   } catch (error) {

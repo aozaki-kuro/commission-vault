@@ -1,17 +1,19 @@
 import 'server-only'
 
-import { characterStatus } from '#data/commissionStatus'
+import { getCharacterStatus as loadCharacterStatus } from '#data/commissionStatus'
 
 interface CharacterEntry {
   DisplayName: string
 }
 
-export const getCharacterStatus = () => characterStatus
+export const getCharacterStatus = () => loadCharacterStatus()
 
-export const isCharacterActive = (character: string): boolean =>
-  characterStatus.active.some(char => char.DisplayName === character)
+export const isCharacterActive = (character: string): boolean => {
+  const status = loadCharacterStatus()
+  return status.active.some(char => char.DisplayName === character)
+}
 
-export const getAllCharacters = (): CharacterEntry[] => [
-  ...characterStatus.active,
-  ...characterStatus.stale,
-]
+export const getAllCharacters = (): CharacterEntry[] => {
+  const status = loadCharacterStatus()
+  return [...status.active, ...status.stale]
+}

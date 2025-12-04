@@ -19,6 +19,7 @@ import { Fragment, useActionState, useEffect, useMemo, useState, useTransition }
 import type { CharacterRow } from '#lib/admin/db'
 
 import { updateCommissionAction, deleteCommissionAction } from '#admin/actions'
+import { notifyDataUpdate } from './dataUpdateSignal'
 import SubmitButton from './SubmitButton'
 import { INITIAL_FORM_STATE } from './types'
 
@@ -68,14 +69,18 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
 
   const [selectedCharacterId, setSelectedCharacterId] = useState<number>(initialCharacterId)
   const [isHidden, setIsHidden] = useState<boolean>(commission.hidden)
+  const [fileName, setFileName] = useState(commission.fileName)
+  const initialLinks = useMemo(() => commission.links.join('\n'), [commission.links])
+  const [linksValue, setLinksValue] = useState(initialLinks)
+  const [designValue, setDesignValue] = useState(commission.design ?? '')
+  const [descriptionValue, setDescriptionValue] = useState(commission.description ?? '')
 
   const selectedCharacter = useMemo(
     () => sortedCharacters.find(character => character.id === selectedCharacterId) ?? null,
     [sortedCharacters, selectedCharacterId],
   )
 
-  const linkValue = useMemo(() => commission.links.join('\n'), [commission.links])
-  const imageSrc = useMemo(() => buildImageSrc(commission.fileName), [commission.fileName])
+  const imageSrc = useMemo(() => buildImageSrc(fileName), [fileName])
 
   // ❌ 移除了 setImageError(false) 的 effect
   // ✅ 仅保留与“外部系统/副作用”相关的定时清除提示
@@ -84,6 +89,10 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
     const timer = setTimeout(() => setDeleteStatus(null), 2000)
     return () => clearTimeout(timer)
   }, [deleteStatus])
+
+  useEffect(() => {
+    if (state.status === 'success') notifyDataUpdate()
+  }, [state.status])
 
   const handleDelete = () => {
     if (!window.confirm('Delete this commission entry?')) return
@@ -213,7 +222,8 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
                 </Label>
                 <Input
                   name="fileName"
-                  defaultValue={commission.fileName}
+                  value={fileName}
+                  onChange={event => setFileName(event.target.value)}
                   required
                   className={controlStyles}
                 />
@@ -226,7 +236,13 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
           <Label className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-300">
             Links (optional, one per line)
           </Label>
-          <Textarea name="links" defaultValue={linkValue} rows={3} className={controlStyles} />
+          <Textarea
+            name="links"
+            value={linksValue}
+            onChange={event => setLinksValue(event.target.value)}
+            rows={3}
+            className={controlStyles}
+          />
           <Description className="text-xs text-gray-500 dark:text-gray-400">
             Paste each URL on a separate line, or leave blank if none.
           </Description>
@@ -237,7 +253,12 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
             <Label className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-300">
               Design (optional)
             </Label>
-            <Input name="design" defaultValue={commission.design ?? ''} className={controlStyles} />
+            <Input
+              name="design"
+              value={designValue}
+              onChange={event => setDesignValue(event.target.value)}
+              className={controlStyles}
+            />
           </Field>
 
           <Field className="space-y-1">
@@ -246,7 +267,8 @@ const CommissionEditForm = ({ commission, characters, onDelete }: CommissionEdit
             </Label>
             <Input
               name="description"
-              defaultValue={commission.description ?? ''}
+              value={descriptionValue}
+              onChange={event => setDescriptionValue(event.target.value)}
               className={controlStyles}
             />
           </Field>

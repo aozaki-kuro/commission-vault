@@ -6,7 +6,7 @@ import {
   parseCommissionFileName,
 } from '#lib/commissions'
 import { parseAndFormatDate } from '#lib/date'
-import { commissionData } from '#data/commissionData'
+import { getCommissionData } from '#data/commissionData'
 import { Commission } from '#data/types'
 import Link from 'next/link'
 
@@ -18,47 +18,37 @@ interface CommissionWithCharacter extends Commission {
 }
 
 /**
- * 使用 Set 去重并计算唯一的委托总数。
- * 对所有角色的委托作品进行去重处理，获取基础文件名，计算总数。
- */
-const totalCommissions = new Set(
-  commissionData.flatMap(({ Commissions }) =>
-    Commissions.map(({ fileName }) => getBaseFileName(fileName)),
-  ),
-).size
-
-/**
  * 检查是否为里程碑数字（50的倍数）
  */
 const isMilestone = (num: number): boolean => num > 0 && num % 50 === 0
-
-/**
- * 获取活跃角色的最新委托作品列表。
- */
-const latestEntries = commissionData
-  // 过滤出活跃的角色
-  .filter(({ Character }) => isCharacterActive(Character))
-  // 展开每个角色的委托列表，并在每个委托对象中添加角色信息
-  .flatMap(({ Character, Commissions }): CommissionWithCharacter[] =>
-    Commissions.map(commission => ({ ...commission, Character })),
-  )
-
-/**
- * 使用 mergePartsAndPreviews 函数对委托作品进行去重处理，保留最新的版本。
- */
-const uniqueEntries = mergePartsAndPreviews(latestEntries)
-
-/**
- * 将委托作品按日期排序，并获取最近的三个条目。
- */
-const sortedEntries = Array.from(uniqueEntries.values())
-  .sort(sortCommissionsByDate)
-  .slice(0, 3) as CommissionWithCharacter[] // 类型断言
-
 /**
  * Update 组件显示最新的委托作品更新信息。
  */
 const Update = () => {
+  const commissionData = getCommissionData()
+
+  // 使用 Set 去重并计算唯一的委托总数。
+  const totalCommissions = new Set(
+    commissionData.flatMap(({ Commissions }) =>
+      Commissions.map(({ fileName }) => getBaseFileName(fileName)),
+    ),
+  ).size
+
+  // 获取活跃角色的最新委托作品列表。
+  const latestEntries = commissionData
+    .filter(({ Character }) => isCharacterActive(Character))
+    .flatMap(({ Character, Commissions }): CommissionWithCharacter[] =>
+      Commissions.map(commission => ({ ...commission, Character })),
+    )
+
+  // 使用 mergePartsAndPreviews 函数对委托作品进行去重处理，保留最新的版本。
+  const uniqueEntries = mergePartsAndPreviews(latestEntries)
+
+  // 将委托作品按日期排序，并获取最近的三个条目。
+  const sortedEntries = Array.from(uniqueEntries.values())
+    .sort(sortCommissionsByDate)
+    .slice(0, 3) as CommissionWithCharacter[]
+
   // 如果没有最新的委托作品，显示提示信息
   if (sortedEntries.length === 0) {
     return <p className="font-mono text-sm">No active updates found</p>

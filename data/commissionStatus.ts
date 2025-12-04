@@ -2,6 +2,8 @@ import 'server-only'
 
 import { queryAll } from './sqlite'
 
+const isDevelopment = process.env.NODE_ENV === 'development'
+
 interface CharacterProps {
   DisplayName: string
 }
@@ -30,4 +32,9 @@ const loadStatus = (): CommissionStatus => {
   return { active, stale }
 }
 
-export const characterStatus: CommissionStatus = loadStatus()
+const staticCharacterStatus: CommissionStatus = loadStatus()
+
+export const getCharacterStatus = (): CommissionStatus =>
+  isDevelopment ? loadStatus() : staticCharacterStatus
+
+export const characterStatus: CommissionStatus = staticCharacterStatus

@@ -2,6 +2,8 @@ import { filterHiddenCommissions, sortCommissionsByDate } from '#lib/commissions
 import { Commission, Props } from '#data/types'
 import { queryAll } from './sqlite'
 
+const isDevelopment = process.env.NODE_ENV === 'development'
+
 interface CharacterRow {
   id: number
   name: string
@@ -86,9 +88,15 @@ const loadCommissionData = (): Props => {
   return filterHiddenCommissions(characters)
 }
 
-const commissions: Props = loadCommissionData()
+const buildCommissionMap = (data: Props) =>
+  new Map(data.map(character => [character.Character, character]))
 
-export const commissionData: Props = commissions
-export const commissionDataMap = new Map(
-  commissionData.map(character => [character.Character, character]),
-)
+const staticCommissionData: Props = loadCommissionData()
+
+export const getCommissionData = (): Props =>
+  isDevelopment ? loadCommissionData() : staticCommissionData
+
+export const getCommissionDataMap = () => buildCommissionMap(getCommissionData())
+
+export const commissionData: Props = staticCommissionData
+export const commissionDataMap = buildCommissionMap(staticCommissionData)

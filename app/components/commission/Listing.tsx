@@ -1,22 +1,23 @@
 import Title from '#components/Title'
-import { commissionDataMap } from '#data/commissionData'
 import { imageImports } from '#data/imageImports'
 import { getCharacterSectionId } from '#lib/characters'
 import { parseCommissionFileName } from '#lib/commissions'
+import type { CharacterCommissions } from '#data/types'
 import Image from 'next/image'
 import IllustratorInfo from './IllustratorInfo'
 
 type ListingProps = {
   Character: string
+  commissionMap: Map<string, CharacterCommissions>
 }
 
 /**
  * Listing 组件显示特定角色的所有委托作品，包括图片、信息和链接。
  * @param Character - 角色名称。
  */
-const Listing = ({ Character }: ListingProps) => {
+const Listing = ({ Character, commissionMap }: ListingProps) => {
   const sectionId = getCharacterSectionId(Character)
-  const characterData = commissionDataMap.get(Character)
+  const characterData = commissionMap.get(Character)
   const commissions = characterData?.Commissions ?? []
 
   return (
