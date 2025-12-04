@@ -110,6 +110,7 @@ import A20250930A from '#images/webp/20250930_Q (part 1).webp'
 import A20250930B from '#images/webp/20250930_Q (part 2).webp'
 import A20251001 from '#images/webp/20251001.webp'
 import A20251122 from '#images/webp/20251122.webp'
+import A20251203 from '#images/webp/20251203.webp'
 
 export const imageImports = {
   '20201220_病ん太廊': A20201220,
@@ -222,4 +223,5 @@ export const imageImports = {
   '20250930_Q (part 2)': A20250930B,
   '20251001': A20251001,
   '20251122': A20251122,
+  '20251203': A20251203,
 }
