@@ -40,7 +40,8 @@
       "#admin/actions": ["app/(dev)/admin/actions.stub.ts"],
       "#admin/*": ["app/(dev)/admin/*"],
       "#data/*": ["data/*"],
-      "#lib/*": ["app/lib/*"]
+      "#lib/*": ["app/lib/*"],
+      "#scripts/*": ["scripts/*"]
     }
   },
   "include": [

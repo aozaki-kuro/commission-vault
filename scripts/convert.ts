@@ -60,7 +60,7 @@ async function convertImage(file: string) {
   }
 }
 
-async function main() {
+export const runImageConversion = async () => {
   await fs.mkdir(DIRS.webp, { recursive: true })
   const files = await fs.readdir(DIRS.input)
   const stats = { processed: 0, skipped: 0, failed: [] as string[] }
@@ -82,9 +82,12 @@ async function main() {
   } else {
     console.log(`${MSG.SUCCESS} Processed ${total} files`)
   }
+  return stats
 }
 
-main().catch(err => {
-  console.error(`${MSG.ERROR} ${err}`)
-  process.exit(1)
-})
+if (process.argv[1] && path.basename(process.argv[1]).startsWith('convert')) {
+  runImageConversion().catch(err => {
+    console.error(`${MSG.ERROR} ${err}`)
+    process.exit(1)
+  })
+}
