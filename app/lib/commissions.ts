@@ -1,5 +1,7 @@
-import { Commission, Props } from '#data/types'
+import { CharacterCommissions, Commission, Props } from '#data/types'
 import { getBaseFileName } from './strings'
+
+export type CommissionWithCharacter = Commission & { character: string }
 
 /**
  * Filter out hidden commissions to speed up builds.
@@ -13,8 +15,8 @@ export const filterHiddenCommissions = (data: Props): Props =>
 /**
  * Merge parts/previews, keeping the latest version.
  */
-export function mergePartsAndPreviews(commissions: Commission[]): Map<string, Commission> {
-  const commissionMap = new Map<string, Commission>()
+export function mergePartsAndPreviews<T extends Commission>(commissions: T[]): Map<string, T> {
+  const commissionMap = new Map<string, T>()
 
   commissions.forEach(commission => {
     const baseFileName = getBaseFileName(commission.fileName)
@@ -31,7 +33,7 @@ export function mergePartsAndPreviews(commissions: Commission[]): Map<string, Co
 /**
  * Sort commissions by date (desc).
  */
-export function sortCommissionsByDate(a: Commission, b: Commission): number {
+export function sortCommissionsByDate<T extends Commission>(a: T, b: T): number {
   return b.fileName.localeCompare(a.fileName)
 }
 
@@ -44,3 +46,24 @@ export function parseCommissionFileName(fileName: string) {
   const creator = fileName.slice(9)
   return { date, year, creator }
 }
+
+/**
+ * Flatten commission data to include character names for downstream processing.
+ */
+export const flattenCommissions = (
+  data: Props,
+  predicate?: (character: CharacterCommissions) => boolean,
+): CommissionWithCharacter[] =>
+  data
+    .filter(entry => (predicate ? predicate(entry) : true))
+    .flatMap(({ Character, Commissions }) =>
+      Commissions.map(commission => ({ ...commission, character: Character })),
+    )
+
+/**
+ * Deduplicate and sort commissions by latest file name.
+ */
+export const collectUniqueCommissions = (
+  commissions: CommissionWithCharacter[],
+): CommissionWithCharacter[] =>
+  Array.from(mergePartsAndPreviews(commissions).values()).sort(sortCommissionsByDate)

@@ -1,26 +1,16 @@
 import { getBaseFileName, kebabCase } from '#lib/strings'
 import { isCharacterActive } from '#lib/characterStatus'
 import {
-  mergePartsAndPreviews,
-  sortCommissionsByDate,
+  collectUniqueCommissions,
+  flattenCommissions,
   parseCommissionFileName,
 } from '#lib/commissions'
 import { parseAndFormatDate } from '#lib/date'
 import { getCommissionData } from '#data/commissionData'
-import { Commission } from '#data/types'
 import Link from 'next/link'
 
-/**
- * 扩展 Commission 类型，添加 Character 属性。
- */
-interface CommissionWithCharacter extends Commission {
-  Character: string
-}
-
-/**
- * 检查是否为里程碑数字（50的倍数）
- */
 const isMilestone = (num: number): boolean => num > 0 && num % 50 === 0
+
 /**
  * Update 组件显示最新的委托作品更新信息。
  */
@@ -35,19 +25,15 @@ const Update = () => {
   ).size
 
   // 获取活跃角色的最新委托作品列表。
-  const latestEntries = commissionData
-    .filter(({ Character }) => isCharacterActive(Character))
-    .flatMap(({ Character, Commissions }): CommissionWithCharacter[] =>
-      Commissions.map(commission => ({ ...commission, Character })),
-    )
+  const latestEntries = flattenCommissions(commissionData, ({ Character }) =>
+    isCharacterActive(Character),
+  )
 
   // 使用 mergePartsAndPreviews 函数对委托作品进行去重处理，保留最新的版本。
-  const uniqueEntries = mergePartsAndPreviews(latestEntries)
+  const uniqueEntries = collectUniqueCommissions(latestEntries)
 
   // 将委托作品按日期排序，并获取最近的三个条目。
-  const sortedEntries = Array.from(uniqueEntries.values())
-    .sort(sortCommissionsByDate)
-    .slice(0, 3) as CommissionWithCharacter[]
+  const sortedEntries = uniqueEntries.slice(0, 3)
 
   // 如果没有最新的委托作品，显示提示信息
   if (sortedEntries.length === 0) {
@@ -66,17 +52,17 @@ const Update = () => {
         <p className="mr-2">Last update:</p>
         <div className="flex flex-col space-y-2">
           {/* 遍历最近的委托作品条目并渲染 */}
-          {sortedEntries.map(({ fileName, Character }, index) => {
+          {sortedEntries.map(({ fileName, character }) => {
             const { date } = parseCommissionFileName(fileName)
             const formattedDate = parseAndFormatDate(date, 'yyyy/MM/dd')
-            const linkId = `#${kebabCase(Character)}-${date}`
+            const linkId = `#${kebabCase(character)}-${date}`
 
             return (
-              <p key={index} className="mr-2">
+              <p key={fileName} className="mr-2">
                 {/* 显示格式化日期并创建指向对应角色的链接 */}
                 {formattedDate} {'[ '}
                 <Link href={linkId} className="underline-offset-2">
-                  {Character}
+                  {character}
                 </Link>
                 {' ]'}
               </p>

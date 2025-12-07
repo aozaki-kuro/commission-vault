@@ -1,15 +1,14 @@
 import { formatDate, parseDateString } from '#lib/date'
 import { getBaseFileName, kebabCase } from '#lib/strings'
-import { mergePartsAndPreviews, sortCommissionsByDate } from '#lib/commissions'
+import {
+  CommissionWithCharacter,
+  collectUniqueCommissions,
+  flattenCommissions,
+} from '#lib/commissions'
 import { commissionData } from '#data/commissionData'
-import { Commission } from '#data/types'
 
 const SITE_TITLE = "Crystallize's Commission Vault"
 const SITE_URL = 'https://crystallize.cc'
-
-interface CommissionWithName extends Commission {
-  characterFullName: string
-}
 
 interface RssItem {
   title: string
@@ -20,18 +19,18 @@ interface RssItem {
   enclosure: string
 }
 
-function buildItem(commission: CommissionWithName): RssItem {
+function buildItem(commission: CommissionWithCharacter): RssItem {
   const cleanedFileName = getBaseFileName(commission.fileName)
   const [datePart, artistPartWithExt] = cleanedFileName.split('_')
   const artistName = artistPartWithExt ? artistPartWithExt.split('.')[0] : 'Anonymous'
   const dateObj = parseDateString(datePart)!
   const pubDate = dateObj.toUTCString()
   const formatted = formatDate(dateObj, 'yyyy/MM/dd')
-  const link = `${SITE_URL}#${encodeURIComponent(kebabCase(commission.characterFullName))}-${datePart}`
+  const link = `${SITE_URL}#${encodeURIComponent(kebabCase(commission.character))}-${datePart}`
   const imageUrl = `https://img.crystallize.cc/nsfw-commission/webp/${commission.fileName}.webp`
   const description = `<![CDATA[Illustrator: ${artistName}, published on ${formatted}]]>`
   return {
-    title: commission.characterFullName,
+    title: commission.character,
     link,
     pubDate,
     author: artistName,
@@ -41,15 +40,8 @@ function buildItem(commission: CommissionWithName): RssItem {
 }
 
 export const rssItems: RssItem[] = (() => {
-  const flattened = commissionData.flatMap(character =>
-    character.Commissions.map(commission => ({
-      ...commission,
-      characterFullName: character.Character,
-    })),
-  ) as CommissionWithName[]
-
-  const unique = mergePartsAndPreviews(flattened)
-  const sorted = Array.from(unique.values()).sort(sortCommissionsByDate) as CommissionWithName[]
+  const flattened = flattenCommissions(commissionData)
+  const sorted = collectUniqueCommissions(flattened)
 
   return sorted.map(buildItem)
 })()

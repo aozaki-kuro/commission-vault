@@ -1,102 +1,30 @@
 import { filterHiddenCommissions, sortCommissionsByDate } from '#lib/commissions'
-import { Commission, Props } from '#data/types'
-import { queryAll } from './sqlite'
+import { Props } from '#data/types'
+import { CharacterRecord, characterRecords, getCharacterRecords } from './commissionRecords'
 
 const isDevelopment = process.env.NODE_ENV === 'development'
 
-interface CharacterRow {
-  id: number
-  name: string
-  status: 'active' | 'stale'
-  sort_order: number
-  file_name?: string | null
-  links?: string | null
-  design?: string | null
-  description?: string | null
-  hidden?: number | null
-}
-
-interface CharacterAccumulator {
-  Character: string
-  Status: 'active' | 'stale'
-  sortOrder: number
-  Commissions: Commission[]
-}
-
-const loadCommissionData = (): Props => {
-  const rows = queryAll<CharacterRow>(
-    `SELECT
-       characters.id,
-       characters.name,
-       characters.status,
-       characters.sort_order,
-       commissions.file_name,
-       commissions.links,
-       commissions.design,
-       commissions.description,
-       commissions.hidden
-     FROM characters
-     LEFT JOIN commissions ON commissions.character_id = characters.id
-     ORDER BY characters.sort_order ASC, commissions.file_name DESC`,
+// 将角色记录转换为页面消费的数据结构，并按时间倒序
+const buildCommissionData = (records: CharacterRecord[]): Props =>
+  filterHiddenCommissions(
+    records.map(record => ({
+      Character: record.name,
+      Commissions: [...record.commissions].sort(sortCommissionsByDate),
+    })),
   )
-
-  const characterMap = new Map<number, CharacterAccumulator>()
-
-  rows.forEach(row => {
-    let accumulator = characterMap.get(row.id)
-
-    if (!accumulator) {
-      accumulator = {
-        Character: row.name,
-        Status: row.status,
-        sortOrder: row.sort_order,
-        Commissions: [],
-      }
-      characterMap.set(row.id, accumulator)
-    }
-
-    if (!row.file_name) return
-
-    let links: string[] = []
-    if (row.links) {
-      try {
-        const parsed = JSON.parse(row.links)
-        if (Array.isArray(parsed)) {
-          links = parsed.map(link => String(link))
-        }
-      } catch {
-        links = []
-      }
-    }
-
-    accumulator.Commissions.push({
-      fileName: row.file_name,
-      Links: links,
-      Design: row.design ?? undefined,
-      Description: row.description ?? undefined,
-      Hidden: Boolean(row.hidden ?? 0),
-    })
-  })
-
-  const characters: Props = [...characterMap.values()]
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map(character => ({
-      Character: character.Character,
-      Commissions: character.Commissions.sort(sortCommissionsByDate),
-    }))
-
-  return filterHiddenCommissions(characters)
-}
 
 const buildCommissionMap = (data: Props) =>
   new Map(data.map(character => [character.Character, character]))
 
-const staticCommissionData: Props = loadCommissionData()
+const staticCommissionData: Props = buildCommissionData(characterRecords)
+const staticCommissionDataMap = buildCommissionMap(staticCommissionData)
 
 export const getCommissionData = (): Props =>
-  isDevelopment ? loadCommissionData() : staticCommissionData
+  isDevelopment ? buildCommissionData(getCharacterRecords()) : staticCommissionData
 
-export const getCommissionDataMap = () => buildCommissionMap(getCommissionData())
+// 开发态每次重建映射，生产态复用缓存
+export const getCommissionDataMap = () =>
+  isDevelopment ? buildCommissionMap(getCommissionData()) : staticCommissionDataMap
 
 export const commissionData: Props = staticCommissionData
-export const commissionDataMap = buildCommissionMap(staticCommissionData)
+export const commissionDataMap = staticCommissionDataMap

@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { queryAll } from './sqlite'
+import { CharacterRecord, characterRecords, getCharacterRecords } from './commissionRecords'
 
 const isDevelopment = process.env.NODE_ENV === 'development'
 
@@ -13,28 +13,23 @@ interface CommissionStatus {
   stale: CharacterProps[]
 }
 
-const loadStatus = (): CommissionStatus => {
-  const rows = queryAll<{ name: string; status: 'active' | 'stale' }>(
-    `SELECT name, status
-     FROM characters
-     ORDER BY sort_order ASC`,
-  )
-
+// 将角色记录划分为 active/stale 状态供前端消费
+const buildStatus = (records: CharacterRecord[]): CommissionStatus => {
   const active: CharacterProps[] = []
   const stale: CharacterProps[] = []
 
-  rows.forEach(row => {
-    const entry = { DisplayName: row.name }
-    if (row.status === 'active') active.push(entry)
+  records.forEach(record => {
+    const entry = { DisplayName: record.name }
+    if (record.status === 'active') active.push(entry)
     else stale.push(entry)
   })
 
   return { active, stale }
 }
 
-const staticCharacterStatus: CommissionStatus = loadStatus()
+const staticCharacterStatus: CommissionStatus = buildStatus(characterRecords)
 
 export const getCharacterStatus = (): CommissionStatus =>
-  isDevelopment ? loadStatus() : staticCharacterStatus
+  isDevelopment ? buildStatus(getCharacterRecords()) : staticCharacterStatus
 
 export const characterStatus: CommissionStatus = staticCharacterStatus
