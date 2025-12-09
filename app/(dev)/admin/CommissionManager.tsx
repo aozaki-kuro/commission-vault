@@ -70,8 +70,7 @@ const CommissionManager = ({ characters, commissions }: CommissionManagerProps) 
           Existing commissions
         </h2>
         <p className="text-sm text-gray-600 dark:text-gray-300">
-          Drag to reprioritize characters and edit their commissions in place. Click to expand
-          multiple characters at once.
+          Drag to reprioritize characters and edit their commissions in place. Click to expand.
         </p>
       </header>
 
