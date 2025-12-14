@@ -84,7 +84,7 @@ const SortableCharacterItem = ({
       style={style}
       className="flex items-center justify-between gap-6 rounded-xl border border-gray-200/80 bg-white/95 px-4 py-3 text-sm shadow-sm ring-1 ring-gray-900/5 transition dark:border-gray-700/80 dark:bg-gray-900/50 dark:ring-white/10"
     >
-      <div className="flex min-h-[40px] flex-1 items-center gap-3">
+      <div className="flex min-h-10 flex-1 items-center gap-3">
         {/* 拖动手柄 */}
         <button
           type="button"
