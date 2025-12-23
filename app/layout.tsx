@@ -4,14 +4,24 @@ import { SiteMeta } from './siteMeta'
 import './globals.css'
 
 /* Custom Font */
-import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google'
+import { IBM_Plex_Sans } from 'next/font/google'
+import localFont from 'next/font/local'
 
+/* Alternative
 const customMono = IBM_Plex_Mono({
   variable: '--font-mono',
   display: 'block',
   style: 'normal',
   weight: ['400'],
   subsets: ['latin'],
+})
+  */
+
+const customMono = localFont({
+  src: './fonts/BerkeleyMono-Regular.woff2',
+  variable: '--font-mono',
+  display: 'block',
+  style: 'normal',
 })
 
 const plexSans = IBM_Plex_Sans({
