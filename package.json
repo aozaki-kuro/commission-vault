@@ -29,7 +29,7 @@
     "@headlessui/react": "^2.2.9",
     "better-sqlite3": "^12.5.0",
     "dotenv": "^17.2.3",
-    "next": "^16.1.0",
+    "next": "^16.1.1",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "rss-parser": "^3.13.0",
@@ -45,7 +45,7 @@
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.23",
     "eslint": "^9.39.2",
-    "eslint-config-next": "^16.1.0",
+    "eslint-config-next": "^16.1.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "husky": "^9.1.7",
@@ -55,6 +55,6 @@
     "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",
-    "wrangler": "^4.56.0"
+    "wrangler": "^4.54.0"
   }
 }
