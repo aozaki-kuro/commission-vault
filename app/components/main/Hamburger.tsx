@@ -1,10 +1,7 @@
 'use client'
 
 import { buildCharacterNavItems, CharacterNavItem } from '#lib/characters'
-import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 interface CharacterEntry {
   DisplayName: string
@@ -58,42 +55,23 @@ ChevronIcon.displayName = 'ChevronIcon'
 
 interface ListItemProps {
   item: CharacterNavItem
-  isActive?: boolean
   close: () => void
 }
 
-const ListItem = memo(({ item, isActive, close }: ListItemProps) => {
-  const router = useRouter()
+const ListItem = memo(({ item, close }: ListItemProps) => {
   const href = `/${item.titleHash}`
 
-  const handleClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault()
-      close()
-      router.push(href)
-    },
-    [href, close, router],
-  )
+  const handleClick = useCallback(() => {
+    close()
+  }, [close])
 
   return (
-    <Link
-      href={href}
-      onClick={handleClick}
-      prefetch
-      className={`${isActive ? 'bg-white/70 dark:bg-white/10' : ''} ${STYLES.listItem}`}
-    >
+    <a href={href} onClick={handleClick} className={STYLES.listItem}>
       {item.displayName}
-    </Link>
+    </a>
   )
 })
 ListItem.displayName = 'ListItem'
-
-const OptimizedMenuItem = memo(({ item, close }: { item: CharacterNavItem; close: () => void }) => (
-  <MenuItem key={item.displayName} as={Fragment}>
-    {({ active }: { active: boolean }) => <ListItem item={item} isActive={active} close={close} />}
-  </MenuItem>
-))
-OptimizedMenuItem.displayName = 'OptimizedMenuItem'
 
 interface CharacterListProps {
   active: CharacterEntry[]
@@ -162,7 +140,9 @@ const CharacterList = memo(({ active, stale, close }: CharacterListProps) => {
   const activeItems = useMemo(
     () =>
       activeNavItems.map(item => (
-        <OptimizedMenuItem key={item.displayName} item={item} close={close} />
+        <li key={item.displayName}>
+          <ListItem item={item} close={close} />
+        </li>
       )),
     [activeNavItems, close],
   )
@@ -170,7 +150,9 @@ const CharacterList = memo(({ active, stale, close }: CharacterListProps) => {
   const staleItems = useMemo(
     () =>
       staleNavItems.map(item => (
-        <OptimizedMenuItem key={item.displayName} item={item} close={close} />
+        <li key={item.displayName}>
+          <ListItem item={item} close={close} />
+        </li>
       )),
     [staleNavItems, close],
   )
@@ -208,14 +190,14 @@ const CharacterList = memo(({ active, stale, close }: CharacterListProps) => {
           ref={activeListRef}
           className={`absolute inset-x-0 w-full will-change-transform ${transitionClasses} ${getListTransform(false)} ${getListOpacity(false)}`}
         >
-          {activeItems}
+          <ul>{activeItems}</ul>
         </div>
 
         <div
           ref={staleListRef}
           className={`absolute inset-x-0 w-full will-change-transform ${transitionClasses} ${getListTransform(true)} ${getListOpacity(true)}`}
         >
-          {staleItems}
+          <ul>{staleItems}</ul>
         </div>
       </div>
 
@@ -236,11 +218,12 @@ CharacterList.displayName = 'CharacterList'
 interface MenuContentProps {
   open: boolean
   close: () => void
+  toggle: () => void
   active: CharacterEntry[]
   stale: CharacterEntry[]
 }
 
-const MenuContent = memo(({ open, close, active, stale }: MenuContentProps) => {
+const MenuContent = memo(({ open, close, toggle, active, stale }: MenuContentProps) => {
   useEffect(() => {
     const html = document.documentElement
     if (open) {
@@ -259,24 +242,29 @@ const MenuContent = memo(({ open, close, active, stale }: MenuContentProps) => {
   return (
     <>
       {open && (
-        <div className="fixed inset-0 z-20 bg-gray-200/10 backdrop-blur-xs dark:bg-gray-900/10" />
+        <button
+          type="button"
+          aria-label="Close navigation menu"
+          className="fixed inset-0 z-20 bg-gray-200/10 backdrop-blur-xs dark:bg-gray-900/10"
+          onClick={close}
+        />
       )}
 
-      <MenuButton className={STYLES.menuButton} style={backdropStyle}>
+      <button
+        type="button"
+        className={STYLES.menuButton}
+        style={backdropStyle}
+        aria-expanded={open}
+        aria-controls="mobile-character-menu"
+        onClick={toggle}
+      >
         <span className="sr-only">Open navigation menu</span>
         <MenuIcon isOpen={open} />
-      </MenuButton>
+      </button>
 
-      <Transition
-        as={Fragment}
-        enter="ease-out duration-300"
-        enterFrom="opacity-0 scale-95"
-        enterTo="opacity-100 scale-100"
-        leave="ease-in duration-200"
-        leaveFrom="opacity-100 scale-100"
-        leaveTo="opacity-0 scale-95"
-      >
-        <MenuItems
+      {open ? (
+        <div
+          id="mobile-character-menu"
           className="absolute right-4 bottom-full z-40 mb-4 max-h-[calc(100vh-8rem)] w-64 origin-bottom-right overflow-y-auto rounded-xl border border-white/20 bg-white/80 font-mono shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-lg focus:outline-hidden dark:bg-black/80"
           style={backdropStyle}
         >
@@ -286,8 +274,8 @@ const MenuContent = memo(({ open, close, active, stale }: MenuContentProps) => {
           <div className="p-2">
             <CharacterList active={active} stale={stale} close={close} />
           </div>
-        </MenuItems>
-      </Transition>
+        </div>
+      ) : null}
     </>
   )
 })
@@ -299,10 +287,14 @@ interface HamburgerProps {
 }
 
 const Hamburger = ({ active, stale }: HamburgerProps) => {
+  const [open, setOpen] = useState(false)
+  const close = useCallback(() => setOpen(false), [])
+  const toggle = useCallback(() => setOpen(prev => !prev), [])
+
   return (
-    <Menu as="div" className="fixed right-8 bottom-8 block md:hidden">
-      {({ open, close }) => <MenuContent open={open} close={close} active={active} stale={stale} />}
-    </Menu>
+    <div className="fixed right-8 bottom-8 block md:hidden">
+      <MenuContent open={open} close={close} toggle={toggle} active={active} stale={stale} />
+    </div>
   )
 }
 

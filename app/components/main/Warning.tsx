@@ -1,15 +1,13 @@
 'use client'
 
-import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react'
-import Image from 'next/image'
-import { Fragment, useCallback, useRef } from 'react'
-import { useSyncExternalStore } from 'react'
-
-import HeadImage from 'public/nsfw-cover-s.webp'
+import dynamic from 'next/dynamic'
+import { useCallback, useRef, useSyncExternalStore } from 'react'
 
 const CONFIRMED_AGE_KEY = 'hasConfirmedAge'
 const AGE_CONFIRM_DURATION = 30 * 24 * 60 * 60 * 1000
 const AGE_CONFIRM_EVENT = 'age-confirm-changed'
+
+const WarningModal = dynamic(() => import('#components/main/WarningModal'))
 
 /** 读取当前是否应该显示弹窗 */
 function getSnapshot(): boolean {
@@ -42,10 +40,53 @@ function subscribe(callback: () => void) {
   }
 }
 
+let hasOpened = false
+const hasOpenedSubscribers = new Set<() => void>()
+
+function markHasOpened() {
+  if (!hasOpened && getSnapshot()) {
+    hasOpened = true
+    hasOpenedSubscribers.forEach(callback => callback())
+  }
+}
+
+function getHasOpenedSnapshot(): boolean {
+  return hasOpened
+}
+
+function getHasOpenedServerSnapshot(): boolean {
+  return false
+}
+
+function subscribeHasOpened(callback: () => void) {
+  const onStorage = () => {
+    markHasOpened()
+  }
+  const onCustom = () => {
+    markHasOpened()
+  }
+
+  hasOpenedSubscribers.add(callback)
+  window.addEventListener('storage', onStorage)
+  window.addEventListener(AGE_CONFIRM_EVENT, onCustom)
+  markHasOpened()
+
+  return () => {
+    hasOpenedSubscribers.delete(callback)
+    window.removeEventListener('storage', onStorage)
+    window.removeEventListener(AGE_CONFIRM_EVENT, onCustom)
+  }
+}
+
 export default function Warning() {
   // 用外部存储（localStorage）作为“单一事实来源”，不再在 effect 里 setState
   const isOpen = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
   const confirmButtonRef = useRef<HTMLButtonElement>(null)
+  const hasOpened = useSyncExternalStore(
+    subscribeHasOpened,
+    getHasOpenedSnapshot,
+    getHasOpenedServerSnapshot,
+  )
 
   const handleConfirmAge = useCallback(() => {
     localStorage.setItem(CONFIRMED_AGE_KEY, String(Date.now()))
@@ -53,87 +94,19 @@ export default function Warning() {
     window.dispatchEvent(new Event(AGE_CONFIRM_EVENT))
   }, [])
 
-  const handleLeave = () => {
+  const handleLeave = useCallback(() => {
     window.location.href = 'https://www.google.com'
-  }
+  }, [])
+
+  const shouldRender = isOpen || hasOpened
+  if (!shouldRender) return null
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog
-        as="div"
-        className="relative z-10"
-        onClose={() => null}
-        initialFocus={confirmButtonRef}
-        static
-      >
-        <TransitionChild
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black/25 backdrop-blur-xl dark:bg-white/5" />
-        </TransitionChild>
-
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center">
-            <TransitionChild
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <DialogPanel className="w-full max-w-md overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all dark:bg-gray-950">
-                <Image
-                  src={HeadImage}
-                  alt="Commission Vault"
-                  quality={80}
-                  placeholder="blur"
-                  className="mb-4 select-none"
-                  priority
-                />
-                <DialogTitle
-                  as="h3"
-                  className="text-center text-lg leading-6 font-bold text-gray-900 select-none dark:text-gray-300"
-                >
-                  [ Warning ]
-                </DialogTitle>
-                <div className="mt-2">
-                  <p className="text-center text-sm text-gray-500 select-none dark:text-gray-400">
-                    You have to be over 18 to view the contents.
-                    <br />
-                    Please <b>leave now</b> if you are under 18.
-                  </p>
-                </div>
-                <div className="mt-4 flex items-center justify-center">
-                  <button
-                    ref={confirmButtonRef}
-                    type="button"
-                    className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 font-mono text-xs font-medium text-blue-900 select-none hover:bg-blue-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                    onClick={handleConfirmAge}
-                  >
-                    I am over 18
-                  </button>
-                  <div className="mx-3" />
-                  <button
-                    type="button"
-                    className="inline-flex justify-center rounded-md border border-transparent bg-red-100 px-4 py-2 font-mono text-xs font-medium text-red-900 hover:bg-red-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
-                    onClick={handleLeave}
-                  >
-                    Leave Now
-                  </button>
-                </div>
-              </DialogPanel>
-            </TransitionChild>
-          </div>
-        </div>
-      </Dialog>
-    </Transition>
+    <WarningModal
+      isOpen={isOpen}
+      confirmButtonRef={confirmButtonRef}
+      onConfirm={handleConfirmAge}
+      onLeave={handleLeave}
+    />
   )
 }
