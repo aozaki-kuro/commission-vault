@@ -1,8 +1,8 @@
 'use client'
 import DevAdminLink from '#components/main/DevAdminLink'
 import { buildCharacterNavItems } from '#lib/characters'
-import { findActiveSection, getSectionsByIds } from '#lib/visibility'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCharacterScrollSpy } from '#lib/useCharacterScrollSpy'
+import { useMemo } from 'react'
 
 interface CharacterListProps {
   characters: { DisplayName: string }[]
@@ -11,73 +11,7 @@ interface CharacterListProps {
 const CharacterList = ({ characters }: CharacterListProps) => {
   const navItems = useMemo(() => buildCharacterNavItems(characters), [characters])
   const titleIds = useMemo(() => navItems.map(item => item.titleId), [navItems])
-  const [activeId, setActiveId] = useState<string>('')
-  const rafId = useRef<number | null>(null)
-  const introductionElementRef = useRef<HTMLElement | null>(null)
-
-  useEffect(() => {
-    introductionElementRef.current = document.getElementById('title-introduction')
-  }, [])
-
-  const getOptimalThreshold = useCallback(() => {
-    const isMobile = window.innerWidth < 768
-    const viewportRatio = isMobile ? 0.2 : 0.25
-    const calculatedThreshold = window.innerHeight * viewportRatio
-    const minThreshold = 80
-
-    return Math.max(minThreshold, calculatedThreshold)
-  }, [])
-
-  const handleScroll = useCallback(() => {
-    if (rafId.current !== null) cancelAnimationFrame(rafId.current)
-
-    rafId.current = requestAnimationFrame(() => {
-      if (!titleIds.length) return
-
-      const sections = getSectionsByIds(titleIds)
-      if (!sections.length) return
-
-      const newActiveId = findActiveSection(sections)
-
-      const introductionElement = introductionElementRef.current
-      const isAtTop = window.scrollY === 0
-
-      const threshold = getOptimalThreshold()
-      const isAtIntroduction =
-        introductionElement &&
-        (() => {
-          const rect = introductionElement.getBoundingClientRect()
-          return rect.top <= threshold && rect.bottom >= threshold
-        })()
-
-      setActiveId(isAtTop || isAtIntroduction ? '' : newActiveId)
-
-      const hash = window.location.hash
-      if (hash) {
-        const element = document.querySelector(hash)
-        if (!element) {
-          history.replaceState(null, '', ' ')
-          return
-        }
-
-        const rect = element.getBoundingClientRect()
-        const isOffscreen = rect.bottom < 0 || rect.top > window.innerHeight
-        if (isOffscreen) history.replaceState(null, '', ' ')
-      }
-    })
-  }, [getOptimalThreshold, titleIds])
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll()
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll)
-      if (rafId.current !== null) {
-        cancelAnimationFrame(rafId.current)
-      }
-    }
-  }, [handleScroll])
+  const activeId = useCharacterScrollSpy(titleIds)
 
   const showAdminLink = process.env.NODE_ENV === 'development'
 
