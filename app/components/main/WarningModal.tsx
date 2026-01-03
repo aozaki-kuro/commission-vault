@@ -54,7 +54,7 @@ export default function WarningModal({
               <DialogPanel className="w-full max-w-md overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all dark:bg-gray-950">
                 <Image
                   src={HeadImage}
-                  alt="Commission Vault"
+                  alt="Commission Index"
                   quality={80}
                   placeholder="blur"
                   className="mb-4 select-none"

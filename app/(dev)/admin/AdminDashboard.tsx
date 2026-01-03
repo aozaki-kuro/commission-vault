@@ -72,7 +72,7 @@ const AdminDashboard = ({ characters, commissions }: AdminDashboardProps) => {
     <div className="mx-auto max-w-5xl space-y-6 px-4 pt-6 pb-10 lg:px-0">
       <header className="space-y-2">
         <h1 className="text-2xl leading-tight font-semibold text-gray-900 dark:text-gray-100">
-          Commission Vault Admin
+          Commission Index Admin
         </h1>
         <p className="text-sm text-gray-600 dark:text-gray-300">
           Create new entries, reprioritize characters, and curate the commission archive.

@@ -7,7 +7,7 @@ import {
 } from '#lib/commissions'
 import { commissionData } from '#data/commissionData'
 
-const SITE_TITLE = "Crystallize's Commission Vault"
+const SITE_TITLE = "Crystallize's Commission Index"
 const SITE_URL = 'https://crystallize.cc'
 
 interface RssItem {

@@ -1,4 +1,4 @@
-# Commission Vault
+# Commission Index
 
 Don't look.
 

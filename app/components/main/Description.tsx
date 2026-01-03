@@ -6,7 +6,7 @@ import Title from '#components/Title'
 const CommissionDescription = () => {
   return (
     <div id="--------Description--------">
-      <h1 className="pb-0 md:pb-2">Commission Vault</h1>
+      <h1 className="pb-0 md:pb-2">Commission Index</h1>
       <Title Content="Introduction" />
 
       <p className="pt-4">
