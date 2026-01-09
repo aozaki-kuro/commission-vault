@@ -48,19 +48,19 @@ import A20231018 from '#images/webp/20231018.webp'
 import A20231031 from '#images/webp/20231031_七市.webp'
 import A20231109 from '#images/webp/20231109_YYDAP.webp'
 import A20231117 from '#images/webp/20231117.webp'
-import A20231204B from '#images/webp/20231204_かりうめ.webp'
 import A20231204A from '#images/webp/20231204_温野りょく.webp'
+import A20231204B from '#images/webp/20231204_かりうめ.webp'
 import A20231215 from '#images/webp/20231215.webp'
 import A20231231 from '#images/webp/20231231_流し満貫.webp'
 import A20240102 from '#images/webp/20240102_温野りょく.webp'
-import A20240113 from '#images/webp/20240113.webp'
+import A20240113 from '#images/webp/20240113_中村六翅.webp'
 import A20240114 from '#images/webp/20240114_七市.webp'
 import A20240223 from '#images/webp/20240223_AOS.webp'
 import A20240225 from '#images/webp/20240225.webp'
 import A20240405 from '#images/webp/20240405_七市.webp'
 import A20240406 from '#images/webp/20240406_どれい.webp'
 import A20240409 from '#images/webp/20240409_雪国裕.webp'
-import A20240410 from '#images/webp/20240410.webp'
+import A20240410 from '#images/webp/20240410_中村六翅.webp'
 import A20240421A from '#images/webp/20240421_Gisyu (part 1).webp'
 import A20240421B from '#images/webp/20240421_Gisyu (part 2).webp'
 import A20240423 from '#images/webp/20240423.webp'
@@ -80,7 +80,7 @@ import A20241028 from '#images/webp/20241028_アータ.webp'
 import A20241031 from '#images/webp/20241031_温野りょく.webp'
 import A20241126 from '#images/webp/20241126.webp'
 import A20241130 from '#images/webp/20241130_七市.webp'
-import A20241203 from '#images/webp/20241203.webp'
+import A20241203 from '#images/webp/20241203_中村六翅.webp'
 import A20241208 from '#images/webp/20241208.webp'
 import A20241223 from '#images/webp/20241223_中村六翅.webp'
 import A20241230A from '#images/webp/20241230_Q (part 1).webp'
@@ -89,13 +89,13 @@ import A20241231 from '#images/webp/20241231_七市.webp'
 import A20250117 from '#images/webp/20250117.webp'
 import A20250124B from '#images/webp/20250124.webp'
 import A20250124A from '#images/webp/20250124_中村六翅.webp'
-import A20250205 from '#images/webp/20250205.webp'
+import A20250205 from '#images/webp/20250205_中村六翅.webp'
 import A20250206 from '#images/webp/20250206_温野りょく.webp'
 import A20250225 from '#images/webp/20250225_七市.webp'
 import A20250302A from '#images/webp/20250302_Q (part 1).webp'
 import A20250302B from '#images/webp/20250302_Q (part 2).webp'
 import A20250320 from '#images/webp/20250320_中村六翅.webp'
-import A20250322 from '#images/webp/20250322.webp'
+import A20250322 from '#images/webp/20250322_中村六翅.webp'
 import A20250403 from '#images/webp/20250403_七市.webp'
 import A20250429 from '#images/webp/20250429.webp'
 import A20250602 from '#images/webp/20250602.webp'
@@ -162,19 +162,19 @@ export const imageImports = {
   '20231031_七市': A20231031,
   '20231109_YYDAP': A20231109,
   '20231117': A20231117,
-  '20231204_かりうめ': A20231204B,
   '20231204_温野りょく': A20231204A,
+  '20231204_かりうめ': A20231204B,
   '20231215': A20231215,
   '20231231_流し満貫': A20231231,
   '20240102_温野りょく': A20240102,
-  '20240113': A20240113,
+  '20240113_中村六翅': A20240113,
   '20240114_七市': A20240114,
   '20240223_AOS': A20240223,
   '20240225': A20240225,
   '20240405_七市': A20240405,
   '20240406_どれい': A20240406,
   '20240409_雪国裕': A20240409,
-  '20240410': A20240410,
+  '20240410_中村六翅': A20240410,
   '20240421_Gisyu (part 1)': A20240421A,
   '20240421_Gisyu (part 2)': A20240421B,
   '20240423': A20240423,
@@ -194,7 +194,7 @@ export const imageImports = {
   '20241031_温野りょく': A20241031,
   '20241126': A20241126,
   '20241130_七市': A20241130,
-  '20241203': A20241203,
+  '20241203_中村六翅': A20241203,
   '20241208': A20241208,
   '20241223_中村六翅': A20241223,
   '20241230_Q (part 1)': A20241230A,
@@ -203,13 +203,13 @@ export const imageImports = {
   '20250117': A20250117,
   '20250124': A20250124B,
   '20250124_中村六翅': A20250124A,
-  '20250205': A20250205,
+  '20250205_中村六翅': A20250205,
   '20250206_温野りょく': A20250206,
   '20250225_七市': A20250225,
   '20250302_Q (part 1)': A20250302A,
   '20250302_Q (part 2)': A20250302B,
   '20250320_中村六翅': A20250320,
-  '20250322': A20250322,
+  '20250322_中村六翅': A20250322,
   '20250403_七市': A20250403,
   '20250429': A20250429,
   '20250602': A20250602,
