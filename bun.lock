@@ -9,7 +9,7 @@
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
         "@headlessui/react": "^2.2.9",
-        "better-sqlite3": "^12.5.0",
+        "better-sqlite3": "^12.6.0",
         "dotenv": "^17.2.3",
         "next": "^16.1.1",
         "react": "^19.2.3",
@@ -22,8 +22,8 @@
         "@tailwindcss/postcss": "^4.1.18",
         "@types/better-sqlite3": "^7.6.13",
         "@types/eslint__eslintrc": "^3.3.0",
-        "@types/node": "^25.0.3",
-        "@types/react": "^19.2.7",
+        "@types/node": "^25.0.6",
+        "@types/react": "^19.2.8",
         "@types/react-dom": "^19.2.3",
         "autoprefixer": "^10.4.23",
         "eslint": "^9.39.2",
@@ -362,9 +362,9 @@
 
     "@types/json5": ["@types/json5@0.0.29", "", {}, "sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ=="],
 
-    "@types/node": ["@types/node@25.0.3", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-W609buLVRVmeW693xKfzHeIV6nJGGz98uCPfeXI1ELMLXVeKYZ9m15fAMSaUPBHYLGFsVRcMmSCksQOrZV9BYA=="],
+    "@types/node": ["@types/node@25.0.6", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-NNu0sjyNxpoiW3YuVFfNz7mxSQ+S4X2G28uqg2s+CzoqoQjLPsWSbsFFyztIAqt2vb8kfEAsJNepMGPTxFDx3Q=="],
 
-    "@types/react": ["@types/react@19.2.7", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-MWtvHrGZLFttgeEj28VXHxpmwYbor/ATPYbBfSFZEIRK0ecCFLl2Qo55z52Hss+UV9CRN7trSeq1zbgx7YDWWg=="],
+    "@types/react": ["@types/react@19.2.8", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-3MbSL37jEchWZz2p2mjntRZtPt837ij10ApxKfgmXCTuHWagYg7iA5bqPw6C8BMPfwidlvfPI/fxOc42HLhcyg=="],
 
     "@types/react-dom": ["@types/react-dom@19.2.3", "", { "peerDependencies": { "@types/react": "^19.2.0" } }, "sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ=="],
 
@@ -478,7 +478,7 @@
 
     "baseline-browser-mapping": ["baseline-browser-mapping@2.9.7", "", { "bin": { "baseline-browser-mapping": "dist/cli.js" } }, "sha512-k9xFKplee6KIio3IDbwj+uaCLpqzOwakOgmqzPezM0sFJlFKcg30vk2wOiAJtkTSfx0SSQDSe8q+mWA/fSH5Zg=="],
 
-    "better-sqlite3": ["better-sqlite3@12.5.0", "", { "dependencies": { "bindings": "^1.5.0", "prebuild-install": "^7.1.1" } }, "sha512-WwCZ/5Diz7rsF29o27o0Gcc1Du+l7Zsv7SYtVPG0X3G/uUI1LqdxrQI7c9Hs2FWpqXXERjW9hp6g3/tH7DlVKg=="],
+    "better-sqlite3": ["better-sqlite3@12.6.0", "", { "dependencies": { "bindings": "^1.5.0", "prebuild-install": "^7.1.1" } }, "sha512-FXI191x+D6UPWSze5IzZjhz+i9MK9nsuHsmTX9bXVl52k06AfZ2xql0lrgIUuzsMsJ7Vgl5kIptvDgBLIV3ZSQ=="],
 
     "bindings": ["bindings@1.5.0", "", { "dependencies": { "file-uri-to-path": "1.0.0" } }, "sha512-p2q/t/mhvuOj/UeLlV6566GD/guowlr0hHxClI0W9m7MWYkL1F0hLo+0Aexs9HSPCtR1SXQ0TD3MMKrXZajbiQ=="],
 
