@@ -1,40 +1,9 @@
-import type { AstroVitePlugin } from './server/astroVitePluginType'
-import path from 'node:path'
-import process from 'node:process'
 import react from '@astrojs/react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, fontProviders } from 'astro/config'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { assetsPipelineIntegration } from './server/assetsPipelineAstro'
-import { devAdminApiPlugin, devAdminRoutesIntegration } from './server/devAdminAstro'
-
-const SOURCE_IMAGE_PATH_PATTERN = /(?:^|\/)data\/images\/.+\.(?:jpe?g|png)$/
-
-function isSourceImagePath(filePath: string) {
-  const normalized = filePath.split(path.sep).join('/').toLowerCase()
-  return SOURCE_IMAGE_PATH_PATTERN.test(normalized)
-}
-
-function devSourceImageWatchPlugin(): AstroVitePlugin {
-  return {
-    name: 'dev-source-image-watch',
-    apply: 'serve',
-    configureServer(server) {
-      const triggerReload = (filePath: string) => {
-        if (!isSourceImagePath(filePath))
-          return
-
-        const relativePath = path.relative(process.cwd(), filePath)
-        server.config.logger.info(`[dev-source-image-watch] source image changed: ${relativePath}`)
-        server.ws.send({ type: 'full-reload' })
-      }
-
-      server.watcher.on('add', triggerReload)
-      server.watcher.on('change', triggerReload)
-      server.watcher.on('unlink', triggerReload)
-    },
-  }
-}
+import { devAdminIntegration } from './server/devAdminAstro'
 
 export default defineConfig({
   output: 'static',
@@ -57,9 +26,9 @@ export default defineConfig({
     },
   ],
 
-  integrations: [react(), assetsPipelineIntegration(), devAdminRoutesIntegration()],
+  integrations: [react(), assetsPipelineIntegration(), devAdminIntegration()],
   vite: {
-    plugins: [tailwindcss(), tsconfigPaths(), devAdminApiPlugin(), devSourceImageWatchPlugin()],
+    plugins: [tailwindcss(), tsconfigPaths()],
     build: {
       rollupOptions: {
         output: {

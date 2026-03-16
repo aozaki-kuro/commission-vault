@@ -1,12 +1,32 @@
 import type { AstroIntegration } from 'astro'
 import { spawn } from 'node:child_process'
+import path from 'node:path'
 import process from 'node:process'
 
-async function runAssetsSyncCli(reason: string) {
+const SOURCE_IMAGE_PATH_PATTERN = /(?:^|\/)data\/images\/.+\.(?:jpe?g|png)$/
+const ASSET_PIPELINE_REASON_ENV = 'ASSET_PIPELINE_REASON'
+const ASSET_PIPELINE_EVAL = `
+  import('./src/lib/pipeline/assets.ts')
+    .then(({ runFullAssetPipeline }) => runFullAssetPipeline(process.env.${ASSET_PIPELINE_REASON_ENV} ?? 'manual'))
+    .catch((error) => {
+      console.error(error)
+      process.exit(1)
+    })
+`
+
+function isSourceImagePath(filePath: string) {
+  const normalized = filePath.split(path.sep).join('/').toLowerCase()
+  return SOURCE_IMAGE_PATH_PATTERN.test(normalized)
+}
+
+async function runAssetPipelineInBun(reason: string) {
   await new Promise<void>((resolve, reject) => {
-    const child = spawn('bun', ['run', 'server/assetsSyncCli.ts', '--reason', reason], {
+    const child = spawn('bun', ['--eval', ASSET_PIPELINE_EVAL], {
       cwd: process.cwd(),
-      env: process.env,
+      env: {
+        ...process.env,
+        [ASSET_PIPELINE_REASON_ENV]: reason,
+      },
       stdio: ['ignore', 'inherit', 'inherit'],
     })
 
@@ -16,7 +36,7 @@ async function runAssetsSyncCli(reason: string) {
         resolve()
         return
       }
-      reject(new Error(`assets sync command exited with code ${code ?? 'null'}`))
+      reject(new Error(`assets pipeline command exited with code ${code ?? 'null'}`))
     })
   })
 }
@@ -36,7 +56,7 @@ async function runAssetPipelineWithLog({
   logger.info(`[${logPrefix}] start reason=${reason}`)
 
   try {
-    await runAssetsSyncCli(reason)
+    await runAssetPipelineInBun(reason)
     logger.info(`[${logPrefix}] done in ${Date.now() - startedAt}ms`)
   }
   catch (error) {
@@ -52,13 +72,27 @@ export function assetsPipelineIntegration(): AstroIntegration {
   return {
     name: 'assets-pipeline',
     hooks: {
-      'astro:server:setup': async ({ logger }) => {
+      'astro:server:setup': async ({ server, logger }) => {
+        const triggerReload = (filePath: string) => {
+          if (!isSourceImagePath(filePath))
+            return
+
+          const relativePath = path.relative(process.cwd(), filePath)
+          logger.info(`[assets/dev-watch] source image changed: ${relativePath}`)
+          logger.info('[assets/dev-watch] trigger full reload')
+          server.ws.send({ type: 'full-reload' })
+        }
+
         await runAssetPipelineWithLog({
           reason: 'astro-dev-startup',
           failOnError: false,
           logPrefix: 'assets/dev-startup',
           logger,
         })
+
+        server.watcher.on('add', triggerReload)
+        server.watcher.on('change', triggerReload)
+        server.watcher.on('unlink', triggerReload)
       },
       'astro:build:start': async ({ logger }) => {
         await runAssetPipelineWithLog({

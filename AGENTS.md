@@ -147,7 +147,7 @@ Additional guidance:
 
 ## Server Runtime Architecture
 
-- Astro dev integration and route injection:
+- Astro dev integration for admin route injection and dev-only API middleware:
   - `server/devAdminAstro.ts`
 - Standalone dev admin API server:
   - `server/adminApi.ts`
@@ -155,15 +155,13 @@ Additional guidance:
   - `server/adminApiHandler.ts`
 - Shared Node/Web bridge helpers:
   - `server/httpBridge.ts`
-- Shared Astro/Vite config typing helper:
-  - `server/astroVitePluginType.ts`
-- Asset pipeline integration:
+- Asset pipeline integration and source-image dev watcher:
   - `server/assetsPipelineAstro.ts`
-  - `server/assetsSyncCli.ts`
 
 ## Change Log
 
 - Consolidated shared home event constants into `src/features/home/events.ts`, removing tiny single-purpose event files for view-mode change, scroll-restore abort, and hamburger mounted state.
+- Consolidated custom dev/build workflow hooks into Astro integrations, removing the bespoke admin Vite middleware plugin, inline source-image watcher plugin, and the extra asset-sync CLI hop.
 - Consolidated shared home sidebar/hamburger target prefetch and deferred-load wiring into `src/features/home/nav/homeNavTargetClient.ts` to reduce duplicate navigation-side client logic.
 - Removed the thin `HomeControlsIsland`, `AdminSuggestionIsland`, and `AliasesDashboardIsland` wrappers so home/admin Astro entrypoints mount their actual React islands directly.
 - Upgraded timeline mode to year-batched lazy loading with manifest-driven target resolution, preserving always-enabled year nav link styling while loading dots/sections progressively (`src/features/home/server/homeTimelineBatches.ts`, `src/features/home/commission/timelineViewEvent.ts`, `src/features/home/commission/timelineViewLoader.ts`, `src/features/home/server/StaticCommissionSections.astro`).
@@ -178,7 +176,7 @@ Additional guidance:
 - Restored unpublished `Want this` button client behavior with localStorage-backed disable/hydration flow after the Astro migration regression.
 - Removed unused React hamburger leftovers (`src/features/home/nav/Hamburger.tsx`, `src/features/home/nav/hamburger/MenuContent.tsx`, `src/features/home/nav/hamburger/CharacterMenuList.tsx`, `src/features/home/nav/hamburger/Icons.tsx`) after the Astro mobile menu migration.
 - Removed the deferred SearchShell handoff so home/admin search now render the real `CommissionSearch` immediately and only defer index construction.
-- Switched admin/server business filenames to camelCase (`adminApi*`, `devAdminAstro`, `assetsPipelineAstro`, `assetsSyncCli`).
+- Switched admin/server business filenames to camelCase (`adminApi*`, `devAdminAstro`, `assetsPipelineAstro`).
 - Moved dev admin Astro routes to `src/devAdmin/pages/*`.
 - Migrated effect-only home/layout side effects to Astro script components.
 - Migrated age gate warning from React island to Astro script.
@@ -215,7 +213,7 @@ Additional guidance:
 - Frontend listing images are rendered with Astro Image (`astro:assets`) from `data/images/*.{jpg,jpeg,png}` source files.
 - Source file resolution is centralized in `src/lib/images/sourceImageRegistry.ts`; keep commission `fileName` and source image stem aligned.
 - Home listing image widths are fixed at `768/960/1280` and `sizes="(max-width: 768px) 92vw, 640px"` to keep analytics variant labels stable.
-- Dev mode includes a source-image watcher (`astro.config.ts`) that full-reloads when `data/images` changes.
+- Dev mode includes a source-image watcher (`server/assetsPipelineAstro.ts`) that full-reloads when `data/images` changes.
 - Admin preview image URL uses dev-only API: `GET /api/admin/source-image/:fileName`.
 - `/images/webp/*` is no longer a supported runtime contract.
 
