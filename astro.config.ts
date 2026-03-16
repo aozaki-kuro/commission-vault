@@ -2,6 +2,7 @@ import type { AstroVitePlugin } from './server/astroVitePluginType'
 import path from 'node:path'
 import process from 'node:process'
 import react from '@astrojs/react'
+import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, fontProviders } from 'astro/config'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { assetsPipelineIntegration } from './server/assetsPipelineAstro'
@@ -58,7 +59,7 @@ export default defineConfig({
 
   integrations: [react(), assetsPipelineIntegration(), devAdminRoutesIntegration()],
   vite: {
-    plugins: [tsconfigPaths(), devAdminApiPlugin(), devSourceImageWatchPlugin()],
+    plugins: [tailwindcss(), tsconfigPaths(), devAdminApiPlugin(), devSourceImageWatchPlugin()],
     build: {
       rollupOptions: {
         output: {
