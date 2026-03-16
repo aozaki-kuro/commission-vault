@@ -241,6 +241,67 @@ describe('mountTimelineViewLoader', () => {
     cleanup()
   })
 
+  it('pipelines timeline batch requests before the first batch resolves', async () => {
+    renderFixture()
+    window.history.replaceState(null, '', '/')
+
+    let resolveFirstBatchResponse!: (value: Response) => void
+    const firstBatchResponse = new Promise<Response>((resolve) => {
+      resolveFirstBatchResponse = (value: Response) => {
+        resolve(value)
+      }
+    })
+
+    const fetchMock = vi.fn((input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/search/home-timeline-batches/en/0.json')) {
+        return firstBatchResponse
+      }
+      if (url.endsWith('/search/home-timeline-batches/en/1.json')) {
+        return Promise.resolve(
+          new Response(`${JSON.stringify(createTimelineBatchPayload(1, '2024'))}\n`, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json; charset=utf-8',
+            },
+          }),
+        )
+      }
+      return Promise.resolve(new Response(null, { status: 404 }))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const cleanup = mountTimelineViewLoader()
+    requestTimelineViewLoad(window, { strategy: 'all' })
+    await Promise.resolve()
+    await Promise.resolve()
+
+    const requestedUrls = fetchMock.mock.calls.map(([input]) =>
+      typeof input === 'string' ? input : input.toString(),
+    )
+    expect(requestedUrls).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('/search/home-timeline-batches/en/0.json'),
+        expect.stringContaining('/search/home-timeline-batches/en/1.json'),
+      ]),
+    )
+
+    resolveFirstBatchResponse(
+      new Response(`${JSON.stringify(createTimelineBatchPayload(0, '2025'))}\n`, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+      }),
+    )
+    await flushTimelineQueue()
+
+    expect(document.getElementById('timeline-year-2025')).toBeTruthy()
+    expect(document.getElementById('timeline-year-2024')).toBeTruthy()
+
+    cleanup()
+  })
+
   it('does not remount or re-scroll when timeline batches were already loaded', async () => {
     renderFixture()
     window.history.replaceState(null, '', '/?view=timeline#timeline-year-2024')

@@ -24,6 +24,7 @@ const TIMELINE_PANEL_SELECTOR = '[data-commission-view-panel="timeline"]'
 const TIMELINE_CONTAINER_SELECTOR = '[data-timeline-sections-container="true"]'
 const TIMELINE_SENTINEL_SELECTOR = '[data-timeline-sections-sentinel="true"]'
 const TIMELINE_PRELOAD_MARGIN_PX = 1200
+const TIMELINE_BATCH_FETCH_CONCURRENCY = 4
 
 interface TimelineViewLoaderDeps {
   dispatchSidebarSync: typeof dispatchSidebarSearchState
@@ -58,23 +59,6 @@ function readRequestOptions(event: Event): RequestTimelineViewLoadOptions {
   if (!(event instanceof CustomEvent))
     return {}
   return event.detail ?? {}
-}
-
-async function mountTimelineBatch({
-  batchIndex,
-  container,
-  doc,
-}: {
-  batchIndex: number
-  container: HTMLElement
-  doc: Document
-}) {
-  const payload = await fetchHomeTimelineBatch({ batchIndex, doc })
-  if (!payload)
-    return false
-
-  mountHomeTimelineBatch({ container, payload })
-  return true
 }
 
 export function mountTimelineViewLoader({
@@ -147,17 +131,32 @@ export function mountTimelineViewLoader({
     }
 
     const finalBatchIndex = Math.min(targetBatchIndex, totalBatchCount - 1)
+    const payloadRequests = new Map<number, ReturnType<typeof fetchHomeTimelineBatch>>()
+    const queueBatchFetch = (batchIndex: number) => {
+      if (batchIndex > finalBatchIndex || payloadRequests.has(batchIndex))
+        return
+      payloadRequests.set(batchIndex, fetchHomeTimelineBatch({ batchIndex, doc }))
+    }
+
+    for (
+      let batchIndex = loadedBatchCount;
+      batchIndex
+      <= Math.min(finalBatchIndex, loadedBatchCount + TIMELINE_BATCH_FETCH_CONCURRENCY - 1);
+      batchIndex += 1
+    ) {
+      queueBatchFetch(batchIndex)
+    }
+
     let didChange = false
 
     for (let batchIndex = loadedBatchCount; batchIndex <= finalBatchIndex; batchIndex += 1) {
-      if (
-        !(await mountTimelineBatch({ batchIndex, container, doc }))
-        && !mountLegacyHomeTimelineBatch({
-          batchIndex,
-          container,
-          panel: timelinePanel,
-        })
-      ) {
+      queueBatchFetch(batchIndex + TIMELINE_BATCH_FETCH_CONCURRENCY - 1)
+
+      const payload = await payloadRequests.get(batchIndex)
+      if (payload) {
+        mountHomeTimelineBatch({ container, payload })
+      }
+      else if (!mountLegacyHomeTimelineBatch({ batchIndex, container, panel: timelinePanel })) {
         break
       }
 

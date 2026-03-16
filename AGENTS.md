@@ -171,6 +171,7 @@ Additional guidance:
 ## Change Log
 
 - Split home client boot into critical immediate mounts (`view sync` + deferred-content loaders + scroll restore) and idle-mounted non-critical enhancers (`sidebar/hamburger/language/tabs/unpublished-interest`) inside `src/features/home/homePageClient.ts`.
+- Updated `src/features/home/commission/timelineViewLoader.ts` to pipeline timeline batch fetches with bounded concurrency before ordered DOM mounting, reducing RTT chaining when loading multiple timeline batches.
 - Moved deferred timeline sections from inline templates to external locale-aware batch JSON routes, and switched timeline loader mounting to manifest-driven fetch/render with legacy template fallback.
 - Split search island locale controls into `src/features/home/i18n/homeSearchControls.ts` and changed production search-index warmup to `idle` + first-interaction fallback to cut initial main-thread/network pressure.
 - Added cache headers for `/search/home-search-entries.json`, `/search/home-character-batches/*`, `/search/home-timeline-batches/*`, and `/rss.xml` in `public/_headers`.
