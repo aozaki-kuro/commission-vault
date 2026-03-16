@@ -57,6 +57,7 @@ const timelineBatchPlan = buildHomeTimelineBatchPlan({
   groups: timelineGroups,
 })
 const timelineBatchManifest = buildHomeTimelineBatchManifest({
+  locale: resolvedLocale,
   plan: timelineBatchPlan,
 })
 const initialTimelineGroups = timelineBatchPlan.initialGroups
@@ -216,18 +217,6 @@ const staleCommissionCount = staleChars.reduce(
             aria-hidden="true"
             class="pointer-events-none h-px overflow-hidden opacity-0"
           />
-          {
-            timelineBatchPlan.batches.map((groups, batchIndex) => (
-              <template data-timeline-batch-index={String(batchIndex)}>
-                <TimelineView
-                  groups={groups}
-                  characterAliasesMap={characterAliasesMap}
-                  creatorAliasesMap={creatorAliasesMap}
-                  keywordAliasesMap={keywordAliasesMap}
-                />
-              </template>
-            ))
-          }
         </>
       )
 : null

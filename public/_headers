@@ -6,3 +6,15 @@
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   X-Robots-Tag: noindex
+
+/search/home-search-entries.json
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+
+/search/home-character-batches/*
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+
+/search/home-timeline-batches/*
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400
+
+/rss.xml
+  Cache-Control: public, max-age=300, stale-while-revalidate=86400

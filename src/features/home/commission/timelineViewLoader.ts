@@ -1,5 +1,10 @@
 import type { RequestTimelineViewLoadOptions } from '#features/home/commission/timelineViewEvent'
 import {
+  fetchHomeTimelineBatch,
+  mountHomeTimelineBatch,
+  mountLegacyHomeTimelineBatch,
+} from '#features/home/commission/homeTimelineBatchClient'
+import {
   getHomeTimelineBatchTotalCount,
   readTimelineLoadedBatchCount,
   readTimelineLoadedState,
@@ -17,7 +22,6 @@ export const TIMELINE_VIEW_LOADED_EVENT = 'home:timeline-view-loaded'
 
 const TIMELINE_PANEL_SELECTOR = '[data-commission-view-panel="timeline"]'
 const TIMELINE_CONTAINER_SELECTOR = '[data-timeline-sections-container="true"]'
-const TIMELINE_LEGACY_TEMPLATE_SELECTOR = 'template[data-timeline-sections-template="true"]'
 const TIMELINE_SENTINEL_SELECTOR = '[data-timeline-sections-sentinel="true"]'
 const TIMELINE_PRELOAD_MARGIN_PX = 1200
 
@@ -56,44 +60,20 @@ function readRequestOptions(event: Event): RequestTimelineViewLoadOptions {
   return event.detail ?? {}
 }
 
-function mountTimelineBatch({
+async function mountTimelineBatch({
   batchIndex,
   container,
-  panel,
+  doc,
 }: {
   batchIndex: number
   container: HTMLElement
-  panel: HTMLElement
+  doc: Document
 }) {
-  const template = panel.querySelector<HTMLTemplateElement>(
-    `template[data-timeline-batch-index="${batchIndex}"]`,
-  )
-  if (!template)
+  const payload = await fetchHomeTimelineBatch({ batchIndex, doc })
+  if (!payload)
     return false
 
-  container.append(template.content.cloneNode(true))
-  template.remove()
-  return true
-}
-
-function mountLegacyTimelineBatch({
-  batchIndex,
-  container,
-  panel,
-}: {
-  batchIndex: number
-  container: HTMLElement
-  panel: HTMLElement
-}) {
-  if (batchIndex !== 0)
-    return false
-
-  const template = panel.querySelector<HTMLTemplateElement>(TIMELINE_LEGACY_TEMPLATE_SELECTOR)
-  if (!template)
-    return false
-
-  container.append(template.content.cloneNode(true))
-  template.remove()
+  mountHomeTimelineBatch({ container, payload })
   return true
 }
 
@@ -171,8 +151,12 @@ export function mountTimelineViewLoader({
 
     for (let batchIndex = loadedBatchCount; batchIndex <= finalBatchIndex; batchIndex += 1) {
       if (
-        !mountTimelineBatch({ batchIndex, container, panel: timelinePanel })
-        && !mountLegacyTimelineBatch({ batchIndex, container, panel: timelinePanel })
+        !(await mountTimelineBatch({ batchIndex, container, doc }))
+        && !mountLegacyHomeTimelineBatch({
+          batchIndex,
+          container,
+          panel: timelinePanel,
+        })
       ) {
         break
       }

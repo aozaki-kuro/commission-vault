@@ -1,7 +1,8 @@
 import { COMMISSION_VIEW_MODE_CHANGE_EVENT } from '#features/home/events'
 import { SIDEBAR_SEARCH_STATE_EVENT } from '#lib/navigation/sidebarSearchState'
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { clearHomeTimelineBatchRequestCacheForTests } from './homeTimelineBatchClient'
 import { clearHomeTimelineBatchManifestCacheForTests } from './homeTimelineBatchManifest'
 import { requestTimelineViewLoad } from './timelineViewEvent'
 import { mountTimelineViewLoader, TIMELINE_VIEW_LOADED_EVENT } from './timelineViewLoader'
@@ -23,6 +24,7 @@ function renderFixture() {
     </div>
     <script type="application/json" data-home-timeline-batch-manifest="true">
       {
+        "locale": "en",
         "initialSectionIds": ["timeline-year-2026"],
         "totalBatches": 2,
         "targetBatchById": {
@@ -35,6 +37,43 @@ function renderFixture() {
   clearHomeTimelineBatchManifestCacheForTests()
 }
 
+function createTimelineBatchPayload(batchIndex: number, year: string) {
+  return {
+    batchIndex,
+    sections: [
+      {
+        yearKey: year,
+        sectionId: `timeline-year-${year}`,
+        titleId: `title-timeline-year-${year}`,
+        sectionHash: `#timeline-year-${year}`,
+        totalCommissions: 1,
+        entries: [
+          {
+            id: `character-alpha-${year}0101`,
+            sectionId: `timeline-year-${year}`,
+            searchKey: `character-alpha::${year}0101_alpha`,
+            searchText: `alpha ${year}`,
+            searchSuggest: 'Character\tAlpha',
+            altText: `© ${year} Alpha & Crystallize`,
+            image: null,
+            sourceImageNotFoundText: 'Source image not found',
+            timeLabel: `${year}/01/01`,
+            primaryText: 'Alpha',
+            secondaryText: null,
+            links: [
+              {
+                label: 'Skeb',
+                url: 'https://example.com',
+              },
+            ],
+            interest: null,
+          },
+        ],
+      },
+    ],
+  }
+}
+
 async function flushTimelineQueue() {
   for (let index = 0; index < 4; index += 1) {
     await Promise.resolve()
@@ -42,10 +81,39 @@ async function flushTimelineQueue() {
   }
 }
 
+afterEach(() => {
+  clearHomeTimelineBatchRequestCacheForTests()
+  clearHomeTimelineBatchManifestCacheForTests(document)
+  vi.unstubAllGlobals()
+  document.body.innerHTML = ''
+  window.history.replaceState(null, '', '/')
+})
+
 describe('mountTimelineViewLoader', () => {
   it('loads deferred timeline batches on initial timeline mode and scrolls to hash target', async () => {
     renderFixture()
     window.history.replaceState(null, '', '/?view=timeline#timeline-year-2024')
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/search/home-timeline-batches/en/0.json')) {
+        return new Response(`${JSON.stringify(createTimelineBatchPayload(0, '2025'))}\n`, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+          },
+        })
+      }
+      if (url.endsWith('/search/home-timeline-batches/en/1.json')) {
+        return new Response(`${JSON.stringify(createTimelineBatchPayload(1, '2024'))}\n`, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+          },
+        })
+      }
+      return new Response(null, { status: 404 })
+    })
+    vi.stubGlobal('fetch', fetchMock)
 
     const onLoaded = vi.fn()
     const onSidebarSync = vi.fn()
@@ -75,6 +143,7 @@ describe('mountTimelineViewLoader', () => {
     expect(onLoaded).toHaveBeenCalled()
     expect(onSidebarSync).toHaveBeenCalled()
     expect(scrollToHashWithoutWrite).toHaveBeenCalledWith('#timeline-year-2024')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
 
     cleanup()
     window.removeEventListener(TIMELINE_VIEW_LOADED_EVENT, onLoaded)
@@ -84,6 +153,27 @@ describe('mountTimelineViewLoader', () => {
   it('loads target timeline batch when the view mode switches later', async () => {
     renderFixture()
     window.history.replaceState(null, '', '/')
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/search/home-timeline-batches/en/0.json')) {
+        return new Response(`${JSON.stringify(createTimelineBatchPayload(0, '2025'))}\n`, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+          },
+        })
+      }
+      if (url.endsWith('/search/home-timeline-batches/en/1.json')) {
+        return new Response(`${JSON.stringify(createTimelineBatchPayload(1, '2024'))}\n`, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+          },
+        })
+      }
+      return new Response(null, { status: 404 })
+    })
+    vi.stubGlobal('fetch', fetchMock)
     const scrollToHashWithoutWrite = vi.fn()
 
     const cleanup = mountTimelineViewLoader({
@@ -104,6 +194,7 @@ describe('mountTimelineViewLoader', () => {
         .querySelector<HTMLElement>('[data-commission-view-panel="timeline"]')
         ?.getAttribute('data-timeline-batches-loaded-count'),
     ).toBe('2')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
 
     cleanup()
   })
@@ -111,6 +202,27 @@ describe('mountTimelineViewLoader', () => {
   it('loads all deferred timeline batches when explicitly requested', async () => {
     renderFixture()
     window.history.replaceState(null, '', '/?view=timeline')
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.endsWith('/search/home-timeline-batches/en/0.json')) {
+        return new Response(`${JSON.stringify(createTimelineBatchPayload(0, '2025'))}\n`, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+          },
+        })
+      }
+      if (url.endsWith('/search/home-timeline-batches/en/1.json')) {
+        return new Response(`${JSON.stringify(createTimelineBatchPayload(1, '2024'))}\n`, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+          },
+        })
+      }
+      return new Response(null, { status: 404 })
+    })
+    vi.stubGlobal('fetch', fetchMock)
 
     const cleanup = mountTimelineViewLoader()
 
@@ -124,6 +236,7 @@ describe('mountTimelineViewLoader', () => {
         .querySelector<HTMLElement>('[data-commission-view-panel="timeline"]')
         ?.getAttribute('data-timeline-loaded'),
     ).toBe('true')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
 
     cleanup()
   })
@@ -131,6 +244,8 @@ describe('mountTimelineViewLoader', () => {
   it('does not remount or re-scroll when timeline batches were already loaded', async () => {
     renderFixture()
     window.history.replaceState(null, '', '/?view=timeline#timeline-year-2024')
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
 
     const panel = document.querySelector<HTMLElement>('[data-commission-view-panel="timeline"]')
     const container = document.querySelector<HTMLElement>(
@@ -162,9 +277,37 @@ describe('mountTimelineViewLoader', () => {
     expect(onLoaded).not.toHaveBeenCalled()
     expect(onSidebarSync).not.toHaveBeenCalled()
     expect(scrollToHashWithoutWrite).not.toHaveBeenCalled()
+    expect(fetchMock).not.toHaveBeenCalled()
 
     cleanup()
     window.removeEventListener(TIMELINE_VIEW_LOADED_EVENT, onLoaded)
     window.removeEventListener(SIDEBAR_SEARCH_STATE_EVENT, onSidebarSync)
+  })
+
+  it('falls back to legacy template mounting when external batch manifest is missing', async () => {
+    document.body.innerHTML = `
+      <div data-commission-view-panel="timeline" data-timeline-loaded="false" data-timeline-batches-loaded-count="0" class="hidden">
+        <div data-timeline-sections-container="true">
+          <section id="timeline-year-2026"></section>
+        </div>
+        <div data-timeline-sections-sentinel="true"></div>
+        <template data-timeline-batch-index="0">
+          <section id="timeline-year-2025"></section>
+        </template>
+      </div>
+    `
+    window.history.replaceState(null, '', '/?view=timeline')
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const cleanup = mountTimelineViewLoader()
+
+    requestTimelineViewLoad(window, { strategy: 'all' })
+    await flushTimelineQueue()
+
+    expect(document.getElementById('timeline-year-2025')).toBeTruthy()
+    expect(fetchMock).not.toHaveBeenCalled()
+
+    cleanup()
   })
 })

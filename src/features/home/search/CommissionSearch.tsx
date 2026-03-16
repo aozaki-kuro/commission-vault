@@ -1,3 +1,4 @@
+import type { HomeSearchControls } from '#features/home/i18n/homeSearchControls'
 import type {
   CommissionSearchEntrySource,
   SearchSuggestionAliasGroup,
@@ -16,7 +17,7 @@ import {
   requestStaleCharactersLoad as dispatchStaleCharactersLoad,
   readStaleCharactersLoadedBatchCount,
 } from '#features/home/commission/staleCharactersEvent'
-import { resolveHomeControls } from '#features/home/i18n/homeLocale'
+import { resolveHomeSearchControls } from '#features/home/i18n/homeSearchControls'
 import CommissionSearchHelpPopover from '#features/home/search/CommissionSearchHelpPopover'
 import CommissionSearchSuggestionDropdown from '#features/home/search/CommissionSearchSuggestionDropdown'
 import PopularKeywordsRow from '#features/home/search/PopularKeywordsRow'
@@ -72,7 +73,7 @@ function clearSearchQueryParamInAddress() {
 }
 
 interface CommissionSearchProps {
-  locale?: string
+  controls?: HomeSearchControls
   disableDomFiltering?: boolean
   onQueryChange?: (query: string) => void
   onMatchedIdsChange?: (matchedIds: Set<number>) => void
@@ -89,7 +90,7 @@ interface CommissionSearchProps {
 }
 
 function CommissionSearch({
-  locale,
+  controls = resolveHomeSearchControls(),
   disableDomFiltering = false,
   onQueryChange,
   onMatchedIdsChange,
@@ -105,7 +106,6 @@ function CommissionSearch({
   suggestionAliasGroups = EMPTY_SUGGESTION_ALIAS_GROUPS,
 }: CommissionSearchProps = {}) {
   const mode = useCommissionViewMode()
-  const controls = resolveHomeControls(locale)
   const inputRef = useRef<HTMLInputElement>(null)
   const didAutoJumpRef = useRef(false)
   const copyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)

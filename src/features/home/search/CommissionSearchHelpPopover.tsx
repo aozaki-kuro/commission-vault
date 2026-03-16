@@ -1,9 +1,9 @@
-import type { HomeLocaleMessages } from '#features/home/i18n/homeLocale'
+import type { HomeSearchControls } from '#features/home/i18n/homeSearchControls'
 import { Button } from '#components/ui/button'
 import { PopoverContent } from '#components/ui/popover'
 
 interface CommissionSearchHelpPopoverProps {
-  controls: HomeLocaleMessages['controls']
+  controls: HomeSearchControls
   onOpenChange: (open: boolean) => void
 }
 

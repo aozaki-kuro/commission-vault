@@ -1,3 +1,4 @@
+import type { HomeLocale } from '#features/home/i18n/homeLocale'
 import type { TimelineYearGroup } from '#lib/commissions/timeline'
 import { getCharacterSectionId } from '#lib/characters/nav'
 import { parseCommissionFileName } from '#lib/commissions'
@@ -10,6 +11,7 @@ export interface HomeTimelineBatchPlan {
 }
 
 export interface HomeTimelineBatchManifest {
+  locale: HomeLocale
   initialSectionIds: string[]
   totalBatches: number
   targetBatchById: Record<string, number>
@@ -66,13 +68,26 @@ export function buildHomeTimelineBatchPlan({
 }
 
 export function buildHomeTimelineBatchManifest({
+  locale,
   plan,
 }: {
+  locale: HomeLocale
   plan: HomeTimelineBatchPlan
 }): HomeTimelineBatchManifest {
   return {
+    locale,
     initialSectionIds: plan.initialGroups.map(group => group.sectionId),
     totalBatches: plan.totalBatches,
     targetBatchById: plan.targetBatchById,
   }
+}
+
+export function buildHomeTimelineBatchUrl({
+  batchIndex,
+  locale,
+}: {
+  batchIndex: number
+  locale: HomeLocale
+}) {
+  return `/search/home-timeline-batches/${locale}/${batchIndex}.json`
 }

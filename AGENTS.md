@@ -61,6 +61,15 @@ This repository contains an Astro 6 static site with React 19 islands, written i
   - `src/features/home/commission/homeCharacterBatchRender.ts`
 - Home timeline lazy-mount behavior is centralized in:
   - `src/features/home/commission/timelineViewLoader.ts`
+- Home timeline batch planning and payload generation are centralized in:
+  - `src/features/home/server/homeTimelineBatches.ts`
+  - `src/features/home/server/homeTimelineBatchPayload.ts`
+  - `src/pages/search/home-timeline-batches/[locale]/[batch].json.ts`
+- Home timeline batch manifest parsing, fetching, and DOM rendering are centralized in:
+  - `src/features/home/commission/homeTimelineBatchManifest.ts`
+  - `src/features/home/commission/homeTimelineBatchClient.ts`
+  - `src/features/home/commission/homeTimelineBatchPayload.ts`
+  - `src/features/home/commission/homeTimelineBatchRender.ts`
 - Home desktop navigation behavior is centralized in:
   - `src/features/home/nav/sidebarNavEnhancer.ts`
 - Home sidebar/hamburger deferred target prefetch and load helper is centralized in:
@@ -81,6 +90,7 @@ This repository contains an Astro 6 static site with React 19 islands, written i
   - Active/stale deferred sections now resolve through an inline manifest plus external batch JSON. Preserve the existing `id` / `data-*` DOM contracts inside batch payloads so sidebar, hamburger, hash navigation, and search stay deterministic.
   - `data-stale-visibility` means the stale group is expanded; `data-stale-loaded` means deferred stale sections are fully mounted. Preserve that distinction when touching search/nav/scroll-restore state.
   - Character/stale section templates must mount with their full entry list intact. Do not reintroduce per-section entry lazy mounts above anchor targets; they break deterministic sidebar/hash navigation.
+  - Search island locale labels should resolve from `src/features/home/i18n/homeSearchControls.ts` so client bundles do not import the full `homeLocale` message graph.
 - Shared pure rendering helpers:
   - `src/features/home/commission/linkDisplay.ts` (link sanitization/priority selection)
   - `src/features/home/commission/templateContentLookup.ts` (recursive template-content id lookup for deferred hash/search flows)
@@ -160,6 +170,9 @@ Additional guidance:
 
 ## Change Log
 
+- Moved deferred timeline sections from inline templates to external locale-aware batch JSON routes, and switched timeline loader mounting to manifest-driven fetch/render with legacy template fallback.
+- Split search island locale controls into `src/features/home/i18n/homeSearchControls.ts` and changed production search-index warmup to `idle` + first-interaction fallback to cut initial main-thread/network pressure.
+- Added cache headers for `/search/home-search-entries.json`, `/search/home-character-batches/*`, `/search/home-timeline-batches/*`, and `/rss.xml` in `public/_headers`.
 - Removed the Bun subprocess-driven asset sync path; home update summary now computes at page render, `/search/home-search-entries.json` and `/rss.xml` are served by Astro routes, and admin write flows no longer require script-side asset regeneration.
 - Consolidated shared home event constants into `src/features/home/events.ts`, removing tiny single-purpose event files for view-mode change, scroll-restore abort, and hamburger mounted state.
 - Consolidated custom dev/build workflow hooks into Astro integrations, removing the bespoke admin Vite middleware plugin, inline source-image watcher plugin, and the extra asset-sync CLI hop.

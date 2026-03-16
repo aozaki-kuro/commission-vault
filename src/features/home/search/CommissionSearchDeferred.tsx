@@ -1,19 +1,56 @@
 import type { CommissionSearchEntrySource, SearchSuggestionAliasGroup } from '#features/home/search/CommissionSearch'
-import { resolveHomeControls } from '#features/home/i18n/homeLocale'
+import { resolveHomeSearchControls } from '#features/home/i18n/homeSearchControls'
 import CommissionSearch from '#features/home/search/CommissionSearch'
 import {
   buildPopularKeywordPoolFromSuggestTexts,
   dedupeKeywords,
 } from '#lib/search/popularKeywords'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
 
 const MAX_FEATURED_KEYWORDS = 6
 const MAX_VISIBLE_POPULAR_KEYWORDS = 6
 const HOME_SEARCH_INDEX_URL = '/search/home-search-entries.json'
 const COMMISSION_ENTRY_SELECTOR = '[data-commission-entry="true"]'
+const SEARCH_INDEX_WARMUP_EVENTS = ['pointerdown', 'keydown', 'touchstart', 'focusin'] as const
+const SEARCH_INDEX_IDLE_TIMEOUT_MS = 1000
+
+type WindowWithIdleCallback = Window
+  & typeof globalThis & {
+    requestIdleCallback?: (
+      callback: IdleRequestCallback,
+      options?: IdleRequestOptions,
+    ) => number
+    cancelIdleCallback?: (id: number) => void
+  }
 
 let cachedHomeSearchEntries: CommissionSearchEntrySource[] | null = null
 let homeSearchEntriesPromise: Promise<CommissionSearchEntrySource[]> | null = null
+
+function ensureHomeSearchEntriesPromise() {
+  if (cachedHomeSearchEntries) {
+    return Promise.resolve(cachedHomeSearchEntries)
+  }
+
+  if (!homeSearchEntriesPromise) {
+    homeSearchEntriesPromise = fetch(HOME_SEARCH_INDEX_URL)
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to load search index: ${response.status}`)
+        }
+        return (await response.json()) as CommissionSearchEntrySource[]
+      })
+      .then((entries) => {
+        cachedHomeSearchEntries = entries
+        return entries
+      })
+      .catch((error) => {
+        homeSearchEntriesPromise = null
+        throw error
+      })
+  }
+
+  return homeSearchEntriesPromise
+}
 
 function createSeededRandom(seed: number) {
   let state = seed >>> 0 || 0x6D2B79F5
@@ -203,7 +240,7 @@ export default function CommissionSearchDeferred({
   featuredKeywords = [],
   suggestionAliasGroups = [],
 }: CommissionSearchDeferredProps = {}) {
-  const controls = resolveHomeControls(locale)
+  const controls = resolveHomeSearchControls(locale)
   const shouldLoadFetchedEntries = Boolean(import.meta.env?.PROD)
   const [popularKeywordPage, setPopularKeywordPage] = useState(0)
   const [hasDismissedFeaturedKeywords, setHasDismissedFeaturedKeywords] = useState(false)
@@ -235,48 +272,85 @@ export default function CommissionSearchDeferred({
 
   useEffect(() => {
     if (shouldLoadFetchedEntries) {
-      if (cachedHomeSearchEntries)
-        return
-
       let active = true
-      if (!homeSearchEntriesPromise) {
-        homeSearchEntriesPromise = fetch(HOME_SEARCH_INDEX_URL)
-          .then(async (response) => {
-            if (!response.ok) {
-              throw new Error(`Failed to load search index: ${response.status}`)
-            }
-            return (await response.json()) as CommissionSearchEntrySource[]
-          })
-          .then((entries) => {
-            cachedHomeSearchEntries = entries
-            return entries
-          })
-          .catch((error) => {
-            homeSearchEntriesPromise = null
-            throw error
-          })
-      }
+      const win = window as WindowWithIdleCallback
+      let idleRequestId: number | null = null
+      let timeoutId: number | null = null
 
-      void homeSearchEntriesPromise
-        .then((entries) => {
-          if (!active)
-            return
+      const applyEntries = (entries: CommissionSearchEntrySource[]) => {
+        if (!active)
+          return
+        startTransition(() => {
           setExternalEntries(entries)
           setPopularKeywordPool(buildPopularKeywordPoolFromEntries(entries))
         })
-        .catch((error) => {
-          console.error(error)
+      }
+
+      const loadFetchedEntries = () => {
+        void ensureHomeSearchEntriesPromise()
+          .then(applyEntries)
+          .catch((error) => {
+            console.error(error)
+          })
+      }
+
+      const clearIdleSchedule = () => {
+        if (idleRequestId !== null && typeof win.cancelIdleCallback === 'function') {
+          win.cancelIdleCallback(idleRequestId)
+          idleRequestId = null
+        }
+        if (timeoutId !== null) {
+          window.clearTimeout(timeoutId)
+          timeoutId = null
+        }
+      }
+
+      const warmupEventController = new AbortController()
+
+      const onFirstInteraction = () => {
+        clearIdleSchedule()
+        warmupEventController.abort()
+        loadFetchedEntries()
+      }
+
+      if (cachedHomeSearchEntries) {
+        applyEntries(cachedHomeSearchEntries)
+      }
+      else if (typeof win.requestIdleCallback === 'function') {
+        idleRequestId = win.requestIdleCallback(() => {
+          idleRequestId = null
+          loadFetchedEntries()
+        }, { timeout: SEARCH_INDEX_IDLE_TIMEOUT_MS })
+      }
+      else {
+        timeoutId = window.setTimeout(() => {
+          timeoutId = null
+          loadFetchedEntries()
+        }, 120)
+      }
+
+      SEARCH_INDEX_WARMUP_EVENTS.forEach((eventName) => {
+        window.addEventListener(eventName, onFirstInteraction, {
+          capture: true,
+          passive: true,
+          once: true,
+          signal: warmupEventController.signal,
         })
+      })
 
       return () => {
         active = false
+        clearIdleSchedule()
+        warmupEventController.abort()
       }
     }
 
     const rafId = window.requestAnimationFrame(() => {
       const entries = buildSearchEntriesFromDom()
-      setExternalEntries(entries.length > 0 ? entries : null)
-      setPopularKeywordPool(buildPopularKeywordPoolFromEntries(entries))
+      startTransition(() => {
+        setExternalEntries(entries.length > 0 ? entries : null)
+        setPopularKeywordPool(buildPopularKeywordPoolFromEntries(entries))
+      })
     })
 
     return () => {
@@ -314,8 +388,8 @@ export default function CommissionSearchDeferred({
 
   return (
     <CommissionSearch
+      controls={controls}
       deferIndexInit
-      locale={locale}
       externalEntries={externalEntries ?? undefined}
       popularKeywords={popularKeywords}
       refreshPopularSearchLabel={controls.refreshPopularSearchLabel}
