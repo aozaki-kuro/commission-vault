@@ -22,7 +22,7 @@ interface SearchEntry {
   searchSuggest: string
 }
 
-function buildHomeSearchEntries(): SearchEntry[] {
+export function buildHomeSearchEntries(): SearchEntry[] {
   const records = getCharacterRecords()
   const commissionMap = getCommissionDataMap()
   const characterAliasesMap = getCharacterAliasesMap()

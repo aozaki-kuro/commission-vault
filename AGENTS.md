@@ -155,11 +155,12 @@ Additional guidance:
   - `server/adminApiHandler.ts`
 - Shared Node/Web bridge helpers:
   - `server/httpBridge.ts`
-- Asset pipeline integration and source-image dev watcher:
+- Source-image dev watcher integration:
   - `server/assetsPipelineAstro.ts`
 
 ## Change Log
 
+- Removed the Bun subprocess-driven asset sync path; home update summary now computes at page render, `/search/home-search-entries.json` and `/rss.xml` are served by Astro routes, and admin write flows no longer require script-side asset regeneration.
 - Consolidated shared home event constants into `src/features/home/events.ts`, removing tiny single-purpose event files for view-mode change, scroll-restore abort, and hamburger mounted state.
 - Consolidated custom dev/build workflow hooks into Astro integrations, removing the bespoke admin Vite middleware plugin, inline source-image watcher plugin, and the extra asset-sync CLI hop.
 - Consolidated shared home sidebar/hamburger target prefetch and deferred-load wiring into `src/features/home/nav/homeNavTargetClient.ts` to reduce duplicate navigation-side client logic.

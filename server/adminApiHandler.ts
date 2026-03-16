@@ -25,8 +25,6 @@ import {
   updateCharactersOrder,
   updateCommission,
 } from '../src/lib/admin/db'
-import { runFullAssetPipeline } from '../src/lib/pipeline/assets'
-import { createAstroStyleLogger } from '../src/lib/pipeline/astroLogger'
 
 interface ApiState {
   status: 'success' | 'error'
@@ -34,7 +32,6 @@ interface ApiState {
 }
 
 const isDevelopment = process.env.NODE_ENV === 'development'
-const logger = createAstroStyleLogger('assets-sync')
 const GET_CHARACTER_COMMISSIONS_PATH_PATTERN = /^\/api\/admin\/characters\/\d+\/commissions$/
 const GET_CHARACTER_COMMISSIONS_ID_PATTERN = /^\/api\/admin\/characters\/(\d+)\/commissions$/
 const PATCH_CHARACTER_PATH_PATTERN = /^\/api\/admin\/characters\/\d+$/
@@ -154,64 +151,8 @@ function getUploadedSourceImage(formData: FormData): File | null {
   return entry
 }
 
-function createAssetsSyncQueue() {
-  let requestedVersion = 0
-  let completedVersion = 0
-  let latestReason = 'unknown'
-  let runningPromise: Promise<void> | null = null
-
-  const runLoop = async () => {
-    while (completedVersion < requestedVersion) {
-      const targetVersion = requestedVersion
-      const reason = latestReason
-      const startedAt = Date.now()
-      logger.info(`start version=${targetVersion} reason=${reason}`)
-
-      try {
-        await runFullAssetPipeline(`admin-write:${reason}`)
-      }
-      catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        logger.error(`failed version=${targetVersion} reason=${reason}: ${message}`)
-        throw error
-      }
-
-      completedVersion = targetVersion
-      logger.success(
-        `done version=${targetVersion} reason=${reason} in ${Date.now() - startedAt}ms`,
-      )
-    }
-  }
-
-  const ensureRunning = () => {
-    if (runningPromise)
-      return
-    runningPromise = runLoop().finally(() => {
-      runningPromise = null
-    })
-  }
-
-  return async (reason: string) => {
-    requestedVersion += 1
-    latestReason = reason
-    const waitForVersion = requestedVersion
-    ensureRunning()
-
-    while (true) {
-      if (completedVersion >= waitForVersion) {
-        break
-      }
-      if (!runningPromise)
-        ensureRunning()
-      await runningPromise
-    }
-  }
-}
-
-const syncPublicAssetsAfterWrite = createAssetsSyncQueue()
-
-async function regeneratePublicAssets(reason: string) {
-  await syncPublicAssetsAfterWrite(reason)
+async function regeneratePublicAssets(_reason: string) {
+  // 资产改为由 Astro 路由和页面渲染按需生成，不再依赖额外脚本刷新缓存。
 }
 
 async function parseJsonBody(request: Request): Promise<Record<string, unknown>> {
@@ -572,7 +513,7 @@ export async function handleAdminApiRequest(request: Request) {
   if (request.method === 'POST' && pathname === '/api/admin/assets/refresh') {
     try {
       await regeneratePublicAssets('manual-refresh')
-      return success('Assets refreshed.')
+      return success('Runtime assets are generated on demand. Refresh is no longer required.')
     }
     catch (error) {
       return handleWriteError(error, 'Failed to refresh assets.')

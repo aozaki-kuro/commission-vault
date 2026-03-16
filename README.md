@@ -11,7 +11,7 @@ Personal use only
 - Admin route shells are Astro pages; interactive admin state is mounted via React islands.
 - `bun run build` — run Astro static build output to `dist/`.
 - `bun run preview` — preview static output locally.
-- Admin page includes a dev-only floating `Refresh Assets Cache` button for manual asset resync.
+- Admin page includes a dev-only floating `Refresh Assets Cache` button to force a fresh admin bootstrap fetch.
 
 ## Tests
 
@@ -21,9 +21,9 @@ Personal use only
 
 Asset generation is shared by Astro:
 
-- Dev startup triggers full asset sync (`home-update-summary`, `home-search-entries`, `rss`).
-- Admin write operations in development trigger queued full asset sync (write-through, coalesced).
-- Production build startup triggers full asset sync before page generation.
+- Home update summary is computed during page rendering.
+- `/search/home-search-entries.json` is served by an Astro route at request/build time.
+- `/rss.xml` is served by an Astro route at request/build time.
 - Source images under `data/images` are imported by Astro Image at runtime; in dev, image add/change/remove triggers a full page reload automatically.
 
 ### Dev ports

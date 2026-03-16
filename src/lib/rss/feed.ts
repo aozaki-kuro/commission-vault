@@ -1,7 +1,7 @@
 import type {
   CommissionWithCharacter,
 } from '#lib/commissions/index'
-import { commissionData } from '#data/commissionData'
+import { getCommissionData } from '#data/commissionData'
 import {
   collectUniqueCommissions,
   flattenCommissions,
@@ -38,15 +38,15 @@ function buildItem(commission: CommissionWithCharacter): RssItem {
   }
 }
 
-export const rssItems: RssItem[] = (() => {
-  const flattened = flattenCommissions(commissionData)
+function buildRssItems(): RssItem[] {
+  const flattened = flattenCommissions(getCommissionData())
   const sorted = collectUniqueCommissions(flattened)
 
   return sorted.map(buildItem)
-})()
+}
 
 export function generateRssFeed(): string {
-  const items = rssItems
+  const items = buildRssItems()
     .map(
       item =>
         `\n    <item>\n      <title>${item.title}</title>\n      <link>${item.link}</link>\n      <pubDate>${item.pubDate}</pubDate>\n      <author>${item.author}</author>\n      <description>${item.description}</description>\n    </item>`,

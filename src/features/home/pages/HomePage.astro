@@ -21,8 +21,8 @@ import StaticCommissionSections from '#features/home/server/StaticCommissionSect
 import AgeGateScript from '#features/home/warning/AgeGateScript.astro'
 import BaseLayout from '#layouts/BaseLayout.astro'
 import { normalizeCharacterAliasKey } from '#lib/characterAliases/shared'
-import { homeUpdateSummary } from '#lib/generated/homeUpdateSummary'
 import { buildSitePayload } from '#lib/home/buildSitePayload'
+import { buildHomeUpdateSummary } from '#lib/home/updateSummary'
 import { listMissingSourceImages, resolveSourceImageByCommissionFileName } from '#lib/images/sourceImageRegistry'
 import { normalizeKeywordAliasKey } from '#lib/keywordAliases/shared'
 import { buildCommissionDataMap, buildCreatorAliasesMap } from '#lib/sitePayload'
@@ -44,6 +44,7 @@ const localeOptions = HOME_LOCALE_SWITCH_ITEMS.map(item => ({
 }))
 
 const payload = buildSitePayload()
+const homeUpdateSummary = buildHomeUpdateSummary(payload.commissionData, payload.activeCharacterNames)
 const featuredSearchKeywords = getHomeFeaturedSearchKeywords()
 const characterAliases = getCharacterAliases()
 const keywordAliases = getKeywordAliases()
