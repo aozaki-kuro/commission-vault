@@ -1,6 +1,7 @@
 import {
   hasDeferredHomeCharacterTarget,
   normalizeHomeCharacterTargetId,
+  readHomeCharacterBatchManifest,
   resolveHomeCharacterTargetBatch,
 } from '#features/home/commission/homeCharacterBatchManifest'
 import { templateContentContainsElementId } from '#features/home/commission/templateContentLookup'
@@ -230,6 +231,10 @@ export function hasStaleCharacterTarget(doc: Document, rawSectionId: string | nu
   const sectionId = normalizeHomeCharacterTargetId(rawSectionId)
   if (!sectionId)
     return false
+  if (doc.getElementById(sectionId))
+    return true
+  if (readHomeCharacterBatchManifest(doc))
+    return false
 
   const template = doc.querySelector<HTMLTemplateElement>(STALE_TEMPLATE_SELECTOR)
   if (!template)
@@ -247,6 +252,8 @@ export function hasDeferredStaleCharacterTarget(doc: Document, rawSectionId: str
   if (!sectionId)
     return false
   if (doc.getElementById(sectionId))
+    return false
+  if (readHomeCharacterBatchManifest(doc))
     return false
 
   const template = getDeferredStaleTemplate(doc)
@@ -267,6 +274,8 @@ export function resolveDeferredStaleCharacterBatch(doc: Document, rawSectionId: 
 
   const sectionId = normalizeHomeCharacterTargetId(rawSectionId)
   if (!sectionId || doc.getElementById(sectionId))
+    return null
+  if (readHomeCharacterBatchManifest(doc))
     return null
 
   const rootTemplate = doc.querySelector<HTMLTemplateElement>(STALE_TEMPLATE_SELECTOR)

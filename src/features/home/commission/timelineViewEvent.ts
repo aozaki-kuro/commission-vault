@@ -90,6 +90,8 @@ export function hasDeferredTimelineTarget(doc: Document, rawTargetId: string | n
   const targetId = normalizeHomeTimelineTargetId(rawTargetId)
   if (!targetId || hasConnectedElementById(doc, targetId))
     return false
+  if (readHomeTimelineBatchManifest(doc))
+    return false
 
   for (const template of getBatchTemplates(doc)) {
     if (!templateContentContainsElementId(template.content, targetId))
@@ -108,6 +110,8 @@ export function resolveDeferredTimelineBatch(doc: Document, rawTargetId: string 
 
   const targetId = normalizeHomeTimelineTargetId(rawTargetId)
   if (!targetId || hasConnectedElementById(doc, targetId))
+    return null
+  if (readHomeTimelineBatchManifest(doc))
     return null
 
   for (const template of getBatchTemplates(doc)) {

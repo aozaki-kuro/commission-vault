@@ -197,7 +197,9 @@ export function useCommissionSearchModel({
   const [isIndexReady, setIsIndexReady] = useState(
     () => !deferIndexInit || !!initialQuery || !!initialUrlQuery,
   )
-  const [shouldWarmFuse, setShouldWarmFuse] = useState(() => !!initialQuery || !!initialUrlQuery)
+  const [shouldWarmFuse, setShouldWarmFuse] = useState(
+    () => !deferIndexInit || !!initialQuery || !!initialUrlQuery,
+  )
   const {
     activeBatchCount,
     activeLoaded,
@@ -231,9 +233,10 @@ export function useCommissionSearchModel({
       request: () => {
         requestActiveCharactersLoad(window, { strategy: 'all' })
       },
-      shouldRequest: !disableDomFiltering && mode === 'character' && hasQuery && !activeLoaded,
+      shouldRequest:
+        !disableDomFiltering && mode === 'character' && hasDeferredQuery && !activeLoaded,
     })
-  }, [activeLoaded, disableDomFiltering, hasQuery, mode])
+  }, [activeLoaded, disableDomFiltering, hasDeferredQuery, mode])
 
   useEffect(() => {
     syncDeferredAllLoadRequest({
@@ -244,9 +247,13 @@ export function useCommissionSearchModel({
         requestStaleCharactersLoad(window, { preserveScroll: true, strategy: 'all' })
       },
       shouldRequest:
-        !disableDomFiltering && mode === 'character' && hasQuery && staleVisible && !staleLoaded,
+        !disableDomFiltering
+        && mode === 'character'
+        && hasDeferredQuery
+        && staleVisible
+        && !staleLoaded,
     })
-  }, [disableDomFiltering, hasQuery, mode, staleLoaded, staleVisible])
+  }, [disableDomFiltering, hasDeferredQuery, mode, staleLoaded, staleVisible])
 
   useEffect(() => {
     syncDeferredAllLoadRequest({
@@ -254,9 +261,10 @@ export function useCommissionSearchModel({
       request: () => {
         requestTimelineViewLoad(window, { strategy: 'all' })
       },
-      shouldRequest: !disableDomFiltering && mode === 'timeline' && hasQuery && !timelineLoaded,
+      shouldRequest:
+        !disableDomFiltering && mode === 'timeline' && hasDeferredQuery && !timelineLoaded,
     })
-  }, [disableDomFiltering, hasQuery, mode, timelineLoaded])
+  }, [disableDomFiltering, hasDeferredQuery, mode, timelineLoaded])
 
   const index = useMemo(() => {
     if (!shouldBuildIndex)

@@ -1,6 +1,7 @@
 import {
   hasDeferredHomeCharacterTarget,
   normalizeHomeCharacterTargetId,
+  readHomeCharacterBatchManifest,
   resolveHomeCharacterTargetBatch,
 } from '#features/home/commission/homeCharacterBatchManifest'
 import { templateContentContainsElementId } from '#features/home/commission/templateContentLookup'
@@ -44,6 +45,8 @@ export function hasDeferredActiveCharacterTarget(doc: Document, rawSectionId: st
   const sectionId = normalizeHomeCharacterTargetId(rawSectionId)
   if (!sectionId || doc.getElementById(sectionId))
     return false
+  if (readHomeCharacterBatchManifest(doc))
+    return false
 
   const template = doc.querySelector<HTMLTemplateElement>(ACTIVE_TEMPLATE_SELECTOR)
   return template ? templateContentContainsElementId(template.content, sectionId) : false
@@ -60,6 +63,8 @@ export function resolveDeferredActiveCharacterBatch(doc: Document, rawSectionId:
 
   const sectionId = normalizeHomeCharacterTargetId(rawSectionId)
   if (!sectionId || doc.getElementById(sectionId))
+    return null
+  if (readHomeCharacterBatchManifest(doc))
     return null
 
   const template = doc.querySelector<HTMLTemplateElement>(ACTIVE_TEMPLATE_SELECTOR)

@@ -102,16 +102,16 @@ describe('commissionSearchDeferred', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renders the real search immediately and keeps deferIndexInit enabled', async () => {
+  it('renders the real search immediately and keeps deferIndexInit disabled', async () => {
     const { default: CommissionSearchDeferred } = await loadDeferredModule()
 
     render(<CommissionSearchDeferred />)
 
     expect(screen.getByTestId('commission-search')).toBeInTheDocument()
-    expect(screen.getByTestId('commission-search-defer-flag')).toHaveTextContent('true')
+    expect(screen.getByTestId('commission-search-defer-flag')).toHaveTextContent('false')
     expect(mockCommissionSearch).toHaveBeenCalledWith(
       expect.objectContaining({
-        deferIndexInit: true,
+        deferIndexInit: false,
       }),
     )
   })
