@@ -71,6 +71,7 @@ export interface HomeLocaleMessages {
     copySearchUrl: string
     searchUrlCopied: string
     searchUrlCopyFailed: string
+    backToTop: string
     byCharacter: string
     byDate: string
     view: string
@@ -168,6 +169,7 @@ const HOME_LOCALE_MESSAGES: Record<HomeLocale, HomeLocaleMessages> = {
       copySearchUrl: 'Copy search URL',
       searchUrlCopied: 'Search URL copied',
       searchUrlCopyFailed: 'Failed to copy search URL.',
+      backToTop: 'Back to top',
       byCharacter: 'By Character',
       byDate: 'By Date',
       view: 'View',
@@ -283,6 +285,7 @@ const HOME_LOCALE_MESSAGES: Record<HomeLocale, HomeLocaleMessages> = {
       copySearchUrl: '複製搜尋網址',
       searchUrlCopied: '已複製搜尋網址',
       searchUrlCopyFailed: '複製搜尋網址失敗。',
+      backToTop: '回到頂部',
       byCharacter: '依角色',
       byDate: '依日期',
       view: '檢視',
@@ -395,6 +398,7 @@ const HOME_LOCALE_MESSAGES: Record<HomeLocale, HomeLocaleMessages> = {
       copySearchUrl: '検索URLをコピー',
       searchUrlCopied: '検索URLをコピーしました',
       searchUrlCopyFailed: '検索URLのコピーに失敗しました。',
+      backToTop: '先頭へ戻る',
       byCharacter: 'キャラクター別',
       byDate: '日付別',
       view: '表示',

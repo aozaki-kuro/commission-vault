@@ -38,6 +38,12 @@ function renderSidebarRoot() {
           <a href="#timeline-year-2026" data-sidebar-character-link="true" data-sidebar-character-status="active" data-sidebar-title-id="timeline-title-2026">2026</a>
         </li>
       </ul>
+      <button
+        data-sidebar-back-to-top-button="true"
+        class="pointer-events-none opacity-0 translate-y-1"
+      >
+        Back to top
+      </button>
     </div>
     <h2 id="title-introduction"></h2>
     <h2 id="title-alpha"></h2>
@@ -155,6 +161,38 @@ describe('sidebarNavEnhancer', () => {
     expect(dot?.classList.contains('opacity-100')).toBe(true)
 
     cleanup()
+  })
+
+  it('reveals back-to-top button on scroll and scrolls to top when clicked', () => {
+    Object.defineProperty(window, 'scrollY', { value: 0, writable: true, configurable: true })
+    const scrollToSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    const onRestoreAbort = vi.fn()
+    window.addEventListener(HOME_SCROLL_RESTORE_ABORT_EVENT, onRestoreAbort)
+
+    const cleanup = mountSidebarNavEnhancer()
+    const backToTopButton = document.querySelector<HTMLButtonElement>(
+      '[data-sidebar-back-to-top-button="true"]',
+    )
+    expect(backToTopButton?.classList.contains('opacity-0')).toBe(true)
+    expect(backToTopButton?.classList.contains('pointer-events-none')).toBe(true)
+
+    window.scrollY = 500
+    window.dispatchEvent(new Event('scroll'))
+
+    expect(backToTopButton?.classList.contains('opacity-100')).toBe(true)
+    expect(backToTopButton?.classList.contains('pointer-events-auto')).toBe(true)
+
+    backToTopButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+    expect(onRestoreAbort).toHaveBeenCalledTimes(1)
+    expect(scrollToSpy).toHaveBeenCalledWith({
+      top: 0,
+      behavior: 'smooth',
+    })
+
+    cleanup()
+    scrollToSpy.mockRestore()
+    window.removeEventListener(HOME_SCROLL_RESTORE_ABORT_EVENT, onRestoreAbort)
   })
 
   it('requests stale loading then scrolls when stale link is clicked', () => {

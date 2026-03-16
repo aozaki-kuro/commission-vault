@@ -5,6 +5,7 @@ import { buildCharacterNavItems } from '#lib/characters/nav'
 import {
   IconChevronDown,
   IconChevronRight,
+  IconChevronUp,
   IconFlare,
   IconLayoutDashboard,
   IconZoom,
@@ -414,6 +415,39 @@ const sidebarNavLinkClass
         }
       </ul>
     </nav>
+  </div>
+
+  <div
+    class="
+      pointer-events-none fixed bottom-8 left-[calc(50%+22rem)] z-30 hidden
+      w-full max-w-[calc(12.5rem+var(--sidebar-lead-offset))]
+      lg:block
+    "
+    style={sidebarLeadOffsetStyle}
+  >
+    <div class="pl-12">
+      <button
+        type="button"
+        data-sidebar-back-to-top-button="true"
+        aria-label={controls.backToTop}
+        title={controls.backToTop}
+        class="
+          pointer-events-none inline-flex size-10 translate-y-1 items-center
+          justify-center rounded-full border border-white/20 bg-white/80
+          text-gray-500 opacity-0 shadow-[0_8px_30px_rgb(0,0,0,0.12)]
+          backdrop-blur-md transition-[opacity,transform,color,background-color]
+          duration-220 ease-out
+          hover:bg-white/90 hover:text-gray-900
+          focus-visible:ring-2 focus-visible:ring-gray-400/70
+          focus-visible:outline-hidden
+          dark:border-white/10 dark:bg-black/80 dark:text-gray-300
+          dark:hover:bg-black/90 dark:hover:text-white
+        "
+      >
+        <IconChevronUp className="size-4" stroke={2.2} />
+        <span class="sr-only">{controls.backToTop}</span>
+      </button>
+    </div>
   </div>
 </aside>
 

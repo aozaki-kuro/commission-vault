@@ -63,11 +63,13 @@ const NAV_PANEL_SELECTOR = '[data-sidebar-nav-panel]'
 const VIEW_MODE_TOGGLE_SELECTOR = '[data-sidebar-view-mode-toggle="true"]'
 const STALE_DETAILS_SELECTOR = '[data-sidebar-stale-details="true"]'
 const STALE_LOAD_TRIGGER_SELECTOR = '[data-load-stale-characters="true"]'
+const BACK_TO_TOP_BUTTON_SELECTOR = '[data-sidebar-back-to-top-button="true"]'
 
 const ACTIVE_DOT_CLASSES = ['scale-100', 'opacity-100'] as const
 const HIDDEN_DOT_CLASSES = ['scale-0', 'opacity-0'] as const
 const SIDEBAR_DOT_SELECTOR = '[data-sidebar-dot-for]'
 const HASH_PREFIX_PATTERN = /^#/
+const BACK_TO_TOP_VISIBILITY_SCROLL_THRESHOLD = 360
 
 interface SidebarNavEnhancerDeps {
   trackEvent: typeof trackRybbitEvent
@@ -188,15 +190,18 @@ export function mountSidebarNavEnhancer({
   const navPanels = [...navRoot.querySelectorAll<HTMLElement>(NAV_PANEL_SELECTOR)]
   const allSidebarDots = [...navRoot.querySelectorAll<HTMLElement>(SIDEBAR_DOT_SELECTOR)]
   const staleDetails = navRoot.querySelector<HTMLDetailsElement>(STALE_DETAILS_SELECTOR)
+  const backToTopButton = navRoot.querySelector<HTMLButtonElement>(BACK_TO_TOP_BUTTON_SELECTOR)
 
   let clearHashRafId: number | null = null
   let syncLinksRafId: number | null = null
   let syncDotsRafId: number | null = null
+  let syncBackToTopRafId: number | null = null
   let activePanelSnapshot: SidebarActivePanelSnapshot | null = null
   let activeDots: HTMLElement[] = []
   const panelDotIndexCache = new WeakMap<HTMLElement, Map<string, HTMLElement[]>>()
   let dotsInitialized = false
   let hasTrackedSidebarSearchUsage = false
+  let isBackToTopVisible = false
   let disposed = false
 
   const clearActivePanelSnapshot = () => {
@@ -395,6 +400,41 @@ export function mountSidebarNavEnhancer({
       run: syncActiveDots,
       setRafId: (nextRafId) => {
         syncDotsRafId = nextRafId
+      },
+    })
+  }
+
+  const setBackToTopButtonVisibility = (visible: boolean) => {
+    if (!backToTopButton)
+      return
+
+    backToTopButton.classList.toggle('pointer-events-auto', visible)
+    backToTopButton.classList.toggle('opacity-100', visible)
+    backToTopButton.classList.toggle('translate-y-0', visible)
+    backToTopButton.classList.toggle('pointer-events-none', !visible)
+    backToTopButton.classList.toggle('opacity-0', !visible)
+    backToTopButton.classList.toggle('translate-y-1', !visible)
+  }
+
+  const syncBackToTopVisibility = () => {
+    syncBackToTopRafId = null
+    if (!backToTopButton)
+      return
+
+    const nextVisible = win.scrollY > BACK_TO_TOP_VISIBILITY_SCROLL_THRESHOLD
+    if (nextVisible === isBackToTopVisible)
+      return
+
+    isBackToTopVisible = nextVisible
+    setBackToTopButtonVisibility(nextVisible)
+  }
+
+  const scheduleSyncBackToTopVisibility = () => {
+    scheduleAnimationFrame({
+      rafId: syncBackToTopRafId,
+      run: syncBackToTopVisibility,
+      setRafId: (nextRafId) => {
+        syncBackToTopRafId = nextRafId
       },
     })
   }
@@ -685,6 +725,15 @@ export function mountSidebarNavEnhancer({
     syncAll()
   }
 
+  const onBackToTopClick = (event: MouseEvent) => {
+    event.preventDefault()
+    dispatchHomeScrollRestoreAbort(win)
+    win.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    })
+  }
+
   controlsRoot.addEventListener('click', onSidebarClick)
   if (controlsRoot !== navRoot) {
     navRoot.addEventListener('click', onSidebarClick)
@@ -695,6 +744,12 @@ export function mountSidebarNavEnhancer({
   win.addEventListener('scroll', scheduleSyncActiveDots, { passive: true })
   win.addEventListener('resize', scheduleSyncActiveDots)
   win.addEventListener('scroll', scheduleClearHashIfTargetIsStale, { passive: true })
+  if (backToTopButton) {
+    backToTopButton.addEventListener('click', onBackToTopClick)
+    win.addEventListener('scroll', scheduleSyncBackToTopVisibility, { passive: true })
+    setBackToTopButtonVisibility(false)
+    syncBackToTopVisibility()
+  }
   win.addEventListener(SIDEBAR_SEARCH_STATE_EVENT, onSidebarSearchState)
   win.addEventListener(STALE_CHARACTERS_STATE_CHANGE_EVENT, onStaleStateChanged)
   win.addEventListener(COMMISSION_VIEW_MODE_CHANGE_EVENT, onViewModeMaybeChanged)
@@ -718,6 +773,10 @@ export function mountSidebarNavEnhancer({
     win.removeEventListener('scroll', scheduleSyncActiveDots)
     win.removeEventListener('resize', scheduleSyncActiveDots)
     win.removeEventListener('scroll', scheduleClearHashIfTargetIsStale)
+    if (backToTopButton) {
+      backToTopButton.removeEventListener('click', onBackToTopClick)
+      win.removeEventListener('scroll', scheduleSyncBackToTopVisibility)
+    }
     win.removeEventListener(SIDEBAR_SEARCH_STATE_EVENT, onSidebarSearchState)
     win.removeEventListener(STALE_CHARACTERS_STATE_CHANGE_EVENT, onStaleStateChanged)
     win.removeEventListener(COMMISSION_VIEW_MODE_CHANGE_EVENT, onViewModeMaybeChanged)
@@ -734,6 +793,10 @@ export function mountSidebarNavEnhancer({
     if (syncDotsRafId !== null) {
       win.cancelAnimationFrame(syncDotsRafId)
       syncDotsRafId = null
+    }
+    if (syncBackToTopRafId !== null) {
+      win.cancelAnimationFrame(syncBackToTopRafId)
+      syncBackToTopRafId = null
     }
   }
 }
