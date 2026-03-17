@@ -129,15 +129,21 @@ function resolveStemByFallback(fileName: string, lookup: SourceImageLookup): str
   return creatorCandidates.length === 1 ? creatorCandidates[0] : null
 }
 
-export function resolveSourceImageStem(fileName: string, lookup: SourceImageLookup): string | null {
-  if (lookup.byStem.has(fileName)) {
+const sourceImageLookup = buildSourceImageLookup(buildSourceImageRecords())
+
+export function resolveSourceImageStem(fileName: string, lookup?: SourceImageLookup): string | null {
+  const resolvedLookup = lookup ?? sourceImageLookup
+
+  if (resolvedLookup.byStem.has(fileName)) {
     return fileName
   }
 
-  return resolveStemByFallback(fileName, lookup)
+  return resolveStemByFallback(fileName, resolvedLookup)
 }
 
-const sourceImageLookup = buildSourceImageLookup(buildSourceImageRecords())
+export function listSourceImageStems(lookup: SourceImageLookup = sourceImageLookup) {
+  return [...lookup.byStem.keys()].toSorted((a, b) => a.localeCompare(b))
+}
 
 export function resolveSourceImageByCommissionFileName(fileName: string, lookup: SourceImageLookup = sourceImageLookup): ImageMetadata | null {
   const resolvedStem = resolveSourceImageStem(fileName, lookup)
