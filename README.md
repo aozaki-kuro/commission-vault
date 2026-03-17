@@ -13,6 +13,17 @@ Personal use only
 - `bun run preview` — preview static output locally.
 - Admin page includes a dev-only floating `Refresh Assets Cache` button to force a fresh admin bootstrap fetch.
 
+Monorepo migration is in progress:
+
+- Root app (`src/*`) is still the active runtime source of truth.
+- New scaffolds are available at `apps/admin`, `apps/admin-worker`, and `apps/web`.
+- New workspace scripts:
+  - `bun run dev:web`
+  - `bun run dev:admin`
+  - `bun run dev:worker`
+  - `bun run build:web`
+  - `bun run build:admin`
+
 ## Tests
 
 - `bun run test` — run the full Vitest suite.

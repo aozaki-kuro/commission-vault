@@ -51,6 +51,36 @@
         "wrangler": "^4.74.0",
       },
     },
+    "apps/admin": {
+      "name": "@commission-index/admin",
+      "version": "0.0.0",
+      "dependencies": {
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
+      },
+      "devDependencies": {
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
+        "typescript": "^5.9.3",
+        "vite": "^7.1.12",
+      },
+    },
+    "apps/admin-worker": {
+      "name": "@commission-index/admin-worker",
+      "version": "0.0.0",
+    },
+    "packages/cloudflare": {
+      "name": "@commission-index/cloudflare",
+      "version": "0.0.0",
+    },
+    "packages/domain": {
+      "name": "@commission-index/domain",
+      "version": "0.0.0",
+    },
+    "packages/ui": {
+      "name": "@commission-index/ui",
+      "version": "0.0.0",
+    },
   },
   "packages": {
     "@adobe/css-tools": ["@adobe/css-tools@4.4.4", "", {}, "sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg=="],
@@ -146,6 +176,16 @@
     "@cloudflare/workerd-linux-arm64": ["@cloudflare/workerd-linux-arm64@1.20260312.1", "", { "os": "linux", "cpu": "arm64" }, "sha512-kNauZhL569Iy94t844OMwa1zP6zKFiL3xiJ4tGLS+TFTEfZ3pZsRH6lWWOtkXkjTyCmBEOog0HSEKjIV4oAffw=="],
 
     "@cloudflare/workerd-windows-64": ["@cloudflare/workerd-windows-64@1.20260312.1", "", { "os": "win32", "cpu": "x64" }, "sha512-5dBrlSK+nMsZy5bYQpj8t9iiQNvCRlkm9GGvswJa9vVU/1BNO4BhJMlqOLWT24EmFyApZ+kaBiPJMV8847NDTg=="],
+
+    "@commission-index/admin": ["@commission-index/admin@workspace:apps/admin"],
+
+    "@commission-index/admin-worker": ["@commission-index/admin-worker@workspace:apps/admin-worker"],
+
+    "@commission-index/cloudflare": ["@commission-index/cloudflare@workspace:packages/cloudflare"],
+
+    "@commission-index/domain": ["@commission-index/domain@workspace:packages/domain"],
+
+    "@commission-index/ui": ["@commission-index/ui@workspace:packages/ui"],
 
     "@cspotcode/source-map-support": ["@cspotcode/source-map-support@0.8.1", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.9" } }, "sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw=="],
 

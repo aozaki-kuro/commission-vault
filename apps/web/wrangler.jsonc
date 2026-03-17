@@ -1,0 +1,18 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "commission-index-web",
+  "compatibility_date": "2026-03-17",
+  "assets": {
+    "directory": "../../dist",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  },
+  "preview_urls": false,
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "crystallize.cc",
+      "custom_domain": true
+    }
+  ]
+}

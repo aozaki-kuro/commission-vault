@@ -1,0 +1,23 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "commission-index-admin",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-03-17",
+  "assets": {
+    "directory": "../admin/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "preview_urls": false,
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "admin.crystallize.cc",
+      "custom_domain": true
+    }
+  ],
+  // D1/R2 bindings are intentionally added in Stage 10 during real cloud resource binding.
+  "vars": {
+    "ADMIN_REALM": "admin.crystallize.cc"
+  }
+}

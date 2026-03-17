@@ -14,6 +14,10 @@ This repository contains an Astro 6 static site with React 19 islands, written i
 - **Path aliases:** Prefer `#layouts/*`, `#features/*`, `#components/*`, `#images/*`, `#data/*`, `#lib/*`, `#styles/*`, `#config/*`, and `#admin/*` (`#admin/actions` points to the HTTP client action wrappers).
 - **Data source:** Commission content lives in `data/commissions.db`; access it through `data/sqlite.ts` (Bun uses `bun:sqlite`, Node falls back to `better-sqlite3`).
   - Admin-managed search configuration tables include `character_aliases`, `creator_aliases`, `keyword_aliases`, and `home_featured_search_keywords`.
+- **Monorepo migration scaffold (in progress):**
+  - New app scaffolds now exist under `apps/admin`, `apps/admin-worker`, and `apps/web`.
+  - Shared package scaffolds now exist under `packages/domain`, `packages/ui`, `packages/cloudflare`, and `packages/config`.
+  - Until migration cutover is complete, the runtime source of truth remains the existing root Astro app and `src/*` codepaths.
 
 ## Home Rendering Architecture
 
@@ -171,6 +175,7 @@ Additional guidance:
 
 ## Change Log
 
+- Added initial monorepo migration scaffolds under `apps/*` and `packages/*`, including standalone admin/frontend and admin worker placeholders with dedicated `wrangler.jsonc` files.
 - Tightened admin write gating to `NODE_ENV=development` only, moved the shared runtime check to `src/lib/admin/environment.ts`, and added admin-side data health / duplicate-entry warnings for safer maintenance.
 - Unified the 404 implementation on the Astro route and removed the redundant static `public/404.html` fallback that was shadowing `src/pages/404.astro` during build.
 - Split home client boot into critical immediate mounts (`view sync` + deferred-content loaders + scroll restore) and idle-mounted non-critical enhancers (`sidebar/hamburger/language/tabs/unpublished-interest`) inside `src/features/home/homePageClient.ts`.

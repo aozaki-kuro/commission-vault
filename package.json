@@ -4,12 +4,21 @@
   "version": "1.3.0",
   "private": true,
   "author": "Crystallize",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "build": "astro build",
+    "build:admin": "bun run --cwd apps/admin build",
+    "build:web": "bun run build",
     "check": "astro check .",
     "clean": "rm -rf .astro dist node_modules .wrangler && bun i",
     "deploy": "bun run build && wrangler deploy",
     "dev": "NODE_ENV=development astro dev",
+    "dev:admin": "bun run --cwd apps/admin dev",
+    "dev:web": "bun run dev",
+    "dev:worker": "bun run --cwd apps/admin-worker dev",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "prepare": "prek install",
