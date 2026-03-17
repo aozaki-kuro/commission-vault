@@ -5,7 +5,7 @@ import { createAstroStyleLogger } from '../src/lib/pipeline/astroLogger'
 import { handleAdminApiRequest } from './adminApiHandler'
 import { toWebRequest, writeNodeResponse } from './httpBridge'
 
-const START_PORT = Number(process.env.ADMIN_API_PORT ?? 8788)
+const START_PORT = Number(process.env.ADMIN_API_PORT ?? 8787)
 const PORT_FILE_PATH = process.env.ADMIN_API_PORT_FILE
 const MAX_PORT_ATTEMPTS = 200
 const logger = createAstroStyleLogger('admin-api')

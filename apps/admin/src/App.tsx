@@ -16,7 +16,7 @@ function getPublicSiteUrl() {
 
   const { hostname, protocol } = window.location
   if (hostname === '127.0.0.1' || hostname === 'localhost') {
-    return 'http://127.0.0.1:4321'
+    return 'http://localhost:4321'
   }
 
   if (hostname === 'admin.crystallize.cc') {

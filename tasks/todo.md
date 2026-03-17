@@ -178,3 +178,15 @@
 - [x] 已通过 HTTP `POST /api/admin/characters` + 远程 D1 读回 + HTTP `DELETE /api/admin/characters/:id` 完成一次真实远程写入闭环验证。
 - [x] `apps/admin-worker` 的 local-only bootstrap/check/sync 脚本入口已删除，`.wrangler/state` 本地持久态已清除。
 - [x] 已验证：`bunx vitest run -c vitest.config.ts apps/admin-worker/src/adminApi.test.ts`、`bun run --cwd apps/admin-worker typecheck`、`bun run --cwd apps/admin typecheck`、`bun run build:admin`、`bun run lint`。
+
+## 本轮执行切片（2026-03-18 本地联调地址对齐）
+
+- [x] 把 standalone admin 在本机环境下回跳公开站的地址统一为 `http://localhost:4321`，避免 `localhost` / `127.0.0.1` 混用造成的 origin 漂移。
+- [x] 把 legacy admin API dev server 默认起始端口收口回 `8787`，与当前 standalone admin / worker 联调约定保持一致。
+- [x] 跑通本轮针对性验证并把结果补到 Review。
+
+## Review（2026-03-18 本地联调地址对齐）
+
+- [x] `bun run lint` 通过。
+- [x] `bun run build:admin` 通过。
+- [x] `bun run build` 通过。
