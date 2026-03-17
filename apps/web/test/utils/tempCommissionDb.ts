@@ -4,7 +4,8 @@ import path from 'node:path'
 import process from 'node:process'
 import { afterEach, vi } from 'vitest'
 
-const projectRoot = process.cwd()
+const appRoot = path.resolve(import.meta.dirname, '../..')
+const projectRoot = appRoot
 const tempDirs: string[] = []
 
 export function setupTempCommissionDb(prefix: string) {
@@ -14,7 +15,7 @@ export function setupTempCommissionDb(prefix: string) {
   const tempDataDir = path.join(tempDir, 'data')
   fs.mkdirSync(tempDataDir, { recursive: true })
   fs.copyFileSync(
-    path.join(projectRoot, 'data', 'commissions.db'),
+    path.join(appRoot, 'data', 'commissions.db'),
     path.join(tempDataDir, 'commissions.db'),
   )
 

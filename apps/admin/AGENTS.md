@@ -22,6 +22,9 @@ This directory contains the standalone admin frontend app (`Vite + React`).
 - `src/pages/AdminSuggestionPage.tsx`: standalone suggestion route that loads and saves featured keywords through the worker bridge.
 - `src/pages/AdminPlaceholderPage.tsx`: per-route placeholder panels until the real pages are ported.
 - `src/styles/globals.css`: migrated global Tailwind/base styles from the legacy admin shell.
+- `test/visual/helpers.ts`: shared Playwright helpers for stable admin screenshots and project gating.
+- `test/visual/admin-legacy-reference.spec.ts`: legacy `/admin/*` screenshot source-of-truth suite that captures reference baselines from `apps/web`.
+- `test/visual/admin-suggestion.spec.ts`: standalone admin Playwright visual regression for the suggestion page.
 - `src/vite-env.d.ts`: client env typing for `ADMIN_API_BASE_URL`.
 - `vite.config.ts`: Vite config with Tailwind v4 integration.
 
@@ -31,6 +34,7 @@ This directory contains the standalone admin frontend app (`Vite + React`).
 - Reuse existing admin React components and interaction behavior without restyling.
 - Talk only to the admin worker API via `ADMIN_API_BASE_URL`.
 - Keep overview and suggestion on the worker-backed data path; new route migrations should follow the same API boundary instead of reading legacy app internals directly.
+- Use `admin-legacy` Playwright baselines as the migration reference until each standalone route fully matches legacy output.
 
 ## Guardrails
 

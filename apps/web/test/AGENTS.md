@@ -6,8 +6,13 @@ test/
 
 - `setup.tsx`: Vitest DOM/global setup shared by React unit tests.
 - `utils/tempCommissionDb.ts`: temporary SQLite fixture helper for admin/data tests.
-- `visual/icon-regression.spec.ts`: Playwright visual regression suite for home/admin high-risk UI shells.
-- `visual/icon-regression.spec.ts-snapshots/*`: committed baseline screenshots; update only for intentional visual changes.
+- `visual/icon-regression.spec.ts`: Playwright visual regression suite for home high-risk UI shells.
+
+Repo root:
+
+- `vitest.config.ts`: workspace-level Vitest entry that includes `apps/*` and `packages/*` tests while reusing this directory's setup helper.
+- `playwright.config.ts`: workspace-level Playwright entry for visual regression, with runtime outputs under root `test-results/` and `playwright-report/`.
+- `test/visual/apps/web/icon-regression.spec.ts-snapshots/*`: committed web Playwright baseline screenshots; update only for intentional visual changes.
 
 ## Rules
 

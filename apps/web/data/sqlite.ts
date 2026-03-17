@@ -1,9 +1,21 @@
+import fs from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
 
 const require = createRequire(import.meta.url)
-const dbPath = path.join(process.cwd(), 'data', 'commissions.db')
+
+function resolveDatabasePath() {
+  const cwdDatabasePath = path.join(process.cwd(), 'data', 'commissions.db')
+  if (fs.existsSync(cwdDatabasePath))
+    return cwdDatabasePath
+
+  const workspaceDatabasePath = path.join(process.cwd(), 'apps', 'web', 'data', 'commissions.db')
+  if (fs.existsSync(workspaceDatabasePath))
+    return workspaceDatabasePath
+
+  return cwdDatabasePath
+}
 
 type QueryParams = ReadonlyArray<unknown>
 
@@ -43,6 +55,8 @@ type BetterSqlite3Constructor = new (
 let cachedDatabaseHandle: DatabaseHandle | null = null
 
 function openDatabase(): DatabaseHandle {
+  const dbPath = resolveDatabasePath()
+
   if (process.versions.bun) {
     const { Database } = require('bun:sqlite') as BunSqliteModule
     const db = new Database(dbPath, { readonly: true })

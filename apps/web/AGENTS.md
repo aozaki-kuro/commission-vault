@@ -5,7 +5,7 @@
 ## Tree
 
 - `astro.config.ts`: Astro app config and dev integrations.
-- `package.json`: web app scripts (`dev/build/check/test/visual/deploy`).
+- `package.json`: web app scripts (`dev/build/check/deploy`) plus wrappers that delegate shared test commands back to the repo root.
 - `tsconfig.json`: web-local alias and TypeScript config.
 - `wrangler.jsonc`: public site deployment config for `crystallize.cc`.
 - `src/`: Astro pages, islands, i18n, home/admin-dev UI logic.
@@ -13,7 +13,7 @@
 - `server/`: Astro dev integrations and admin API handler bridge.
 - `data/`: SQLite data source and data access modules.
 - `public/`: static assets and redirects/headers.
-- `test/`: Vitest and Playwright test suites.
+- `test/`: web-owned Vitest setup/helpers and Playwright spec files; shared test config, visual baselines, and generated results now live at the repo root.
 
 ## Responsibilities
 

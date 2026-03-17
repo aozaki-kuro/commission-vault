@@ -6,6 +6,7 @@ This repository contains an Astro 6 static site with React 19 islands, written i
 
 - **Runtime & package manager:** Node 24 via [mise](https://mise.jdx.dev) and `bun` for all commands.
 - **Framework:** Astro + Tailwind CSS + selective React islands (`@astrojs/react`).
+- **Repo-level testing:** `vitest.config.ts` and `playwright.config.ts` live at the repository root so `bun run test*` exercises the workspace from one entrypoint; keep app-owned test suites under each workspace, keep committed Playwright baselines under root `test/visual/apps/<workspace>/`, and keep generated outputs under root `coverage/`, `test-results/`, and `playwright-report/`.
 - **Astro 6 guardrails:**
   - Keep `i18n.routing.redirectToDefaultLocale` explicit whenever `/` is a real page and must not silently inherit future default changes.
   - Keep `apps/web/src/content.config.ts` present even when empty. It exists to satisfy Astro's content bootstrap and suppress the dev-only `Content config not loaded` warning; do not add collections unless the project actually adopts them.
@@ -175,6 +176,7 @@ Additional guidance:
 
 ## Change Log
 
+- Moved Vitest and Playwright configuration to repository-root entrypoints, kept app-owned suites under `apps/*/test`, moved committed Playwright baselines to root `test/visual/apps/*`, routed generated test outputs to root directories, and started downshifting web runtime/build dependencies out of the root workspace manifest.
 - Migrated the standalone `suggestion` route in `apps/admin`, added worker-backed featured-keyword save/load flows, and extended the admin worker legacy bridge to proxy suggestion writes during the migration window.
 - Bridged standalone admin overview data through `apps/admin-worker`, added local worker CORS/dev-auth handling for Vite-to-worker requests, and switched `apps/admin` overview to live worker-backed counts/latest entries.
 - Moved timeline grouping and year-navigation helpers into `packages/domain`, leaving `apps/web` timeline modules as bridge exports.

@@ -153,16 +153,3 @@ test.describe('home mobile floating menus', () => {
     await expectUnionToMatchSnapshot(page, 'mobile-hamburger-open.png', [toggle, panel])
   })
 })
-
-test.describe('admin suggestion dashboard', () => {
-  test('featured keyword editor stays visually stable', async ({ page }) => {
-    await page.goto('/admin/suggestion')
-    await page.locator('form').waitFor()
-    await prepareStablePage(page)
-
-    await expect(page.locator('form')).toHaveScreenshot('admin-suggestion-dashboard.png', {
-      animations: 'disabled',
-      caret: 'hide',
-    })
-  })
-})
