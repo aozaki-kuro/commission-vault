@@ -10,10 +10,18 @@ export interface Env {
   ASSETS: AssetFetcher
   DB?: D1DatabaseLike
   IMAGES?: R2BucketLike
+  LEGACY_ADMIN_API_BASE_URL?: string
   ADMIN_USERNAME?: string
   ADMIN_PASSWORD?: string
   ADMIN_REALM?: string
 }
+
+const LEGACY_READ_ENDPOINTS = new Set([
+  '/api/admin/bootstrap',
+  '/api/admin/aliases/bootstrap',
+  '/api/admin/suggestion',
+])
+const TRAILING_SLASH_PATTERN = /\/+$/
 
 function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -35,12 +43,87 @@ function unauthorized(realm: string) {
   })
 }
 
+function noContent() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Cache-Control': 'no-store',
+    },
+  })
+}
+
+function isLocalHostname(value: string | null) {
+  if (!value) {
+    return false
+  }
+
+  const hostname = value.toLowerCase().split(':')[0] ?? ''
+
+  return hostname === '127.0.0.1'
+    || hostname === 'localhost'
+    || hostname.endsWith('.localhost')
+}
+
+function isLocalDevelopmentRequest(request: Request) {
+  const { hostname, protocol } = new URL(request.url)
+
+  return protocol === 'http:'
+    || isLocalHostname(hostname)
+    || isLocalHostname(request.headers.get('host'))
+    || isLocalHostname(request.headers.get('x-forwarded-host'))
+}
+
+function getAllowedCorsOrigin(request: Request) {
+  const origin = request.headers.get('origin')
+  if (!origin) {
+    return null
+  }
+
+  try {
+    const originUrl = new URL(origin)
+    const requestUrl = new URL(request.url)
+
+    if (originUrl.origin === requestUrl.origin) {
+      return originUrl.origin
+    }
+
+    if (isLocalHostname(originUrl.hostname)) {
+      return originUrl.origin
+    }
+  }
+  catch {
+    return null
+  }
+
+  return null
+}
+
+function withCorsHeaders(request: Request, response: Response) {
+  const allowedOrigin = getAllowedCorsOrigin(request)
+  if (!allowedOrigin) {
+    return response
+  }
+
+  const headers = new Headers(response.headers)
+  const requestedHeaders = request.headers.get('access-control-request-headers')
+
+  headers.set('Access-Control-Allow-Origin', allowedOrigin)
+  headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
+  headers.set('Access-Control-Allow-Headers', requestedHeaders ?? 'Authorization, Content-Type')
+  headers.append('Vary', 'Origin')
+
+  return new Response(response.body, {
+    status: response.status,
+    headers,
+  })
+}
+
 function isAuthorized(request: Request, env: Env) {
   const expectedUser = env.ADMIN_USERNAME ?? ''
   const expectedPassword = env.ADMIN_PASSWORD ?? ''
 
   if (!expectedUser || !expectedPassword) {
-    return false
+    return isLocalDevelopmentRequest(request)
   }
 
   const header = request.headers.get('authorization')
@@ -68,7 +151,59 @@ function isAuthorized(request: Request, env: Env) {
   return username === expectedUser && password === expectedPassword
 }
 
-async function handleApi(request: Request) {
+function getLegacyAdminUrl(request: Request, env: Env) {
+  const baseUrl = env.LEGACY_ADMIN_API_BASE_URL?.trim()
+  if (!baseUrl) {
+    return null
+  }
+
+  const requestUrl = new URL(request.url)
+  return new URL(`${requestUrl.pathname}${requestUrl.search}`, `${baseUrl.replace(TRAILING_SLASH_PATTERN, '')}/`)
+}
+
+function getProxyRequestHeaders(request: Request) {
+  const headers = new Headers()
+  const accept = request.headers.get('accept')
+
+  if (accept) {
+    headers.set('accept', accept)
+  }
+
+  return headers
+}
+
+async function proxyLegacyAdminRequest(request: Request, env: Env) {
+  const targetUrl = getLegacyAdminUrl(request, env)
+  if (!targetUrl) {
+    return json({
+      status: 'error',
+      message: 'Legacy admin API bridge is not configured.',
+    }, 503)
+  }
+
+  try {
+    const response = await fetch(targetUrl, {
+      method: request.method,
+      headers: getProxyRequestHeaders(request),
+      redirect: 'manual',
+    })
+    const headers = new Headers(response.headers)
+    headers.set('Cache-Control', 'no-store')
+    return new Response(response.body, {
+      status: response.status,
+      headers,
+    })
+  }
+  catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to reach legacy admin API.'
+    return json({
+      status: 'error',
+      message,
+    }, 502)
+  }
+}
+
+async function handleApi(request: Request, env: Env) {
   const { pathname } = new URL(request.url)
 
   if (request.method === 'GET' && pathname === '/api/admin/health') {
@@ -76,6 +211,10 @@ async function handleApi(request: Request) {
       status: 'ok',
       message: 'admin worker scaffold is running',
     })
+  }
+
+  if (request.method === 'GET' && LEGACY_READ_ENDPOINTS.has(pathname)) {
+    return proxyLegacyAdminRequest(request, env)
   }
 
   return json({
@@ -87,14 +226,18 @@ async function handleApi(request: Request) {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const realm = env.ADMIN_REALM ?? 'admin.crystallize.cc'
+    const { pathname } = new URL(request.url)
 
-    if (!isAuthorized(request, env)) {
-      return unauthorized(realm)
+    if (request.method === 'OPTIONS' && pathname.startsWith('/api/admin/')) {
+      return withCorsHeaders(request, noContent())
     }
 
-    const { pathname } = new URL(request.url)
+    if (!isAuthorized(request, env)) {
+      return withCorsHeaders(request, unauthorized(realm))
+    }
+
     if (pathname.startsWith('/api/admin/')) {
-      return handleApi(request)
+      return withCorsHeaders(request, await handleApi(request, env))
     }
 
     return env.ASSETS.fetch(request)

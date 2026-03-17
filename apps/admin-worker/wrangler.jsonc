@@ -18,6 +18,7 @@
   ],
   // D1/R2 bindings are intentionally added in Stage 10 during real cloud resource binding.
   "vars": {
-    "ADMIN_REALM": "admin.crystallize.cc"
+    "ADMIN_REALM": "admin.crystallize.cc",
+    "LEGACY_ADMIN_API_BASE_URL": "http://localhost:4321"
   }
 }

@@ -1,0 +1,73 @@
+@import 'tailwindcss';
+
+@font-face {
+  font-family: 'Berkeley Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../../../web/public/fonts/BerkeleyMono-Regular.woff2') format('woff2');
+}
+
+@layer base {
+  :root {
+    --font-sans: var(--font-ibm-plex-sans, 'IBM Plex Sans'), sans-serif;
+    --font-mono:
+      'Berkeley Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+      monospace;
+    color-scheme: light dark;
+    background-color: #fff;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      background-color: #171717;
+    }
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    background-color: inherit;
+  }
+
+  body {
+    font-family: var(--font-sans);
+  }
+
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  h1 {
+    margin-bottom: 0.4em;
+    @apply text-[1.6em] font-bold text-gray-800 dark:text-gray-100;
+  }
+
+  h2 {
+    font: bold;
+    @apply text-[1.4em] font-bold text-gray-800 md:text-[1.5em] dark:text-gray-100;
+  }
+
+  p,
+  li {
+    @apply text-gray-800 dark:text-gray-300;
+  }
+
+  a,
+  [data-link-style='true'] {
+    text-underline-position: from-font;
+    text-decoration-skip-ink: all;
+    @apply font-medium underline decoration-gray-400 decoration-1 underline-offset-1 transition-opacity hover:opacity-70 dark:text-white dark:decoration-gray-600;
+  }
+
+  @media screen and (min-device-pixel-ratio: 1.5), screen and (min-resolution: 1.5dppx) {
+    body {
+      @apply antialiased;
+    }
+  }
+}

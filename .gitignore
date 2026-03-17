@@ -56,6 +56,7 @@ apps/web/data/commissions.db-shm
 
 # wrangler
 /.wrangler/
+**/.wrangler/
 
 apps/web/public/rss.xml
 apps/web/public/search/home-search-entries.json

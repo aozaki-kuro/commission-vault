@@ -1,11 +1,20 @@
 import antfu from '@antfu/eslint-config'
 import betterTailwindcss from 'eslint-plugin-better-tailwindcss'
 
+const adminTailwindEntryPoint = 'apps/admin/src/styles/globals.css'
+const adminTailwindRules = Object.fromEntries(
+  Object.entries(betterTailwindcss.configs.recommended.rules).map(([ruleName, ruleConfig]) => {
+    const severity = Array.isArray(ruleConfig) ? ruleConfig[0] : ruleConfig
+    return [ruleName, [severity, { entryPoint: adminTailwindEntryPoint }]]
+  }),
+)
+
 const eslintConfig = antfu({
   astro: true,
   typescript: true,
   test: true,
   react: true,
+  ignores: ['**/.wrangler/**'],
   formatters: {
     /**
      * Format CSS, LESS, SCSS files, also the `<style>` blocks in Vue
@@ -33,6 +42,11 @@ eslintConfig.append({
   rules: {
     ...betterTailwindcss.configs.recommended.rules,
   },
+})
+
+eslintConfig.append({
+  files: ['apps/admin/src/**/*.{ts,tsx}'],
+  rules: adminTailwindRules,
 })
 
 export default eslintConfig
