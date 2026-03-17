@@ -175,6 +175,7 @@ Additional guidance:
 
 ## Change Log
 
+- Extracted shared `character` / `commission` / alias / suggestion type contracts into `packages/domain` and switched `apps/web` to consume the package export surface.
 - Added a workspace-local React server renderer shim in `apps/web/src/config/astroReactServerShim.ts` so Astro prerender/build works after moving the app into `apps/web`.
 - Moved the Astro runtime from repository root into `apps/web` (including `src`, `server`, `data`, `public`, and `test`) and switched root scripts to delegate to the new workspace app.
 - Added initial monorepo migration scaffolds under `apps/*` and `packages/*`, including standalone admin/frontend and admin worker placeholders with dedicated `wrangler.jsonc` files.

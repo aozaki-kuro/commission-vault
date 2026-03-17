@@ -4,7 +4,7 @@
 
 ## Tree
 
-- `domain`: shared entities, value objects, and business helpers.
+- `domain`: shared content/admin/search contracts and pure domain helpers.
 - `ui`: shared React UI primitives that do not alter visual contracts.
 - `cloudflare`: worker runtime types and helpers for D1/R2/auth.
 - `config`: shared configuration presets.

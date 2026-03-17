@@ -72,6 +72,9 @@
     "apps/web": {
       "name": "@commission-index/web",
       "version": "0.0.0",
+      "dependencies": {
+        "@commission-index/domain": "workspace:*",
+      },
     },
     "packages/cloudflare": {
       "name": "@commission-index/cloudflare",
@@ -80,6 +83,9 @@
     "packages/domain": {
       "name": "@commission-index/domain",
       "version": "0.0.0",
+      "dependencies": {
+        "fuse.js": "^7.1.0",
+      },
     },
     "packages/ui": {
       "name": "@commission-index/ui",

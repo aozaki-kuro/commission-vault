@@ -3,6 +3,9 @@
   "type": "module",
   "version": "0.0.0",
   "private": true,
+  "dependencies": {
+    "@commission-index/domain": "workspace:*"
+  },
   "scripts": {
     "dev": "NODE_ENV=development astro dev",
     "build": "astro build",

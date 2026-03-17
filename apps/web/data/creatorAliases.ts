@@ -1,11 +1,7 @@
 import process from 'node:process'
+import type { CreatorAliasEntry } from '@commission-index/domain'
 import { normalizeCreatorName, parseAliasesJson } from '#lib/creatorAliases/shared'
 import { queryAll } from './sqlite'
-
-interface CreatorAliasRow {
-  creatorName: string
-  aliases: string[]
-}
 
 interface RawCreatorAliasRow {
   creatorName: string
@@ -14,7 +10,7 @@ interface RawCreatorAliasRow {
 
 const isDevelopment = process.env.NODE_ENV === 'development'
 let cachedHasCreatorAliasesTable: boolean | null = null
-let cachedCreatorAliases: CreatorAliasRow[] | null = null
+let cachedCreatorAliases: CreatorAliasEntry[] | null = null
 
 function hasCreatorAliasesTable(): boolean {
   if (!isDevelopment && cachedHasCreatorAliasesTable !== null) {
@@ -34,7 +30,7 @@ function hasCreatorAliasesTable(): boolean {
   return exists
 }
 
-export function getCreatorAliases(): CreatorAliasRow[] {
+export function getCreatorAliases(): CreatorAliasEntry[] {
   if (!isDevelopment && cachedCreatorAliases) {
     return cachedCreatorAliases
   }

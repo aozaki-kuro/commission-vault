@@ -1,4 +1,5 @@
 import process from 'node:process'
+import type { CharacterAliasEntry } from '@commission-index/domain'
 import {
   normalizeCharacterAliases,
   normalizeCharacterAliasKey,
@@ -7,11 +8,6 @@ import {
 } from '#lib/characterAliases/shared'
 import { queryAll } from './sqlite'
 
-interface CharacterAliasRow {
-  characterName: string
-  aliases: string[]
-}
-
 interface RawCharacterAliasRow {
   characterName: string
   aliasesJson: string
@@ -19,7 +15,7 @@ interface RawCharacterAliasRow {
 
 const isDevelopment = process.env.NODE_ENV === 'development'
 let cachedHasCharacterAliasesTable: boolean | null = null
-let cachedCharacterAliases: CharacterAliasRow[] | null = null
+let cachedCharacterAliases: CharacterAliasEntry[] | null = null
 
 function hasCharacterAliasesTable(): boolean {
   if (!isDevelopment && cachedHasCharacterAliasesTable !== null) {
@@ -39,7 +35,7 @@ function hasCharacterAliasesTable(): boolean {
   return exists
 }
 
-export function getCharacterAliases(): CharacterAliasRow[] {
+export function getCharacterAliases(): CharacterAliasEntry[] {
   if (!isDevelopment && cachedCharacterAliases) {
     return cachedCharacterAliases
   }

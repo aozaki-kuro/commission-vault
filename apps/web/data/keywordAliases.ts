@@ -1,15 +1,11 @@
 import process from 'node:process'
+import type { KeywordAliasEntry } from '@commission-index/domain'
 import {
   normalizeKeywordAliases,
   normalizeKeywordAliasKey,
   parseKeywordAliasesJson,
 } from '#lib/keywordAliases/shared'
 import { queryAll } from './sqlite'
-
-interface KeywordAliasRow {
-  baseKeyword: string
-  aliases: string[]
-}
 
 interface RawKeywordAliasRow {
   baseKeyword: string
@@ -18,7 +14,7 @@ interface RawKeywordAliasRow {
 
 const isDevelopment = process.env.NODE_ENV === 'development'
 let cachedHasKeywordAliasesTable: boolean | null = null
-let cachedKeywordAliases: KeywordAliasRow[] | null = null
+let cachedKeywordAliases: KeywordAliasEntry[] | null = null
 
 function hasKeywordAliasesTable(): boolean {
   if (!isDevelopment && cachedHasKeywordAliasesTable !== null) {
@@ -38,7 +34,7 @@ function hasKeywordAliasesTable(): boolean {
   return exists
 }
 
-export function getKeywordAliases(): KeywordAliasRow[] {
+export function getKeywordAliases(): KeywordAliasEntry[] {
   if (!isDevelopment && cachedKeywordAliases) {
     return cachedKeywordAliases
   }

@@ -1,6 +1,19 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import type {
+  AdminAliasesData,
+  AdminBootstrapData,
+  AdminCommissionSearchRow,
+  AdminData,
+  CharacterAliasRow,
+  CharacterRow,
+  CharacterStatus,
+  CommissionRow,
+  CreatorAliasRow,
+  HomeSuggestionAdminData,
+  KeywordAliasRow,
+} from '@commission-index/domain'
 import {
   normalizeCharacterAliases,
   normalizeCharacterAliasKey,
@@ -26,78 +39,6 @@ import {
 } from '#lib/search/popularKeywords'
 import Database from 'better-sqlite3'
 import { ensureDevelopmentWriteEnabled } from './environment'
-
-export type CharacterStatus = 'active' | 'stale'
-
-interface CharacterRow {
-  id: number
-  name: string
-  status: CharacterStatus
-  sortOrder: number
-  commissionCount: number
-}
-
-interface CommissionRow {
-  id: number
-  characterId: number
-  characterName: string
-  fileName: string
-  links: string[]
-  design?: string | null
-  description?: string | null
-  keyword?: string | null
-  hidden: boolean
-}
-
-export interface AdminCommissionSearchRow {
-  id: number
-  characterId: number
-  characterName: string
-  fileName: string
-  design?: string | null
-  description?: string | null
-  keyword?: string | null
-}
-
-export interface CreatorAliasRow {
-  creatorName: string
-  aliases: string[]
-  commissionCount: number
-}
-
-export interface CharacterAliasRow {
-  characterName: string
-  aliases: string[]
-  commissionCount: number
-}
-
-export interface KeywordAliasRow {
-  baseKeyword: string
-  aliases: string[]
-  commissionCount: number
-}
-
-export interface AdminData {
-  characters: CharacterRow[]
-  commissions: CommissionRow[]
-}
-
-export interface AdminBootstrapData {
-  characters: CharacterRow[]
-  creatorAliases: CreatorAliasRow[]
-  commissionSearchRows: AdminCommissionSearchRow[]
-}
-
-export interface HomeSuggestionAdminData {
-  featuredKeywords: string[]
-  keywordOptions: string[]
-}
-
-export interface AdminAliasesData {
-  characterAliases: CharacterAliasRow[]
-  creatorAliases: CreatorAliasRow[]
-  keywordAliases: KeywordAliasRow[]
-}
 
 type BetterSqlite3Database = Database.Database
 
@@ -1312,7 +1253,19 @@ export function saveHomeFeaturedSearchKeywords(keywords: string[]) {
   })
 }
 
-export type { CharacterRow, CommissionRow }
+export type {
+  AdminAliasesData,
+  AdminBootstrapData,
+  AdminCommissionSearchRow,
+  AdminData,
+  CharacterAliasRow,
+  CharacterRow,
+  CharacterStatus,
+  CommissionRow,
+  CreatorAliasRow,
+  HomeSuggestionAdminData,
+  KeywordAliasRow,
+} from '@commission-index/domain'
 
 export function deleteCharacter(id: number) {
   ensureWritable()

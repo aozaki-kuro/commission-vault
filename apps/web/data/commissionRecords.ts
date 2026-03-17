@@ -1,8 +1,6 @@
-import type { Commission } from '#data/types'
+import type { CharacterRecord, CharacterStatus } from '@commission-index/domain'
 import process from 'node:process'
 import { queryAll } from './sqlite'
-
-export type CharacterStatus = 'active' | 'stale'
 
 interface CharacterRow {
   id: number
@@ -15,14 +13,6 @@ interface CharacterRow {
   description?: string | null
   keyword?: string | null
   hidden?: number | null
-}
-
-export interface CharacterRecord {
-  id: number
-  name: string
-  status: CharacterStatus
-  sortOrder: number
-  commissions: Commission[]
 }
 
 const isDevelopment = process.env.NODE_ENV === 'development'
@@ -114,3 +104,4 @@ export function getCharacterRecords(): CharacterRecord[] {
 }
 
 export { staticCharacterRecords as characterRecords }
+export type { CharacterRecord, CharacterStatus } from '@commission-index/domain'

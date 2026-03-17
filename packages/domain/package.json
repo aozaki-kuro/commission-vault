@@ -6,6 +6,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "dependencies": {
+    "fuse.js": "^7.1.0"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json"
   }

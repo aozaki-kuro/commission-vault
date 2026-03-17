@@ -1,10 +1,10 @@
+import type { SuggestionSource } from '@commission-index/domain'
 import { normalizeCharacterAliasKey } from '#lib/characterAliases/shared'
 import { parseCommissionFileName } from '#lib/commissions/index'
 import { normalizeCreatorName } from '#lib/creatorAliases/shared'
 import { buildDateSearchTokensFromCompactDate } from '#lib/date/search'
 import { normalizeKeywordAliasKey, splitKeywordTerms } from '#lib/keywordAliases/shared'
 
-type SuggestionSource = 'Character' | 'Creator' | 'Keyword' | 'Date'
 type CreatorMode = 'normalized' | 'raw'
 type CreatorSearchTextMode = CreatorMode | 'both'
 
