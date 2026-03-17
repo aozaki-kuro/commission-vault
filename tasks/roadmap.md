@@ -4,7 +4,7 @@
 
 ## 默认决策与假设
 
-- 本轮优先收口 `apps/admin-worker` 的非 CRUD 写路由壳，先把 `assets/refresh` 从 legacy passthrough 收回 worker 原生兼容 no-op；不新增公共 API
+- 本轮优先收口 `apps/admin-worker` 的 worker-native 写路径：character CRUD 已先行切入，下一步继续推进 commission CRUD 与 `source-image POST`；不新增公共 API
 - `apps/admin-worker` 继续持有 admin API contract；迁移期间允许逐路由替换执行后端，但不允许漂移现有请求/响应形状
 - `apps/admin-worker/src/adminData.ts` 默认保持读侧模型，不继续膨胀成读写混合模块
 - worker 写路径默认新增独立 persistence 层；推荐命名为 `apps/admin-worker/src/adminPersistence.ts`
@@ -34,7 +34,7 @@
 
 - `apps/web`：成熟。它仍是公开站生产源代码，同时继续持有 dev-only admin 页面、legacy admin API、SQLite 读写、本地图片读写与公开站构建链
 - `apps/admin`：前端迁移已完成。五个主页面都在这里，视觉基线存在，但它还没有脱离 worker API 依赖
-- `apps/admin-worker`：部分完成。worker 入口、Basic Auth、本地 CORS、`adminData` 读侧、CRUD 壳已存在；但 `wrangler` 尚未接入真实 D1/R2 bindings，真正写持久层也还没有从 legacy app 脱离
+- `apps/admin-worker`：部分完成。worker 入口、Basic Auth、本地 CORS、`adminData` 读侧、CRUD 壳已存在；character CRUD、alias、suggestion 已具备 worker-native D1 写路径，但 `wrangler` 尚未接入真实 D1/R2 bindings，commission CRUD 与 source-image 写入也还没有从 legacy app 脱离
 - `packages/domain`：成熟并已在主链路使用，承担 admin/web 共享 DTO 与纯逻辑
 - `packages/cloudflare`：脚手架。只有占位 env 类型，当前也未进入主链路，尚未承接真正的 auth / binding / helper
 - `packages/ui`：脚手架。没有实际共享 UI 被两个 app 复用
@@ -92,7 +92,7 @@
 
 - `apps/admin-worker/src/adminApi.ts`
   - 当前已原生处理一部分 GET 路由与 CRUD 路由壳
-  - 默认 CRUD backend 仍是 `createLegacyCrudBackend`
+  - 默认 CRUD backend 会在存在 `DB` binding 时优先接管 character CRUD，其余 commission 写路径仍回落到 `createLegacyCrudBackend`
   - passthrough allowlist 仍包含以下 fallback 路径；当 `adminData`/native write 能处理时会先于它命中：
     - `/api/admin/bootstrap`
     - `/api/admin/aliases/bootstrap`
@@ -147,13 +147,14 @@
 - 状态：`部分完成`
 - 当前真值：
   - worker 已持有 CRUD 请求命中、校验、归一化、错误响应壳
-  - 默认持久化 backend 仍是 `createLegacyCrudBackend`
-  - alias batch、suggestion 保存、source-image POST 仍未原生化
+  - 在存在 `DB` binding 时，character CRUD、alias batch、suggestion 保存已可走 worker-native persistence
+  - commission CRUD 默认持久化 backend 仍是 `createLegacyCrudBackend`
+  - `source-image POST` 仍未原生化
   - `assets/refresh` 已收口为 worker 原生兼容 no-op，不再依赖 legacy passthrough
 - 离完成还差什么：
-  - 真正的 D1/R2 写持久层
-  - 写路径 contract tests / integration tests
-  - route-by-route 去 bridge 方案
+  - commission CRUD 与 `source-image POST` 的真正 D1/R2 写持久层
+  - 写路径 contract tests / integration tests 继续扩到 commission/source-image
+  - 继续 route-by-route 去 bridge
 
 ### 2.4 Public web 事实源解耦
 
@@ -200,7 +201,7 @@
 
 - 当前：
   - 读路径部分 D1/R2 化
-  - 写路径默认仍是 `createLegacyCrudBackend`
+  - 默认 backend 已会在存在 `DB` binding 时优先切到 character CRUD 的 worker-native persistence
   - CRUD 壳已经在 worker，不再是原始白名单代理
   - 但这些 binding-aware 路径尚未通过 `wrangler` 真实接线
 - 默认方案：
@@ -208,8 +209,8 @@
   - 新增独立 persistence backend，不把 SQL / D1 / R2 写逻辑塞回 `adminApi.ts`
 - 下一步：
   - 让 `createDefaultCrudBackend()` 在具备持久层 bindings 时优先走 worker persistence backend
-  - route-by-route 替换 `createCharacter` / `updateCharacter` / `updateCharacterOrder` / `deleteCharacter` / `createCommission` / `updateCommission` / `deleteCommission`
-  - alias batch、suggestion 保存、source-image POST 从 passthrough allowlist 中逐个移除
+  - route-by-route 继续替换 `createCommission` / `updateCommission` / `deleteCommission`，并补齐 `source-image POST`
+  - 继续收紧 legacy fallback，只保留尚未原生化的 write 路由
 
 #### `apps/admin-worker/src/adminData.ts`
 
@@ -257,11 +258,11 @@
 #### alias / suggestion / source-image POST / `assets/refresh`
 
 - `alias batch`
-  - 当前：仍走 passthrough
-  - 下一步：迁入 worker persistence，复用与 legacy 相同的 payload 形状
+  - 当前：存在 `DB` binding 时已迁入 worker persistence；缺 binding 时再 fallback
+  - 下一步：在 `wrangler` 接线后收紧 runtime fallback 范围
 - `suggestion` 保存
-  - 当前：GET 可走 D1，POST 仍未原生化
-  - 下一步：把 featured keyword 写入迁入 worker persistence
+  - 当前：GET 可走 D1，POST 在存在 `DB` binding 时也已可走 worker persistence
+  - 下一步：在 `wrangler` 接线后把 fallback 从“默认路径”降到“兼容兜底”
 - `source-image` replace/upload
   - 当前：GET 可走 R2；POST 仍未原生化
   - 默认方案：worker 写 R2，legacy 本地文件写入仅作为 fallback

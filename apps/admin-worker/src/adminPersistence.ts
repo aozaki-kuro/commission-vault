@@ -30,6 +30,25 @@ export interface D1DatabaseLike {
   prepare: (query: string) => D1PreparedStatementLike
 }
 
+type CharacterStatus = 'active' | 'stale'
+
+interface MaxSortOrderRow {
+  maxOrder?: number | null
+}
+
+interface CharacterIdRow {
+  id: number
+}
+
+interface CharacterNameRow {
+  name: string
+}
+
+interface CharacterOrderPayload {
+  active: number[]
+  stale: number[]
+}
+
 const MAX_FEATURED_SEARCH_KEYWORDS = 6
 const NORMALIZE_SPACES_PATTERN = /\s+/g
 
@@ -101,6 +120,25 @@ async function runStatement(db: D1DatabaseLike, query: string, values: unknown[]
   }
 }
 
+async function queryRows<TRow>(
+  db: D1DatabaseLike,
+  query: string,
+  values: unknown[] = [],
+): Promise<TRow[]> {
+  const statement = values.length > 0 ? db.prepare(query).bind(...values) : db.prepare(query)
+  const result = await statement.all<TRow>()
+  return Array.isArray(result.results) ? result.results : []
+}
+
+async function queryFirstRow<TRow>(
+  db: D1DatabaseLike,
+  query: string,
+  values: unknown[] = [],
+): Promise<TRow | null> {
+  const rows = await queryRows<TRow>(db, query, values)
+  return rows[0] ?? null
+}
+
 async function ensureCreatorAliasesTable(db: D1DatabaseLike) {
   await runStatement(db, CREATE_CREATOR_ALIASES_TABLE_SQL)
 }
@@ -115,6 +153,100 @@ async function ensureKeywordAliasesTable(db: D1DatabaseLike) {
 
 async function ensureHomeFeaturedSearchKeywordsTable(db: D1DatabaseLike) {
   await runStatement(db, CREATE_HOME_FEATURED_SEARCH_KEYWORDS_TABLE_SQL)
+}
+
+export async function createCharacter(
+  db: D1DatabaseLike,
+  input: { name: string, status: CharacterStatus },
+) {
+  const name = input.name.trim()
+  if (!name) {
+    throw new Error('Character name is required.')
+  }
+
+  const maxOrderRow = await queryFirstRow<MaxSortOrderRow>(
+    db,
+    'SELECT COALESCE(MAX(sort_order), 0) as maxOrder FROM characters',
+  )
+
+  await runStatement(
+    db,
+    'INSERT INTO characters (name, status, sort_order) VALUES (?, ?, ?)',
+    [name, input.status, Number(maxOrderRow?.maxOrder ?? 0) + 1],
+  )
+
+  return name
+}
+
+export async function updateCharacter(
+  db: D1DatabaseLike,
+  input: { id: number, name: string, status: CharacterStatus },
+) {
+  const name = input.name.trim()
+  if (!name) {
+    throw new Error('Character name is required.')
+  }
+
+  const existing = await queryFirstRow<CharacterIdRow>(
+    db,
+    'SELECT id FROM characters WHERE id = ? LIMIT 1',
+    [input.id],
+  )
+
+  if (!existing) {
+    throw new Error('Character not found.')
+  }
+
+  await runStatement(
+    db,
+    'UPDATE characters SET name = ?, status = ? WHERE id = ?',
+    [name, input.status, input.id],
+  )
+
+  return name
+}
+
+export async function updateCharacterOrder(
+  db: D1DatabaseLike,
+  payload: CharacterOrderPayload,
+) {
+  const { active, stale } = payload
+  if (
+    !Array.isArray(active)
+    || !Array.isArray(stale)
+    || active.some(id => typeof id !== 'number' || !Number.isFinite(id))
+    || stale.some(id => typeof id !== 'number' || !Number.isFinite(id))
+  ) {
+    throw new Error('Invalid character order payload.')
+  }
+
+  const combined = [
+    ...active.map<[number, CharacterStatus]>(id => [id, 'active']),
+    ...stale.map<[number, CharacterStatus]>(id => [id, 'stale']),
+  ]
+
+  for (const [index, [id, status]] of combined.entries()) {
+    await runStatement(
+      db,
+      'UPDATE characters SET sort_order = ?, status = ? WHERE id = ?',
+      [index + 1, status, id],
+    )
+  }
+}
+
+export async function deleteCharacter(db: D1DatabaseLike, id: number) {
+  const existing = await queryFirstRow<CharacterNameRow>(
+    db,
+    'SELECT name FROM characters WHERE id = ? LIMIT 1',
+    [id],
+  )
+
+  if (!existing) {
+    throw new Error('Character not found.')
+  }
+
+  await runStatement(db, 'DELETE FROM commissions WHERE character_id = ?', [id])
+  await runStatement(db, 'DELETE FROM characters WHERE id = ?', [id])
 }
 
 export async function saveCreatorAliasesBatch(

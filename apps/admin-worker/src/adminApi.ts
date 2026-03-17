@@ -1,4 +1,11 @@
+import type { D1DatabaseLike } from './adminPersistence'
 import { handleAdminReadRequest } from './adminData'
+import {
+  createCharacter as persistCharacterCreate,
+  deleteCharacter as persistCharacterDelete,
+  updateCharacterOrder as persistCharacterOrderUpdate,
+  updateCharacter as persistCharacterUpdate,
+} from './adminPersistence'
 import { handleAdminWriteRequest, LEGACY_PASSTHROUGH } from './adminWriteApi'
 
 const TRAILING_SLASH_PATTERN = /\/+$/
@@ -128,6 +135,19 @@ function failure(message: string, status = 400) {
     status: 'error',
     message,
   } satisfies ApiState, status)
+}
+
+function resolveD1Database(value: unknown): D1DatabaseLike | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const candidate = value as { prepare?: unknown }
+  if (typeof candidate.prepare !== 'function') {
+    return null
+  }
+
+  return value as D1DatabaseLike
 }
 
 function withNoStoreHeaders(response: Response) {
@@ -466,6 +486,74 @@ export function createLegacyCrudBackend(env: Env, fetchImpl: typeof fetch = fetc
   }
 }
 
+function createCharacterCrudBackend(
+  db: D1DatabaseLike,
+  fallbackBackend: AdminCrudBackend,
+): AdminCrudBackend {
+  return {
+    ...fallbackBackend,
+    async createCharacter(input) {
+      try {
+        const name = await persistCharacterCreate(db, input)
+        return json({
+          status: 'success',
+          message: `Character "${name}" created.`,
+        })
+      }
+      catch (error) {
+        return failure(error instanceof Error ? error.message : 'Failed to create character.')
+      }
+    },
+    async updateCharacter(input) {
+      try {
+        const name = await persistCharacterUpdate(db, input)
+        return json({
+          status: 'success',
+          message: `Character "${name}" updated.`,
+        })
+      }
+      catch (error) {
+        return failure(error instanceof Error ? error.message : 'Failed to update character.')
+      }
+    },
+    async updateCharacterOrder(payload) {
+      try {
+        await persistCharacterOrderUpdate(db, payload)
+        return json({
+          status: 'success',
+          message: 'Character order updated.',
+        })
+      }
+      catch (error) {
+        return failure(error instanceof Error ? error.message : 'Failed to update character order.')
+      }
+    },
+    async deleteCharacter(id) {
+      try {
+        await persistCharacterDelete(db, id)
+        return json({
+          status: 'success',
+          message: 'Character deleted.',
+        })
+      }
+      catch (error) {
+        return failure(error instanceof Error ? error.message : 'Failed to delete character.')
+      }
+    },
+  }
+}
+
+function createDefaultCrudBackend(env: Env, fetchImpl: typeof fetch = fetch): AdminCrudBackend {
+  const legacyBackend = createLegacyCrudBackend(env, fetchImpl)
+  const db = resolveD1Database(env.DB)
+
+  if (!db) {
+    return legacyBackend
+  }
+
+  return createCharacterCrudBackend(db, legacyBackend)
+}
+
 async function handleCrudRequest(request: Request, backend: AdminCrudBackend) {
   const { pathname } = new URL(request.url)
 
@@ -580,10 +668,11 @@ async function handleCrudRequest(request: Request, backend: AdminCrudBackend) {
 export async function handleAdminApiRequest(
   request: Request,
   env: Env,
-  backend: AdminCrudBackend = createLegacyCrudBackend(env),
+  backend: AdminCrudBackend | undefined = undefined,
   fetchImpl: typeof fetch = fetch,
 ) {
   const { pathname } = new URL(request.url)
+  const resolvedBackend = backend ?? createDefaultCrudBackend(env, fetchImpl)
 
   if (request.method === 'GET' && pathname === '/api/admin/health') {
     return json({
@@ -597,7 +686,7 @@ export async function handleAdminApiRequest(
     return nativeReadResponse
   }
 
-  const nativeCrudResponse = await handleCrudRequest(request, backend)
+  const nativeCrudResponse = await handleCrudRequest(request, resolvedBackend)
   if (nativeCrudResponse) {
     return nativeCrudResponse
   }

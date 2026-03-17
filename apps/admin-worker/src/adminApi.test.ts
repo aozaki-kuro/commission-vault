@@ -41,7 +41,9 @@ interface StatementExecution {
   values: unknown[]
 }
 
-function createD1Recorder() {
+function createD1Recorder(options: {
+  queryResults?: (query: string, values: unknown[]) => unknown[]
+} = {}) {
   const executions: StatementExecution[] = []
 
   function createStatement(query: string, values: unknown[] = []) {
@@ -51,7 +53,7 @@ function createD1Recorder() {
       },
       async all() {
         executions.push({ query, values })
-        return { results: [] }
+        return { results: options.queryResults?.(query, values) ?? [] }
       },
       async run() {
         executions.push({ query, values })
@@ -463,6 +465,170 @@ describe('admin worker CRUD contract routing', () => {
       name: 'Renamed',
       status: 'active',
     })
+  })
+
+  it('handles create-character natively when DB binding exists', async () => {
+    const { db, executions } = createD1Recorder({
+      queryResults(query) {
+        if (query.includes('MAX(sort_order)')) {
+          return [{ maxOrder: 4 }]
+        }
+
+        return []
+      },
+    })
+    const legacyFetch = vi.fn(async () => createJsonResponse({ status: 'success', message: 'legacy' }))
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/characters`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: '  Alice  ',
+          status: 'stale',
+        }),
+      }),
+      {
+        DB: db,
+        LEGACY_ADMIN_API_BASE_URL: 'http://legacy.test',
+      },
+      undefined,
+      legacyFetch,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Character "Alice" created.',
+    })
+    expect(legacyFetch).not.toHaveBeenCalled()
+
+    const insertOps = executions.filter(item => item.query.includes('INSERT INTO characters'))
+    expect(insertOps).toHaveLength(1)
+    expect(insertOps[0]?.values).toEqual(['Alice', 'stale', 5])
+  })
+
+  it('handles update-character natively when DB binding exists', async () => {
+    const { db, executions } = createD1Recorder({
+      queryResults(query, values) {
+        if (query.includes('SELECT id FROM characters WHERE id = ?')) {
+          return [{ id: Number(values[0]) }]
+        }
+
+        return []
+      },
+    })
+    const legacyFetch = vi.fn(async () => createJsonResponse({ status: 'success', message: 'legacy' }))
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/characters/14`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: '  Renamed  ',
+          status: 'active',
+        }),
+      }),
+      {
+        DB: db,
+        LEGACY_ADMIN_API_BASE_URL: 'http://legacy.test',
+      },
+      undefined,
+      legacyFetch,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Character "Renamed" updated.',
+    })
+    expect(legacyFetch).not.toHaveBeenCalled()
+
+    const updateOps = executions.filter(item => item.query.includes('UPDATE characters SET name = ?, status = ?'))
+    expect(updateOps).toHaveLength(1)
+    expect(updateOps[0]?.values).toEqual(['Renamed', 'active', 14])
+  })
+
+  it('handles character reordering natively when DB binding exists', async () => {
+    const { db, executions } = createD1Recorder()
+    const legacyFetch = vi.fn(async () => createJsonResponse({ status: 'success', message: 'legacy' }))
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/characters/order`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          active: [1, 2],
+          stale: [3],
+        }),
+      }),
+      {
+        DB: db,
+        LEGACY_ADMIN_API_BASE_URL: 'http://legacy.test',
+      },
+      undefined,
+      legacyFetch,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Character order updated.',
+    })
+    expect(legacyFetch).not.toHaveBeenCalled()
+
+    const updateOps = executions.filter(item =>
+      item.query.includes('UPDATE characters SET sort_order = ?, status = ? WHERE id = ?'),
+    )
+    expect(updateOps).toHaveLength(3)
+    expect(updateOps.map(item => item.values)).toEqual([
+      [1, 'active', 1],
+      [2, 'active', 2],
+      [3, 'stale', 3],
+    ])
+  })
+
+  it('handles delete-character natively when DB binding exists', async () => {
+    const { db, executions } = createD1Recorder({
+      queryResults(query) {
+        if (query.includes('SELECT name FROM characters WHERE id = ?')) {
+          return [{ name: 'Alice' }]
+        }
+
+        return []
+      },
+    })
+    const legacyFetch = vi.fn(async () => createJsonResponse({ status: 'success', message: 'legacy' }))
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/characters/7`, {
+        method: 'DELETE',
+      }),
+      {
+        DB: db,
+        LEGACY_ADMIN_API_BASE_URL: 'http://legacy.test',
+      },
+      undefined,
+      legacyFetch,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Character deleted.',
+    })
+    expect(legacyFetch).not.toHaveBeenCalled()
+
+    expect(executions.filter(item => item.query.includes('DELETE FROM commissions WHERE character_id = ?')))
+      .toHaveLength(1)
+    expect(executions.filter(item => item.query.includes('DELETE FROM characters WHERE id = ?')))
+      .toHaveLength(1)
   })
 
   it('loads bootstrap data natively when DB binding exists', async () => {

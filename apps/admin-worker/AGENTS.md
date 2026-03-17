@@ -33,6 +33,7 @@ This directory contains the standalone admin worker.
 
 ## Change Log
 
+- 2026-03-17: Added worker-native D1 persistence for character create/update/reorder/delete, and made the default CRUD backend prefer native character writes when `DB` bindings exist while leaving commission CRUD on legacy fallback.
 - 2026-03-17: Added `src/adminData.ts` so worker read routes can serve bootstrap, aliases, suggestion, character-commission, and source-image GET requests when D1/R2 bindings exist, before falling back to legacy.
 - 2026-03-17: Added worker-native D1 persistence for `aliases`/`suggestion` writes in `src/adminPersistence.ts`, and tightened write routing to native-with-DB plus legacy fallback when `DB` binding is absent.
 - 2026-03-17: Split worker-owned non-CRUD write routes into `src/adminWriteApi.ts` and moved `assets/refresh` to a native compatibility no-op instead of legacy passthrough.

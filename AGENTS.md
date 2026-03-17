@@ -177,6 +177,7 @@ Additional guidance:
 ## Change Log
 
 - Added `apps/admin-worker/src/adminData.ts` so worker read routes can serve bootstrap, aliases, suggestion, character commissions, and source-image GETs from D1/R2 bindings before falling back to the legacy bridge.
+- Added worker-native D1 persistence for character create/update/reorder/delete and made `apps/admin-worker` prefer native character CRUD when `DB` bindings exist, while leaving commission CRUD/source-image writes on explicit migration fallback.
 - Added worker-owned D1 persistence for alias batch saves and featured-keyword suggestion writes, removed those routes from the primary legacy passthrough path when bindings exist, and extended admin worker contract coverage.
 - Split worker-owned non-CRUD admin write compatibility handling into `apps/admin-worker/src/adminWriteApi.ts` and moved `/api/admin/assets/refresh` off the legacy passthrough path.
 - Moved standalone admin CRUD route matching/validation into `apps/admin-worker/src/adminApi.ts`, leaving non-migrated source-image/refresh flows on explicit passthrough and adding worker contract tests.
