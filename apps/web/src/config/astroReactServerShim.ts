@@ -1,8 +1,9 @@
-import React from 'react'
+import * as React from 'react'
 import ReactDOM from 'react-dom/server'
 
 const contexts = new WeakMap<object, { currentIndex: number }>()
 const idPrefix = 'r'
+const SLOT_NAME_NORMALIZE_PATTERN = /[-_]([a-z])/g
 
 function incrementId(rendererContextResult: object) {
   const existingContext = contexts.get(rendererContextResult)
@@ -84,7 +85,7 @@ async function renderToPipeableStreamAsync(vnode: React.ReactNode, options: Reco
   let html = ''
 
   return new Promise<string>((resolve, reject) => {
-    let stream = ReactDOM.renderToPipeableStream(vnode, {
+    const stream = ReactDOM.renderToPipeableStream(vnode, {
       ...(options as Parameters<typeof ReactDOM.renderToPipeableStream>[1]),
       onError(error) {
         reject(error)
@@ -108,7 +109,7 @@ const formContentTypes = ['application/x-www-form-urlencoded', 'multipart/form-d
 
 function isFormRequest(contentType: string | null) {
   const type = contentType?.split(';')[0].toLowerCase()
-  return formContentTypes.some(candidate => type === candidate)
+  return type ? formContentTypes.includes(type) : false
 }
 
 async function getFormState({ result }: { result?: { request: Request, actionResult?: unknown } }) {
@@ -143,7 +144,7 @@ async function renderToStaticMarkup(
 
   const slots: Record<string, React.ReactNode> = {}
   for (const [key, value] of Object.entries(slotted)) {
-    const name = key.trim().replace(/[-_]([a-z])/g, (_, letter: string) => letter.toUpperCase())
+    const name = key.trim().replace(SLOT_NAME_NORMALIZE_PATTERN, (_, letter: string) => letter.toUpperCase())
     slots[name] = React.createElement(StaticHtml, {
       hydrate: needsHydration(metadata),
       value: String(value ?? ''),
@@ -204,7 +205,8 @@ async function check(
     return false
 
   if (Component.prototype != null && typeof Component.prototype.render === 'function') {
-    return React.Component.isPrototypeOf(Component) || React.PureComponent.isPrototypeOf(Component)
+    return Object.prototype.isPrototypeOf.call(React.Component, Component)
+      || Object.prototype.isPrototypeOf.call(React.PureComponent, Component)
   }
 
   let isReactComponent = false

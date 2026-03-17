@@ -1,6 +1,6 @@
 export {
-  normalizeKeywordAliasKey,
   normalizeKeywordAliases,
+  normalizeKeywordAliasKey,
   normalizeKeywordBaseTerm,
   parseKeywordAliasesJson,
   splitKeywordTerms,

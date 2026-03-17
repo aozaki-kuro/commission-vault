@@ -1,5 +1,5 @@
-import process from 'node:process'
 import type { CreatorAliasEntry } from '@commission-index/domain'
+import process from 'node:process'
 import { normalizeCreatorName, parseAliasesJson } from '#lib/creatorAliases/shared'
 import { queryAll } from './sqlite'
 

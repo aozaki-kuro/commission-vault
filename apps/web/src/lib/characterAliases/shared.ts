@@ -1,6 +1,6 @@
 export {
+  normalizeCharacterAliases,
   normalizeCharacterAliasKey,
   normalizeCharacterAliasName,
-  normalizeCharacterAliases,
   parseCharacterAliasesJson,
 } from '@commission-index/domain'

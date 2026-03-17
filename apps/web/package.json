@@ -3,9 +3,6 @@
   "type": "module",
   "version": "0.0.0",
   "private": true,
-  "dependencies": {
-    "@commission-index/domain": "workspace:*"
-  },
   "scripts": {
     "dev": "NODE_ENV=development astro dev",
     "build": "astro build",
@@ -17,5 +14,8 @@
     "test:watch": "vitest -c vitest.config.ts",
     "test:visual": "playwright test -c playwright.config.ts",
     "test:visual:update": "playwright test -c playwright.config.ts --update-snapshots"
+  },
+  "dependencies": {
+    "@commission-index/domain": "workspace:*"
   }
 }

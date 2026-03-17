@@ -1,6 +1,3 @@
-import fs from 'node:fs'
-import path from 'node:path'
-import process from 'node:process'
 import type {
   AdminAliasesData,
   AdminBootstrapData,
@@ -14,6 +11,9 @@ import type {
   HomeSuggestionAdminData,
   KeywordAliasRow,
 } from '@commission-index/domain'
+import fs from 'node:fs'
+import path from 'node:path'
+import process from 'node:process'
 import {
   normalizeCharacterAliases,
   normalizeCharacterAliasKey,

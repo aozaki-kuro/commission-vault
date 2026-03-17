@@ -1,5 +1,5 @@
-import process from 'node:process'
 import type { KeywordAliasEntry } from '@commission-index/domain'
+import process from 'node:process'
 import {
   normalizeKeywordAliases,
   normalizeKeywordAliasKey,

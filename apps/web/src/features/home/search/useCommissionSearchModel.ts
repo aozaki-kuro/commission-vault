@@ -6,15 +6,9 @@ import { requestTimelineViewLoad } from '#features/home/commission/timelineViewE
 import {
   buildRelatedSuggestionTermsMap,
   buildSearchIndex,
-
   createEmptySearchIndex,
   getDisplayMetrics,
-
 } from '#features/home/search/commissionSearchIndex'
-import {
-  LOAD_STALE_COMMAND_VALUE,
-
-} from '#features/home/search/CommissionSearchSuggestionDropdown'
 import { useCommissionSearchDomSync } from '#features/home/search/useCommissionSearchDomSync'
 import { useSearchPanelLoadedState } from '#features/home/search/useSearchPanelLoadedState'
 import { ANALYTICS_EVENTS } from '#lib/analytics/events'
@@ -66,6 +60,7 @@ interface UseCommissionSearchModelOptions {
 const MIN_TRACK_QUERY_LENGTH = 2
 const EMPTY_RELATED_SUGGESTION_TERMS_MAP = new Map<string, string[]>()
 const SEARCH_QUERY_LOCATION_CHANGE_EVENT = 'home:search-query-location-change'
+const LOAD_STALE_COMMAND_VALUE = '__load-stale__'
 
 function getUrlQuerySnapshot() {
   if (typeof window === 'undefined')

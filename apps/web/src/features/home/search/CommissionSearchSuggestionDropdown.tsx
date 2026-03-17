@@ -8,7 +8,7 @@ export interface SuggestionViewModel {
   relatedTerms: string[]
 }
 
-export const LOAD_STALE_COMMAND_VALUE = '__load-stale__'
+const LOAD_STALE_COMMAND_VALUE = '__load-stale__'
 
 interface CommissionSearchSuggestionDropdownProps {
   hiddenStaleNoticeMessage: string

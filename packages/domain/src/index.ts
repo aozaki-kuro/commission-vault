@@ -1,12 +1,4 @@
 export type {
-  CharacterAliasEntry,
-  CharacterAliasRow,
-  CreatorAliasEntry,
-  CreatorAliasRow,
-  KeywordAliasEntry,
-  KeywordAliasRow,
-} from './aliases'
-export type {
   AdminAliasesData,
   AdminBootstrapData,
   AdminCommissionSearchRow,
@@ -16,45 +8,21 @@ export type {
   HomeSuggestionAdminData,
 } from './admin'
 export type {
-  CharacterCommissions,
-  CharacterRecord,
-  CharacterStatus,
-  Commission,
-  CommissionCollection,
-  Props,
-} from './content'
-export type {
-  FilteredSuggestion,
-  SearchEntryLike,
-  SearchIndexLike,
-  Suggestion,
-  SuggestionEntryLike,
-  SuggestionRows,
-  SuggestionSource,
-  SuggestionTokenOperator,
-} from './search'
+  CharacterAliasEntry,
+  CharacterAliasRow,
+  CreatorAliasEntry,
+  CreatorAliasRow,
+  KeywordAliasEntry,
+  KeywordAliasRow,
+} from './aliases'
 export {
+  normalizeCharacterAliases,
   normalizeCharacterAliasKey,
   normalizeCharacterAliasName,
-  normalizeCharacterAliases,
   parseCharacterAliasesJson,
 } from './characterAliases'
-export {
-  hasCjkCharacter,
-  normalizeAliases,
-  normalizeCreatorName,
-  parseAliasesJson,
-} from './creatorAliases'
 export type { CommissionFileNameParts } from './commissionFileName'
 export { parseCommissionFileName } from './commissionFileName'
-export type { DateSearchParts } from './dateSearch'
-export {
-  buildDateSearchTokensFromCompactDate,
-  normalizeDateQueryToken,
-  parseDateSearchInput,
-  toDateSearchTokens,
-  toPrimaryDateSearchToken,
-} from './dateSearch'
 export type {
   BuildCommissionSearchMetadataInput,
   CommissionSearchMetadata,
@@ -65,10 +33,42 @@ export {
   buildCommissionSearchDomKey,
   buildCommissionSearchMetadata,
 } from './commissionSearchMetadata'
+export type {
+  CharacterCommissions,
+  CharacterRecord,
+  CharacterStatus,
+  Commission,
+  CommissionCollection,
+  Props,
+} from './content'
 export {
-  normalizeKeywordAliasKey,
+  hasCjkCharacter,
+  normalizeAliases,
+  normalizeCreatorName,
+  parseAliasesJson,
+} from './creatorAliases'
+export type { DateSearchParts } from './dateSearch'
+export {
+  buildDateSearchTokensFromCompactDate,
+  normalizeDateQueryToken,
+  parseDateSearchInput,
+  toDateSearchTokens,
+  toPrimaryDateSearchToken,
+} from './dateSearch'
+export {
   normalizeKeywordAliases,
+  normalizeKeywordAliasKey,
   normalizeKeywordBaseTerm,
   parseKeywordAliasesJson,
   splitKeywordTerms,
 } from './keywordAliases'
+export type {
+  FilteredSuggestion,
+  SearchEntryLike,
+  SearchIndexLike,
+  Suggestion,
+  SuggestionEntryLike,
+  SuggestionRows,
+  SuggestionSource,
+  SuggestionTokenOperator,
+} from './search'
