@@ -1,11 +1,16 @@
 import Database from 'better-sqlite3'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resetModulesInTempDir, setupTempCommissionDb } from '../../../test/utils/tempCommissionDb'
 
 describe('admin db keyword alias operations (sqlite integration)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   it('saves keyword aliases in batch and deduplicates base keywords', async () => {
     const { tempDir, dbPath } = setupTempCommissionDb('commission-index-admin-keyword-alias-db-')
     resetModulesInTempDir(tempDir)
+    vi.stubEnv('NODE_ENV', 'development')
 
     const adminDb = await import('./db')
     adminDb.saveKeywordAliasesBatch([

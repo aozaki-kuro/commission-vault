@@ -25,6 +25,7 @@ import {
   dedupeKeywords,
 } from '#lib/search/popularKeywords'
 import Database from 'better-sqlite3'
+import { ensureDevelopmentWriteEnabled } from './environment'
 
 export type CharacterStatus = 'active' | 'stale'
 
@@ -100,7 +101,6 @@ export interface AdminAliasesData {
 
 type BetterSqlite3Database = Database.Database
 
-const isDevelopment = process.env.NODE_ENV !== 'production'
 const databasePath = path.join(process.cwd(), 'data', 'commissions.db')
 let hasCommissionKeywordColumnCache: boolean | null = null
 
@@ -864,9 +864,7 @@ export function getHomeSuggestionAdminData(): HomeSuggestionAdminData {
 }
 
 function ensureWritable() {
-  if (!isDevelopment) {
-    throw new Error('Writable database operations are only available in development mode.')
-  }
+  ensureDevelopmentWriteEnabled()
 }
 
 export function createCharacter(input: { name: string, status: CharacterStatus }) {

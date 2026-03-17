@@ -1,6 +1,5 @@
 import type { CharacterStatus } from '../src/lib/admin/db'
 import { readFile } from 'node:fs/promises'
-import process from 'node:process'
 import {
   removeSourceImageFile,
   replaceUploadedSourceImage,
@@ -25,13 +24,13 @@ import {
   updateCharactersOrder,
   updateCommission,
 } from '../src/lib/admin/db'
+import { isDevelopmentWriteEnabled } from '../src/lib/admin/environment'
 
 interface ApiState {
   status: 'success' | 'error'
   message: string
 }
 
-const isDevelopment = process.env.NODE_ENV === 'development'
 const GET_CHARACTER_COMMISSIONS_PATH_PATTERN = /^\/api\/admin\/characters\/\d+\/commissions$/
 const GET_CHARACTER_COMMISSIONS_ID_PATTERN = /^\/api\/admin\/characters\/(\d+)\/commissions$/
 const PATCH_CHARACTER_PATH_PATTERN = /^\/api\/admin\/characters\/\d+$/
@@ -194,7 +193,7 @@ export async function handleAdminApiRequest(request: Request) {
     return notFound()
   }
 
-  if (!isDevelopment) {
+  if (!isDevelopmentWriteEnabled()) {
     return notFound()
   }
 

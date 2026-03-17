@@ -1,11 +1,16 @@
 import Database from 'better-sqlite3'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resetModulesInTempDir, setupTempCommissionDb } from '../../../test/utils/tempCommissionDb'
 
 describe('admin db home suggestion operations (sqlite integration)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   it('persists and orders featured keywords with dedupe', async () => {
     const { tempDir, dbPath } = setupTempCommissionDb('commission-index-admin-suggestion-db-')
     resetModulesInTempDir(tempDir)
+    vi.stubEnv('NODE_ENV', 'development')
 
     const adminDb = await import('./db')
     adminDb.saveHomeFeaturedSearchKeywords([
@@ -53,6 +58,7 @@ describe('admin db home suggestion operations (sqlite integration)', () => {
   it('returns admin payload including options and featured keywords', async () => {
     const { tempDir } = setupTempCommissionDb('commission-index-admin-suggestion-data-')
     resetModulesInTempDir(tempDir)
+    vi.stubEnv('NODE_ENV', 'development')
 
     const adminDb = await import('./db')
     adminDb.saveHomeFeaturedSearchKeywords(['Kanaut Nishe', 'maid'])

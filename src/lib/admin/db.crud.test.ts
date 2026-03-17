@@ -1,12 +1,13 @@
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import Database from 'better-sqlite3'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resetModulesInTempDir, setupTempCommissionDb } from '../../../test/utils/tempCommissionDb'
 
-async function loadAdminDbInTempDir() {
+async function loadAdminDbInTempDir(nodeEnv = 'development') {
   const { tempDir, dbPath } = setupTempCommissionDb('commission-index-admin-crud-')
   resetModulesInTempDir(tempDir)
+  vi.stubEnv('NODE_ENV', nodeEnv)
   const adminDb = await import('./db')
   return { adminDb, dbPath }
 }
@@ -16,6 +17,10 @@ function hashFile(filePath: string) {
 }
 
 describe('admin db commission and character operations (sqlite integration)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   it('creates, updates, and deletes commissions with normalized stored values', async () => {
     const { adminDb, dbPath } = await loadAdminDbInTempDir()
     const { characters } = adminDb.getAdminData()
@@ -176,5 +181,13 @@ describe('admin db commission and character operations (sqlite integration)', ()
     for (const id of nextStale) {
       expect(afterStatusById.get(id)).toBe('stale')
     }
+  })
+
+  it('rejects writable operations outside development mode', async () => {
+    const { adminDb } = await loadAdminDbInTempDir('test')
+
+    expect(() => adminDb.createCharacter({ name: 'Blocked', status: 'active' })).toThrow(
+      'Writable database operations are only available in development mode.',
+    )
   })
 })

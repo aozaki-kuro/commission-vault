@@ -1,10 +1,15 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resetModulesInTempDir, setupTempCommissionDb } from '../../../test/utils/tempCommissionDb'
 
 describe('admin aliases priority filtering', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   it('hides lower-priority duplicate base terms from creator/keyword aliases', async () => {
     const { tempDir } = setupTempCommissionDb('commission-index-admin-alias-priority-')
     resetModulesInTempDir(tempDir)
+    vi.stubEnv('NODE_ENV', 'development')
 
     const adminDb = await import('./db')
     adminDb.saveCharacterAliasesBatch([{ characterName: 'Kanaut Nishe', aliases: ['カナウト'] }])
