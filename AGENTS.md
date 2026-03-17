@@ -175,6 +175,7 @@ Additional guidance:
 
 ## Change Log
 
+- Moved alias normalization, date-search token helpers, commission filename parsing, and commission search metadata builders into `packages/domain`, leaving `apps/web` wrappers as bridge exports.
 - Extracted shared `character` / `commission` / alias / suggestion type contracts into `packages/domain` and switched `apps/web` to consume the package export surface.
 - Added a workspace-local React server renderer shim in `apps/web/src/config/astroReactServerShim.ts` so Astro prerender/build works after moving the app into `apps/web`.
 - Moved the Astro runtime from repository root into `apps/web` (including `src`, `server`, `data`, `public`, and `test`) and switched root scripts to delegate to the new workspace app.
