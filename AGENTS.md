@@ -175,6 +175,7 @@ Additional guidance:
 
 ## Change Log
 
+- Moved timeline grouping and year-navigation helpers into `packages/domain`, leaving `apps/web` timeline modules as bridge exports.
 - Aligned root ESLint peer dependencies and fixed remaining repo lint violations so `bun run lint` works from the workspace root.
 - Moved alias normalization, date-search token helpers, commission filename parsing, and commission search metadata builders into `packages/domain`, leaving `apps/web` wrappers as bridge exports.
 - Extracted shared `character` / `commission` / alias / suggestion type contracts into `packages/domain` and switched `apps/web` to consume the package export surface.

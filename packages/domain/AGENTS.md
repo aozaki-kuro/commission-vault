@@ -12,8 +12,10 @@
 - `src/creatorAliases.ts`: creator-name normalization and alias parsing helpers.
 - `src/keywordAliases.ts`: keyword normalization, splitting, and legacy JSON parsing helpers.
 - `src/dateSearch.ts`: date query parsing and token generation helpers.
+- `src/navigation.ts`: shared navigation item contracts.
 - `src/commissionFileName.ts`: commission filename parsing helpers.
 - `src/commissionSearchMetadata.ts`: shared search text / suggestion metadata builder.
+- `src/timeline.ts`: timeline grouping and year-nav pure helpers.
 - `src/index.ts`: single export surface for the package.
 
 ## Boundaries

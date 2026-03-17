@@ -62,6 +62,7 @@ export {
   parseKeywordAliasesJson,
   splitKeywordTerms,
 } from './keywordAliases'
+export type { CharacterNavItem } from './navigation'
 export type {
   FilteredSuggestion,
   SearchEntryLike,
@@ -72,3 +73,13 @@ export type {
   SuggestionSource,
   SuggestionTokenOperator,
 } from './search'
+export type {
+  TimelineCommissionEntry,
+  TimelineYearGroup,
+} from './timeline'
+export {
+  buildCommissionTimeline,
+  buildTimelineYearNavItem,
+  getTimelineYearSectionId,
+  getTimelineYearTitleId,
+} from './timeline'
