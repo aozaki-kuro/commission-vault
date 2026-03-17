@@ -1,3 +1,5 @@
+import { handleAdminWriteRequest } from './adminWriteApi'
+
 const TRAILING_SLASH_PATTERN = /\/+$/
 
 const CHARACTER_ITEM_PATH_PATTERN = /^\/api\/admin\/characters\/\d+$/
@@ -102,10 +104,6 @@ const LEGACY_PASSTHROUGH_ROUTES: LegacyBridgeRoute[] = [
   },
   {
     matches: pathname => COMMISSION_SOURCE_IMAGE_PATH_PATTERN.test(pathname),
-    methods: buildMethodSet(['POST']),
-  },
-  {
-    matches: pathname => pathname === '/api/admin/assets/refresh',
     methods: buildMethodSet(['POST']),
   },
 ]
@@ -605,6 +603,11 @@ export async function handleAdminApiRequest(
   const nativeCrudResponse = await handleCrudRequest(request, backend)
   if (nativeCrudResponse) {
     return nativeCrudResponse
+  }
+
+  const nativeWriteResponse = handleAdminWriteRequest(request)
+  if (nativeWriteResponse) {
+    return nativeWriteResponse
   }
 
   const shouldPassthroughLegacyRequest = LEGACY_PASSTHROUGH_ROUTES.some(route =>

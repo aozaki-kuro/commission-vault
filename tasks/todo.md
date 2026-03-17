@@ -23,7 +23,7 @@
 
 - `已完成` Standalone admin 前端：`overview` / `create` / `edit` / `aliases` / `suggestion` 已全部迁入 `apps/admin`
 - `部分完成` Admin worker 读路径：`/api/admin/health`、`/api/admin/bootstrap`、`/api/admin/aliases/bootstrap`、`/api/admin/suggestion` GET、`/api/admin/characters/:id/commissions` GET、`/api/admin/source-image/:fileName` GET 已可在存在 `DB` / `IMAGES` bindings 时走 D1/R2
-- `部分完成` Admin worker 写路径：CRUD 路由命中、入参归一化、错误响应壳已在 worker；默认持久化 backend 仍是 `createLegacyCrudBackend`，alias/suggestion/source-image POST 与 `assets/refresh` 仍未原生化
+- `部分完成` Admin worker 写路径：CRUD 路由命中、入参归一化、错误响应壳已在 worker；默认持久化 backend 仍是 `createLegacyCrudBackend`，alias/suggestion/source-image POST 仍未原生化，`assets/refresh` 已收口为 worker 原生兼容 no-op
 - `部分完成` Public web 事实源解耦：`packages/domain` 已承接一部分纯逻辑，但 `apps/web` 渲染/构建链仍直接读取本地 SQLite 与 `data/images/*`
 - `未开始` 云端事实源与 Publish：尚未建立 D1 migration、R2 object key 规则、publish-status、锁与恢复策略
 - `部分完成` 部署、认证、本地联调：域名路由、admin worker Basic Auth、独立 `dev:web` / `dev:admin` / `dev:worker` 已有，但尚无统一联调命令与完整 bindings/runbook
@@ -52,8 +52,9 @@
 - [x] worker 入口、路由分发、Basic Auth、local-dev CORS 已落地
 - [x] worker 已原生持有 `health` 与一组 D1/R2 读路径
 - [x] worker 已原生持有 CRUD 路由契约：命中、入参归一化、错误响应壳
+- [x] `assets/refresh` 已从 legacy passthrough 收口为 worker 原生兼容 no-op
 - [ ] CRUD 持久化执行层仍未原生化，默认 backend 仍是 `createLegacyCrudBackend`
-- [ ] alias batch 写入、suggestion 保存、source-image POST、`assets/refresh` 仍保留 legacy bridge 或 fallback
+- [ ] alias batch 写入、suggestion 保存、source-image POST 仍保留 legacy bridge 或 fallback
 - [ ] 现有 contract tests 主要覆盖 CRUD 壳与远端读路径，写路径原生化后的测试矩阵仍未补齐
 
 ### 阶段 3：公开站事实源解耦
@@ -105,7 +106,7 @@
 - [ ] worker 现在已经不是空壳，但“读路径原生化”容易被误判成“迁移已完成”；真正困难仍在写路径持久层与 publish 闭环
 - [ ] `apps/web` 仍直连本地 SQLite 与本地图像；只要这一点不拆，云端事实源与 publish 都只能停留在脚手架阶段
 - [ ] standalone admin 虽已完成页面迁移，但只要 `apps/web/src/features/admin/*` 和 legacy `/admin/*` 继续存在，就仍有双实现漂移风险
-- [ ] `assets/refresh` 当前已经是兼容性 no-op；若不在 roadmap 中明确其命运，后续很容易被再次误用成“发布按钮”
+- [x] `assets/refresh` 已明确为 worker 兼容性 no-op；后续不得再次误用成“发布按钮”
 
 ## 下一步关口
 
@@ -122,3 +123,4 @@
 - [x] 已把 worker 已原生化的读路径与尚未原生化的写路径明确区分
 - [x] 已把当前遗留耦合点收口为一组可跟踪文件，而不是抽象口号
 - [x] 详细迁移路线、模块级拆解、默认决策与验收标准转移到 `tasks/roadmap.md`
+- [x] `apps/admin-worker` 已原生接管 `assets/refresh` 兼容 no-op，legacy passthrough allowlist 缩减一项

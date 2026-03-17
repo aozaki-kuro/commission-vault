@@ -463,7 +463,8 @@ export function AdminOverviewPage() {
               dark:text-gray-300
             "
             >
-              Data health and write flows still remain on the legacy runtime and will move next.
+              Most data health and write flows still remain on the legacy runtime and will move
+              next.
             </p>
           </article>
         </div>

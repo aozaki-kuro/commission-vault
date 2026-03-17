@@ -272,4 +272,20 @@ describe('admin worker CRUD contract routing', () => {
       status: 'active',
     })
   })
+
+  it('handles refresh-assets natively without requiring the legacy bridge', async () => {
+    const backend = createCrudBackend()
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/assets/refresh`, { method: 'POST' }),
+      {},
+      backend,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Runtime assets are generated on demand. Refresh is no longer required.',
+    })
+  })
 })

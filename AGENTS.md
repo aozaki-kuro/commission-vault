@@ -176,6 +176,7 @@ Additional guidance:
 
 ## Change Log
 
+- Split worker-owned non-CRUD admin write compatibility handling into `apps/admin-worker/src/adminWriteApi.ts` and moved `/api/admin/assets/refresh` off the legacy passthrough path.
 - Moved standalone admin CRUD route matching/validation into `apps/admin-worker/src/adminApi.ts`, leaving non-migrated source-image/refresh flows on explicit passthrough and adding worker contract tests.
 - Moved Vitest and Playwright configuration to repository-root entrypoints, kept app-owned suites under `apps/*/test`, moved committed Playwright baselines to root `test/visual/apps/*`, routed generated test outputs to root directories, and started downshifting web runtime/build dependencies out of the root workspace manifest.
 - Migrated the standalone `edit` route in `apps/admin`, bridged edit CRUD/source-image/refresh flows through `apps/admin-worker`, and added standalone edit visual regression coverage.

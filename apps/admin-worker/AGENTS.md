@@ -6,6 +6,7 @@ This directory contains the standalone admin worker.
 
 - `src/index.ts`: worker entrypoint for auth, local-dev CORS handling, asset serving, and delegation into the admin API router.
 - `src/adminApi.ts`: admin API router that owns CRUD route matching, payload normalization, error envelopes, legacy passthrough allowlist, and the swappable CRUD backend adapter.
+- `src/adminWriteApi.ts`: worker-owned non-CRUD write-route shell for compatibility responses that should stop proxying through the legacy runtime, starting with `assets/refresh`.
 - `src/adminApi.test.ts`: contract tests that lock CRUD route normalization and failure responses so standalone admin and worker do not drift apart.
 - `wrangler.jsonc`: worker asset binding, local legacy API bridge origin, and route metadata.
 
@@ -28,5 +29,6 @@ This directory contains the standalone admin worker.
 
 ## Change Log
 
+- 2026-03-17: Split worker-owned non-CRUD write routes into `src/adminWriteApi.ts` and moved `assets/refresh` to a native compatibility no-op instead of legacy passthrough.
 - 2026-03-17: Moved `create` / `edit` CRUD routes from raw whitelist proxying to native worker route handling with a swappable backend adapter, while leaving source-image / refresh / alias / suggestion flows on explicit passthrough.
 - 2026-03-17: Added worker-side CRUD contract tests to lock request normalization and error response shape.

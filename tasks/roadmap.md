@@ -4,7 +4,7 @@
 
 ## 默认决策与假设
 
-- 本轮只做仓库盘点与迁移计划文档化，不修改运行时代码，不新增公共 API
+- 本轮优先收口 `apps/admin-worker` 的非 CRUD 写路由壳，先把 `assets/refresh` 从 legacy passthrough 收回 worker 原生兼容 no-op；不新增公共 API
 - `apps/admin-worker` 继续持有 admin API contract；迁移期间允许逐路由替换执行后端，但不允许漂移现有请求/响应形状
 - `apps/admin-worker/src/adminData.ts` 默认保持读侧模型，不继续膨胀成读写混合模块
 - worker 写路径默认新增独立 persistence 层；推荐命名为 `apps/admin-worker/src/adminPersistence.ts`
@@ -98,7 +98,6 @@
     - `/api/admin/suggestion`
     - `/api/admin/source-image/*`
     - `/api/admin/commissions/:id/source-image`
-    - `/api/admin/assets/refresh`
 - `apps/web/server/adminApiHandler.ts`
   - 当前仍是 legacy admin 写入执行者
   - 同时承担 source-image 本地文件写入与 refresh no-op 响应
@@ -143,7 +142,8 @@
 - 当前真值：
   - worker 已持有 CRUD 请求命中、校验、归一化、错误响应壳
   - 默认持久化 backend 仍是 `createLegacyCrudBackend`
-  - alias batch、suggestion 保存、source-image POST、`assets/refresh` 仍未原生化
+  - alias batch、suggestion 保存、source-image POST 仍未原生化
+  - `assets/refresh` 已收口为 worker 原生兼容 no-op，不再依赖 legacy passthrough
 - 离完成还差什么：
   - 真正的 D1/R2 写持久层
   - 写路径 contract tests / integration tests
@@ -202,7 +202,7 @@
 - 下一步：
   - 让 `createDefaultCrudBackend()` 在具备持久层 bindings 时优先走 worker persistence backend
   - route-by-route 替换 `createCharacter` / `updateCharacter` / `updateCharacterOrder` / `deleteCharacter` / `createCommission` / `updateCommission` / `deleteCommission`
-  - alias batch、suggestion 保存、source-image POST、`assets/refresh` 从 passthrough allowlist 中逐个移除
+  - alias batch、suggestion 保存、source-image POST 从 passthrough allowlist 中逐个移除
 
 #### `apps/admin-worker/src/adminData.ts`
 
@@ -259,7 +259,7 @@
   - 当前：GET 可走 R2；POST 仍未原生化
   - 默认方案：worker 写 R2，legacy 本地文件写入仅作为 fallback
 - `assets/refresh`
-  - 当前：legacy 已经是 no-op
+  - 当前：worker 已原生返回 compatibility no-op，legacy 只剩本地 dev 兼容实现
   - 默认方案：worker 保留同等 no-op，直到 Publish 成型前都不引入新语义
   - 后续切换：Publish 落地后再决定把 UI 上的 refresh affordance 改成显式 publish
 
@@ -469,7 +469,7 @@
   - 新增 `apps/admin-worker/src/adminPersistence.ts`
   - 将 `createDefaultCrudBackend()` 逐路由切到 worker persistence backend
   - 将 alias batch / suggestion POST / source-image POST 从 passthrough 移出
-  - `assets/refresh` 统一改为 worker 兼容 no-op
+  - 保持 `assets/refresh` 为 worker 兼容 no-op，不再回退到 passthrough
 - 验收信号：
   - CRUD / alias / suggestion / source-image POST 在不命中 legacy proxy 的情况下完成
   - `apps/admin-worker/src/adminApi.test.ts` 覆盖对应 happy path / validation / failure path
