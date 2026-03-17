@@ -13,7 +13,7 @@
 
 - `apps/web`：当前公开站真实运行时，同时继续承载 dev-only legacy `/admin/*`、本地 SQLite、`data/images/*`、legacy admin 数据层与本地图片写入逻辑
 - `apps/admin`：standalone 管理端前端已完成五个主页面迁移，视觉基线已建立，但运行仍依赖 worker API
-- `apps/admin-worker`：已有 worker 入口、Basic Auth、local-dev CORS、D1/R2 读路径与 CRUD 路由契约壳；写入执行层仍主要依赖 legacy bridge
+- `apps/admin-worker`：已有 worker 入口、Basic Auth、local-dev CORS、D1/R2 读路径与 CRUD 路由契约壳，以及 alias/suggestion 的 D1 写持久层；CRUD 默认 backend 与 source-image POST 仍依赖 legacy bridge 或 fallback
 - `packages/domain`：已承接共享类型与纯逻辑，是当前唯一进入主链路的共享包
 - `packages/cloudflare`：仅有占位类型与 env 约束，尚未承接实际 worker 共享能力
 - `packages/ui`：仅有占位导出，尚未吸收 admin/web 的共享 UI
@@ -23,7 +23,7 @@
 
 - `已完成` Standalone admin 前端：`overview` / `create` / `edit` / `aliases` / `suggestion` 已全部迁入 `apps/admin`
 - `部分完成` Admin worker 读路径：`/api/admin/health`、`/api/admin/bootstrap`、`/api/admin/aliases/bootstrap`、`/api/admin/suggestion` GET、`/api/admin/characters/:id/commissions` GET、`/api/admin/source-image/:fileName` GET 已可在存在 `DB` / `IMAGES` bindings 时走 D1/R2
-- `部分完成` Admin worker 写路径：CRUD 路由命中、入参归一化、错误响应壳已在 worker；默认持久化 backend 仍是 `createLegacyCrudBackend`，alias/suggestion/source-image POST 仍未原生化，`assets/refresh` 已收口为 worker 原生兼容 no-op
+- `部分完成` Admin worker 写路径：CRUD 路由命中、入参归一化、错误响应壳已在 worker；`alias batch` 与 `suggestion` 保存已可在存在 `DB` binding 时走 worker 原生持久层；默认 CRUD backend 与 `source-image POST` 仍未原生化，`assets/refresh` 已收口为 worker 原生兼容 no-op
 - `部分完成` Public web 事实源解耦：`packages/domain` 已承接一部分纯逻辑，但 `apps/web` 渲染/构建链仍直接读取本地 SQLite 与 `data/images/*`
 - `未开始` 云端事实源与 Publish：尚未建立 D1 migration、R2 object key 规则、publish-status、锁与恢复策略
 - `部分完成` 部署、认证、本地联调：域名路由、admin worker Basic Auth、独立 `dev:web` / `dev:admin` / `dev:worker` 已有，但尚无统一联调命令与完整 bindings/runbook
@@ -54,8 +54,9 @@
 - [x] worker 已原生持有 CRUD 路由契约：命中、入参归一化、错误响应壳
 - [x] `assets/refresh` 已从 legacy passthrough 收口为 worker 原生兼容 no-op
 - [ ] CRUD 持久化执行层仍未原生化，默认 backend 仍是 `createLegacyCrudBackend`
-- [ ] alias batch 写入、suggestion 保存、source-image POST 仍保留 legacy bridge 或 fallback
-- [ ] 现有 contract tests 主要覆盖 CRUD 壳与远端读路径，写路径原生化后的测试矩阵仍未补齐
+- [x] alias batch 写入与 suggestion 保存已在存在 `DB` binding 时走 worker persistence，缺 binding 时再 fallback
+- [ ] `source-image POST` 仍保留 legacy bridge 或 fallback
+- [ ] 写路径测试矩阵已开始覆盖 alias/suggestion 原生路径，但 CRUD/source-image 仍未补齐
 
 ### 阶段 3：公开站事实源解耦
 
@@ -93,7 +94,7 @@
 ## 当前遗留耦合
 
 - [ ] `apps/web/server/devAdminAstro.ts`：继续把 legacy `/admin/*` 注入 Astro dev
-- [ ] `apps/web/server/adminApiHandler.ts`：继续承担 legacy admin 写入、source-image 处理与 refresh no-op 响应
+- [ ] `apps/web/server/adminApiHandler.ts`：继续承担 CRUD 默认写入 fallback 与 source-image 处理；alias/suggestion 不再是首选执行路径
 - [ ] `apps/web/src/lib/admin/db.ts`：继续承担本地 SQLite 读写与隐式 schema 自修复
 - [ ] `apps/web/src/features/admin/imageUpload.ts`：继续承担本地文件系统图片写入/替换
 - [ ] `apps/web/data/sqlite.ts`：继续承担公开站对本地 SQLite 的只读访问
@@ -110,7 +111,7 @@
 
 ## 下一步关口
 
-1. 先完成 worker 写路径原生化设计收口：明确 `adminData.ts` 保持读侧、另拆写侧持久层模块，并按路由逐步替换 `createLegacyCrudBackend`
+1. 继续完成 worker 写路径原生化设计收口：在已落地 alias/suggestion persistence 的基础上，推进 CRUD backend 与 `source-image POST` 的逐路由替换
 2. 再定义公开站 snapshot contract：至少覆盖 `site payload`、`home-search-entries`、`rss`、`home-character-batches`、`home-timeline-batches`
 3. 在 snapshot contract 稳定后，再推进 D1 / R2 / Publish：把 `Save` 和 `Publish` 拆成两步，而不是继续扩展 legacy refresh
 4. 只有在 worker 原生写链路、snapshot contract、publish 状态机全部稳定后，才删除 `apps/web` legacy admin 与双实现组件
@@ -124,3 +125,5 @@
 - [x] 已把当前遗留耦合点收口为一组可跟踪文件，而不是抽象口号
 - [x] 详细迁移路线、模块级拆解、默认决策与验收标准转移到 `tasks/roadmap.md`
 - [x] `apps/admin-worker` 已原生接管 `assets/refresh` 兼容 no-op，legacy passthrough allowlist 缩减一项
+- [x] `apps/admin-worker` 已新增独立写侧持久层模块，用于 alias/suggestion 的 worker-native D1 写入
+- [x] alias batch 与 suggestion POST 已从 worker legacy passthrough 主路径中收紧，相关 contract tests 已补入

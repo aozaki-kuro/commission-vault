@@ -36,6 +36,37 @@ function createCrudBackend(overrides: Partial<AdminCrudBackend> = {}): AdminCrud
   }
 }
 
+interface StatementExecution {
+  query: string
+  values: unknown[]
+}
+
+function createD1Recorder() {
+  const executions: StatementExecution[] = []
+
+  return {
+    db: {
+      prepare(query: string) {
+        return {
+          bind(...values: unknown[]) {
+            return {
+              async run() {
+                executions.push({ query, values })
+                return { success: true }
+              },
+            }
+          },
+          async run() {
+            executions.push({ query, values: [] })
+            return { success: true }
+          },
+        }
+      },
+    },
+    executions,
+  }
+}
+
 describe('admin worker CRUD contract routing', () => {
   it('normalizes create-character payload before delegating to backend', async () => {
     const createCharacter = vi.fn(async (_input: CreateCharacterInput) =>
@@ -271,6 +302,156 @@ describe('admin worker CRUD contract routing', () => {
       name: 'Renamed',
       status: 'active',
     })
+  })
+
+  it('handles suggestion writes natively when DB binding exists', async () => {
+    const backend = createCrudBackend()
+    const { db, executions } = createD1Recorder()
+    const legacyFetch = vi.fn(async () => createJsonResponse({ status: 'success', message: 'legacy' }))
+
+    const request = new Request(`${baseUrl}/api/admin/suggestion`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        keywordsJson: JSON.stringify(['  Kanaut Nishe ', 'maid', 'kanaut   nishe']),
+      }),
+    })
+
+    const response = await handleAdminApiRequest(
+      request,
+      {
+        DB: db,
+        LEGACY_ADMIN_API_BASE_URL: 'http://legacy.test',
+      },
+      backend,
+      legacyFetch,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Home featured keywords saved.',
+    })
+    expect(legacyFetch).not.toHaveBeenCalled()
+
+    const deleteOps = executions.filter(item =>
+      item.query.includes('DELETE FROM home_featured_search_keywords'),
+    )
+    const insertOps = executions.filter(item =>
+      item.query.includes('INSERT INTO home_featured_search_keywords'),
+    )
+
+    expect(deleteOps).toHaveLength(1)
+    expect(insertOps).toHaveLength(2)
+    expect(insertOps.map(item => item.values)).toEqual([
+      ['Kanaut Nishe', 1],
+      ['maid', 2],
+    ])
+  })
+
+  it('handles creator alias writes natively when DB binding exists', async () => {
+    const backend = createCrudBackend()
+    const { db, executions } = createD1Recorder()
+    const legacyFetch = vi.fn(async () => createJsonResponse({ status: 'success', message: 'legacy' }))
+
+    const request = new Request(`${baseUrl}/api/admin/aliases/batch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        rows: [
+          { creatorName: 'Q (part 1)', aliases: ['Cue'] },
+          { creatorName: 'Q (part 2)', aliases: ['cue'] },
+        ],
+      }),
+    })
+
+    const response = await handleAdminApiRequest(
+      request,
+      {
+        DB: db,
+        LEGACY_ADMIN_API_BASE_URL: 'http://legacy.test',
+      },
+      backend,
+      legacyFetch,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Creator aliases saved.',
+    })
+    expect(legacyFetch).not.toHaveBeenCalled()
+
+    const insertOps = executions.filter(item => item.query.includes('INSERT INTO creator_aliases'))
+    expect(insertOps).toHaveLength(1)
+    expect(insertOps[0]?.values[0]).toBe('Q')
+    expect(JSON.parse(String(insertOps[0]?.values[1]))).toEqual(expect.arrayContaining(['Cue', 'cue']))
+  })
+
+  it('keeps creator alias rowsJson compatibility and delete semantics when DB binding exists', async () => {
+    const backend = createCrudBackend()
+    const { db, executions } = createD1Recorder()
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/aliases/batch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rowsJson: JSON.stringify([
+            { creatorName: 'Q (part 1)', alias: '' },
+          ]),
+        }),
+      }),
+      { DB: db },
+      backend,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Creator aliases saved.',
+    })
+
+    const deleteOps = executions.filter(item => item.query.includes('DELETE FROM creator_aliases'))
+    const insertOps = executions.filter(item => item.query.includes('INSERT INTO creator_aliases'))
+
+    expect(deleteOps).toHaveLength(1)
+    expect(deleteOps[0]?.values).toEqual(['Q'])
+    expect(insertOps).toHaveLength(0)
+  })
+
+  it('falls back to legacy suggestion write route when DB binding is missing', async () => {
+    const backend = createCrudBackend()
+    const legacyFetch = vi.fn(async () =>
+      createJsonResponse({ status: 'success', message: 'legacy suggestion save' }))
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/suggestion`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          keywords: ['maid'],
+        }),
+      }),
+      { LEGACY_ADMIN_API_BASE_URL: 'http://legacy.test' },
+      backend,
+      legacyFetch,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'legacy suggestion save',
+    })
+    expect(legacyFetch).toHaveBeenCalledTimes(1)
   })
 
   it('handles refresh-assets natively without requiring the legacy bridge', async () => {

@@ -1,4 +1,4 @@
-import { handleAdminWriteRequest } from './adminWriteApi'
+import { handleAdminWriteRequest, LEGACY_PASSTHROUGH } from './adminWriteApi'
 
 const TRAILING_SLASH_PATTERN = /\/+$/
 
@@ -19,6 +19,7 @@ export type CharacterStatus = 'active' | 'stale'
 
 export interface Env {
   LEGACY_ADMIN_API_BASE_URL?: string
+  DB?: unknown
 }
 
 export interface ApiState {
@@ -87,20 +88,8 @@ const LEGACY_PASSTHROUGH_ROUTES: LegacyBridgeRoute[] = [
     methods: buildMethodSet(['GET']),
   },
   {
-    matches: pathname => pathname === '/api/admin/aliases/batch',
-    methods: buildMethodSet(['POST']),
-  },
-  {
-    matches: pathname => pathname === '/api/admin/character-aliases/batch',
-    methods: buildMethodSet(['POST']),
-  },
-  {
-    matches: pathname => pathname === '/api/admin/keyword-aliases/batch',
-    methods: buildMethodSet(['POST']),
-  },
-  {
     matches: pathname => pathname === '/api/admin/suggestion',
-    methods: buildMethodSet(['GET', 'POST']),
+    methods: buildMethodSet(['GET']),
   },
   {
     matches: pathname => COMMISSION_SOURCE_IMAGE_PATH_PATTERN.test(pathname),
@@ -590,6 +579,7 @@ export async function handleAdminApiRequest(
   request: Request,
   env: Env,
   backend: AdminCrudBackend = createLegacyCrudBackend(env),
+  fetchImpl: typeof fetch = fetch,
 ) {
   const { pathname } = new URL(request.url)
 
@@ -605,7 +595,11 @@ export async function handleAdminApiRequest(
     return nativeCrudResponse
   }
 
-  const nativeWriteResponse = handleAdminWriteRequest(request)
+  const nativeWriteResponse = await handleAdminWriteRequest(request, env)
+  if (nativeWriteResponse === LEGACY_PASSTHROUGH) {
+    return proxyLegacyAdminRequest(request, env, fetchImpl)
+  }
+
   if (nativeWriteResponse) {
     return nativeWriteResponse
   }
@@ -615,7 +609,7 @@ export async function handleAdminApiRequest(
   )
 
   if (shouldPassthroughLegacyRequest) {
-    return proxyLegacyAdminRequest(request, env)
+    return proxyLegacyAdminRequest(request, env, fetchImpl)
   }
 
   return notFound()

@@ -176,6 +176,7 @@ Additional guidance:
 
 ## Change Log
 
+- Added worker-owned D1 persistence for alias batch saves and featured-keyword suggestion writes, removed those routes from the primary legacy passthrough path when bindings exist, and extended admin worker contract coverage.
 - Split worker-owned non-CRUD admin write compatibility handling into `apps/admin-worker/src/adminWriteApi.ts` and moved `/api/admin/assets/refresh` off the legacy passthrough path.
 - Moved standalone admin CRUD route matching/validation into `apps/admin-worker/src/adminApi.ts`, leaving non-migrated source-image/refresh flows on explicit passthrough and adding worker contract tests.
 - Moved Vitest and Playwright configuration to repository-root entrypoints, kept app-owned suites under `apps/*/test`, moved committed Playwright baselines to root `test/visual/apps/*`, routed generated test outputs to root directories, and started downshifting web runtime/build dependencies out of the root workspace manifest.

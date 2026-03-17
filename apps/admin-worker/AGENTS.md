@@ -6,7 +6,8 @@ This directory contains the standalone admin worker.
 
 - `src/index.ts`: worker entrypoint for auth, local-dev CORS handling, asset serving, and delegation into the admin API router.
 - `src/adminApi.ts`: admin API router that owns CRUD route matching, payload normalization, error envelopes, legacy passthrough allowlist, and the swappable CRUD backend adapter.
-- `src/adminWriteApi.ts`: worker-owned non-CRUD write-route shell for compatibility responses that should stop proxying through the legacy runtime, starting with `assets/refresh`.
+- `src/adminWriteApi.ts`: worker-owned non-CRUD write-route shell for compatibility responses and conditional native-write routing (`DB` bound -> native, otherwise legacy fallback).
+- `src/adminPersistence.ts`: worker-native D1 persistence helpers for admin non-CRUD writes (`aliases` + `suggestion`) with shared normalization rules.
 - `src/adminApi.test.ts`: contract tests that lock CRUD route normalization and failure responses so standalone admin and worker do not drift apart.
 - `wrangler.jsonc`: worker asset binding, local legacy API bridge origin, and route metadata.
 
@@ -17,6 +18,7 @@ This directory contains the standalone admin worker.
 - Serve admin frontend assets from `apps/admin/dist`.
 - Access D1 and R2 through Worker bindings.
 - Own the CRUD route contract in the worker even while persistence is still being migrated.
+- Own alias/suggestion D1 writes when `DB` bindings exist, and only fall back to the legacy bridge when those bindings are absent.
 - Bridge only the still-unmigrated legacy endpoints during migration so standalone admin routes can move incrementally without changing API shape.
 
 ## Guardrails
@@ -29,6 +31,7 @@ This directory contains the standalone admin worker.
 
 ## Change Log
 
+- 2026-03-17: Added worker-native D1 persistence for `aliases`/`suggestion` writes in `src/adminPersistence.ts`, and tightened write routing to native-with-DB plus legacy fallback when `DB` binding is absent.
 - 2026-03-17: Split worker-owned non-CRUD write routes into `src/adminWriteApi.ts` and moved `assets/refresh` to a native compatibility no-op instead of legacy passthrough.
 - 2026-03-17: Moved `create` / `edit` CRUD routes from raw whitelist proxying to native worker route handling with a swappable backend adapter, while leaving source-image / refresh / alias / suggestion flows on explicit passthrough.
 - 2026-03-17: Added worker-side CRUD contract tests to lock request normalization and error response shape.
