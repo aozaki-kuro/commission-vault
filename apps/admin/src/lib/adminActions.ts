@@ -1,3 +1,4 @@
+import type { CharacterStatus, CommissionRow } from '@commission-index/domain'
 import type { FormState } from './formState'
 import { getAdminApiUrl } from './adminApi'
 
@@ -68,6 +69,30 @@ async function postAdminJson(pathname: string, payload: unknown) {
   return parseResponse(response)
 }
 
+async function sendAdminJson(
+  pathname: string,
+  method: 'PATCH' | 'POST' | 'PUT',
+  payload: unknown,
+) {
+  const response = await fetch(getAdminApiUrl(pathname), {
+    method,
+    body: JSON.stringify(payload),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  return parseResponse(response)
+}
+
+async function sendAdminRequest(pathname: string, method: 'DELETE' | 'POST') {
+  const response = await fetch(getAdminApiUrl(pathname), {
+    method,
+  })
+
+  return parseResponse(response)
+}
+
 async function saveAliasesBatchAction(
   pathname: string,
   fallback: string,
@@ -80,6 +105,137 @@ async function saveAliasesBatchAction(
   }
   catch (error) {
     return toErrorState(error, fallback)
+  }
+}
+
+export async function addCharacterAction(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  void _prevState
+
+  try {
+    return postAdminJson('/api/admin/characters', {
+      name: formData.get('name')?.toString() ?? '',
+      status: formData.get('status')?.toString() ?? 'active',
+    })
+  }
+  catch (error) {
+    return toErrorState(error, 'Failed to create character.')
+  }
+}
+
+export async function addCommissionAction(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  void _prevState
+
+  try {
+    const response = await fetch(getAdminApiUrl('/api/admin/commissions'), {
+      method: 'POST',
+      body: formData,
+    })
+
+    return parseResponse(response)
+  }
+  catch (error) {
+    return toErrorState(error, 'Failed to add commission.')
+  }
+}
+
+export async function updateCommissionAction(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  void _prevState
+
+  const id = Number(formData.get('id'))
+  if (!Number.isFinite(id) || id <= 0) {
+    return {
+      status: 'error',
+      message: 'Invalid commission identifier.',
+    }
+  }
+
+  try {
+    return sendAdminJson(`/api/admin/commissions/${id}`, 'PATCH', {
+      characterId: Number(formData.get('characterId')),
+      fileName: formData.get('fileName')?.toString() ?? '',
+      links: formData.get('links')?.toString() ?? '',
+      design: formData.get('design')?.toString() ?? '',
+      description: formData.get('description')?.toString() ?? '',
+      keyword: formData.get('keyword')?.toString() ?? '',
+      hidden: formData.get('hidden') === 'on',
+    })
+  }
+  catch (error) {
+    return toErrorState(error, 'Failed to update commission.')
+  }
+}
+
+export async function replaceCommissionSourceImageAction(formData: FormData): Promise<FormState> {
+  const id = Number(formData.get('id'))
+  if (!Number.isFinite(id) || id <= 0) {
+    return {
+      status: 'error',
+      message: 'Invalid commission identifier.',
+    }
+  }
+
+  try {
+    const response = await fetch(getAdminApiUrl(`/api/admin/commissions/${id}/source-image`), {
+      method: 'POST',
+      body: formData,
+    })
+
+    return parseResponse(response)
+  }
+  catch (error) {
+    return toErrorState(error, 'Failed to replace source image.')
+  }
+}
+
+export async function saveCharacterOrder(payload: {
+  active: number[]
+  stale: number[]
+}): Promise<FormState> {
+  try {
+    return sendAdminJson('/api/admin/characters/order', 'PUT', payload)
+  }
+  catch (error) {
+    return toErrorState(error, 'Failed to update character order.')
+  }
+}
+
+export async function renameCharacter(payload: {
+  id: number
+  name: string
+  status: CharacterStatus
+}): Promise<FormState> {
+  try {
+    return sendAdminJson(`/api/admin/characters/${payload.id}`, 'PATCH', payload)
+  }
+  catch (error) {
+    return toErrorState(error, 'Failed to update character.')
+  }
+}
+
+export async function deleteCommissionAction(id: number): Promise<FormState> {
+  try {
+    return sendAdminRequest(`/api/admin/commissions/${id}`, 'DELETE')
+  }
+  catch (error) {
+    return toErrorState(error, 'Failed to delete commission.')
+  }
+}
+
+export async function deleteCharacterAction(id: number): Promise<FormState> {
+  try {
+    return sendAdminRequest(`/api/admin/characters/${id}`, 'DELETE')
+  }
+  catch (error) {
+    return toErrorState(error, 'Failed to delete character.')
   }
 }
 
@@ -131,5 +287,38 @@ export async function saveHomeFeaturedKeywordsAction(
   }
   catch (error) {
     return toErrorState(error, 'Failed to save featured keywords.')
+  }
+}
+
+export async function fetchCharacterCommissionsAction(
+  characterId: number,
+): Promise<CommissionRow[]> {
+  if (!Number.isFinite(characterId) || characterId <= 0) {
+    throw new Error('Invalid character identifier.')
+  }
+
+  const response = await fetch(getAdminApiUrl(`/api/admin/characters/${characterId}/commissions`), {
+    method: 'GET',
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to load commissions (${response.status}).`)
+  }
+
+  const payload = (await response.json()) as { commissions?: CommissionRow[] } | null
+  if (!payload || !Array.isArray(payload.commissions)) {
+    throw new Error('Invalid commissions payload.')
+  }
+
+  return payload.commissions
+}
+
+export async function refreshAssetsAction(): Promise<FormState> {
+  try {
+    return sendAdminRequest('/api/admin/assets/refresh', 'POST')
+  }
+  catch (error) {
+    return toErrorState(error, 'Failed to refresh assets.')
   }
 }

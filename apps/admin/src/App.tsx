@@ -3,6 +3,8 @@ import { adminSections, getAdminSectionForPath, normalizeAdminPath } from './app
 import { adminActionLinkStyles, adminSurfaceStyles } from './app/ui'
 import { AdminPageShell, AdminRootLayout } from './components/AdminLayout'
 import { AdminAliasesPage } from './pages/AdminAliasesPage'
+import { AdminCreatePage } from './pages/AdminCreatePage'
+import { AdminEditPage } from './pages/AdminEditPage'
 import { AdminOverviewPage } from './pages/AdminOverviewPage'
 import { AdminPlaceholderPage } from './pages/AdminPlaceholderPage'
 import { AdminSuggestionPage } from './pages/AdminSuggestionPage'
@@ -105,11 +107,15 @@ export function App() {
 
   const page = currentSection.key === 'overview'
     ? <AdminOverviewPage />
-    : currentSection.key === 'aliases'
-      ? <AdminAliasesPage />
-      : currentSection.key === 'suggestion'
-        ? <AdminSuggestionPage />
-        : <AdminPlaceholderPage section={currentSection} />
+    : currentSection.key === 'create'
+      ? <AdminCreatePage />
+      : currentSection.key === 'edit'
+        ? <AdminEditPage />
+        : currentSection.key === 'aliases'
+          ? <AdminAliasesPage />
+          : currentSection.key === 'suggestion'
+            ? <AdminSuggestionPage />
+            : <AdminPlaceholderPage section={currentSection} />
 
   return (
     <AdminRootLayout>

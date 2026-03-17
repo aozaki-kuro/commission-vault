@@ -1,0 +1,326 @@
+import type { ChangeEvent, ComponentPropsWithoutRef } from 'react'
+import { IconChevronDown } from '@tabler/icons-react'
+import { formControlStyles } from '../../app/ui'
+
+const fieldLabelStyles
+  = 'text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-300'
+const fieldDescriptionStyles = 'text-xs text-gray-500 dark:text-gray-400'
+
+type InputBinding = Pick<ComponentPropsWithoutRef<'input'>, 'value' | 'onChange'>
+type TextareaBinding = Pick<ComponentPropsWithoutRef<'textarea'>, 'value' | 'onChange'>
+
+function bindInputValue(value?: string, onChange?: (value: string) => void): InputBinding | undefined {
+  if (value === undefined || !onChange) {
+    return undefined
+  }
+
+  return {
+    onChange: (event: ChangeEvent<HTMLInputElement>) => onChange(event.target.value),
+    value,
+  }
+}
+
+function bindTextareaValue(value?: string, onChange?: (value: string) => void): TextareaBinding | undefined {
+  if (value === undefined || !onChange) {
+    return undefined
+  }
+
+  return {
+    onChange: (event: ChangeEvent<HTMLTextAreaElement>) => onChange(event.target.value),
+    value,
+  }
+}
+
+function SelectChevron() {
+  return (
+    <IconChevronDown
+      className="
+        pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2
+        text-gray-400
+      "
+      stroke={1.7}
+      aria-hidden="true"
+    />
+  )
+}
+
+interface CharacterSelectOption {
+  id: number
+  name: string
+}
+
+interface CommissionCharacterFieldProps {
+  options: CharacterSelectOption[]
+  selectedCharacterId: number | null
+  onChange: (id: number | null) => void
+  disabled?: boolean
+}
+
+export function CommissionCharacterField({
+  options,
+  selectedCharacterId,
+  onChange,
+  disabled = false,
+}: CommissionCharacterFieldProps) {
+  const hasCharacters = options.length > 0
+  const isDisabled = disabled || !hasCharacters
+
+  return (
+    <div className="space-y-1">
+      <label className={fieldLabelStyles} htmlFor="create-commission-character">
+        Character
+      </label>
+      <div className="relative">
+        <select
+          id="create-commission-character"
+          name="characterId"
+          value={selectedCharacterId === null ? '' : String(selectedCharacterId)}
+          onChange={event => onChange(event.target.value ? Number(event.target.value) : null)}
+          disabled={isDisabled}
+          aria-label="Character"
+          className={`
+            ${formControlStyles}
+            h-auto appearance-none py-2.5 pr-10
+          `}
+        >
+          <option value="" disabled>
+            {hasCharacters ? 'Select character' : 'No characters available'}
+          </option>
+          {options.map(option => (
+            <option key={option.id} value={option.id}>
+              {option.name}
+            </option>
+          ))}
+        </select>
+        <SelectChevron />
+      </div>
+      <p className={fieldDescriptionStyles}>Choose the character this commission belongs to.</p>
+    </div>
+  )
+}
+
+interface CommissionFileNameFieldProps {
+  value?: string
+  onChange?: (value: string) => void
+  placeholder?: string
+}
+
+interface CommissionSourceImageFieldProps {
+  accept?: string
+  helperMessage?: string
+  helperTone?: 'default' | 'success' | 'error'
+  required?: boolean
+  onChange?: (event: ChangeEvent<HTMLInputElement>) => void
+}
+
+export function CommissionSourceImageField({
+  accept = 'image/jpeg,image/png,.jpg,.jpeg,.png',
+  helperMessage = 'Upload JPG/PNG. It will be saved to data/images using this file name and then imported automatically.',
+  helperTone = 'default',
+  required = false,
+  onChange,
+}: CommissionSourceImageFieldProps) {
+  const helperMessageClassName
+    = helperTone === 'error'
+      ? 'text-red-600 dark:text-red-400'
+      : helperTone === 'success'
+        ? 'text-emerald-600 dark:text-emerald-400'
+        : fieldDescriptionStyles
+
+  return (
+    <div className="space-y-1">
+      <label className={fieldLabelStyles} htmlFor="create-commission-source-image">
+        {required ? 'Source image' : 'Source image (optional)'}
+      </label>
+      <input
+        id="create-commission-source-image"
+        type="file"
+        name="sourceImage"
+        accept={accept}
+        required={required}
+        onChange={onChange}
+        className={`
+          ${formControlStyles}
+          pointer-events-none cursor-pointer
+          file:pointer-events-auto file:mr-3 file:rounded-md file:border-0
+          file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium
+          file:text-gray-700
+          hover:file:bg-gray-200
+          dark:file:bg-gray-800 dark:file:text-gray-200
+          dark:hover:file:bg-gray-700
+        `}
+      />
+      <p className={helperMessageClassName}>{helperMessage}</p>
+    </div>
+  )
+}
+
+export function CommissionFileNameField({
+  value,
+  onChange,
+  placeholder,
+}: CommissionFileNameFieldProps) {
+  return (
+    <div className="space-y-1">
+      <label className={fieldLabelStyles} htmlFor="create-commission-file-name">
+        File name
+      </label>
+      <input
+        id="create-commission-file-name"
+        type="text"
+        name="fileName"
+        required
+        placeholder={placeholder}
+        className={formControlStyles}
+        {...(bindInputValue(value, onChange) ?? {})}
+      />
+    </div>
+  )
+}
+
+interface CommissionLinksFieldProps {
+  value?: string
+  onChange?: (value: string) => void
+  rows?: number
+}
+
+export function CommissionLinksField({
+  value,
+  onChange,
+  rows = 4,
+}: CommissionLinksFieldProps) {
+  return (
+    <div className="space-y-1">
+      <label className={fieldLabelStyles} htmlFor="create-commission-links">
+        Links (optional, one per line)
+      </label>
+      <textarea
+        id="create-commission-links"
+        name="links"
+        rows={rows}
+        placeholder="https://example.com"
+        className={formControlStyles}
+        {...(bindTextareaValue(value, onChange) ?? {})}
+      />
+      <p className={fieldDescriptionStyles}>
+        Paste each URL on a separate line, or leave blank if none.
+      </p>
+    </div>
+  )
+}
+
+interface CommissionDesignDescriptionFieldsProps {
+  designValue?: string
+  onDesignChange?: (value: string) => void
+  descriptionValue?: string
+  onDescriptionChange?: (value: string) => void
+  designPlaceholder?: string
+  descriptionPlaceholder?: string
+}
+
+export function CommissionDesignDescriptionFields({
+  designValue,
+  onDesignChange,
+  descriptionValue,
+  onDescriptionChange,
+  designPlaceholder,
+  descriptionPlaceholder,
+}: CommissionDesignDescriptionFieldsProps) {
+  return (
+    <div className="
+      grid gap-4
+      md:grid-cols-2
+    "
+    >
+      <div className="space-y-1">
+        <label className={fieldLabelStyles} htmlFor="create-commission-design">
+          Design (optional)
+        </label>
+        <input
+          id="create-commission-design"
+          type="text"
+          name="design"
+          placeholder={designPlaceholder}
+          className={formControlStyles}
+          {...(bindInputValue(designValue, onDesignChange) ?? {})}
+        />
+      </div>
+
+      <div className="space-y-1">
+        <label className={fieldLabelStyles} htmlFor="create-commission-description">
+          Description (optional)
+        </label>
+        <input
+          id="create-commission-description"
+          type="text"
+          name="description"
+          placeholder={descriptionPlaceholder}
+          className={formControlStyles}
+          {...(bindInputValue(descriptionValue, onDescriptionChange) ?? {})}
+        />
+      </div>
+    </div>
+  )
+}
+
+interface CommissionKeywordFieldProps {
+  value?: string
+  onChange?: (value: string) => void
+}
+
+export function CommissionKeywordField({ value, onChange }: CommissionKeywordFieldProps) {
+  return (
+    <div className="space-y-1">
+      <label className={fieldLabelStyles} htmlFor="create-commission-keyword">
+        Keywords (optional, comma-separated, search-only)
+      </label>
+      <input
+        id="create-commission-keyword"
+        type="text"
+        name="keyword"
+        placeholder="e.g. studio k, skeb, private tag"
+        className={formControlStyles}
+        {...(bindInputValue(value, onChange) ?? {})}
+      />
+      <p className={fieldDescriptionStyles}>
+        Separate keywords with commas. They are searchable but never rendered publicly.
+      </p>
+    </div>
+  )
+}
+
+interface CommissionHiddenSwitchProps {
+  isHidden: boolean
+  onChange: (next: boolean) => void
+}
+
+export function CommissionHiddenSwitch({
+  isHidden,
+  onChange,
+}: CommissionHiddenSwitchProps) {
+  return (
+    <div className="flex items-center gap-3">
+      <input
+        id="commission-hidden"
+        type="checkbox"
+        name="hidden"
+        checked={isHidden}
+        onChange={event => onChange(event.target.checked)}
+        aria-label="Hide commission from public list"
+        className="
+          size-4 accent-gray-900
+          dark:accent-gray-100
+        "
+      />
+      <label
+        htmlFor="commission-hidden"
+        className="
+          text-sm font-medium text-gray-700
+          dark:text-gray-200
+        "
+      >
+        Hidden
+      </label>
+    </div>
+  )
+}

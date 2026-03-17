@@ -16,15 +16,83 @@ export interface Env {
   ADMIN_REALM?: string
 }
 
-const LEGACY_BRIDGED_ENDPOINTS = new Map<string, Set<string>>([
-  ['/api/admin/bootstrap', new Set(['GET'])],
-  ['/api/admin/aliases/bootstrap', new Set(['GET'])],
-  ['/api/admin/aliases/batch', new Set(['POST'])],
-  ['/api/admin/character-aliases/batch', new Set(['POST'])],
-  ['/api/admin/keyword-aliases/batch', new Set(['POST'])],
-  ['/api/admin/suggestion', new Set(['GET', 'POST'])],
-])
 const TRAILING_SLASH_PATTERN = /\/+$/
+const CHARACTER_ITEM_PATH_PATTERN = /^\/api\/admin\/characters\/\d+$/
+const CHARACTER_COMMISSIONS_PATH_PATTERN = /^\/api\/admin\/characters\/\d+\/commissions$/
+const COMMISSION_ITEM_PATH_PATTERN = /^\/api\/admin\/commissions\/\d+$/
+const COMMISSION_SOURCE_IMAGE_PATH_PATTERN = /^\/api\/admin\/commissions\/\d+\/source-image$/
+
+interface LegacyBridgeRoute {
+  matches: (pathname: string) => boolean
+  methods: Set<string>
+}
+
+function buildMethodSet(methods: string[]) {
+  return new Set(methods)
+}
+
+const LEGACY_BRIDGED_ROUTES: LegacyBridgeRoute[] = [
+  {
+    matches: pathname => pathname === '/api/admin/bootstrap',
+    methods: buildMethodSet(['GET']),
+  },
+  {
+    matches: pathname => pathname === '/api/admin/characters',
+    methods: buildMethodSet(['POST']),
+  },
+  {
+    matches: pathname => pathname === '/api/admin/characters/order',
+    methods: buildMethodSet(['PUT']),
+  },
+  {
+    matches: pathname => CHARACTER_ITEM_PATH_PATTERN.test(pathname),
+    methods: buildMethodSet(['PATCH', 'DELETE']),
+  },
+  {
+    matches: pathname => CHARACTER_COMMISSIONS_PATH_PATTERN.test(pathname),
+    methods: buildMethodSet(['GET']),
+  },
+  {
+    matches: pathname => pathname === '/api/admin/commissions',
+    methods: buildMethodSet(['POST']),
+  },
+  {
+    matches: pathname => COMMISSION_ITEM_PATH_PATTERN.test(pathname),
+    methods: buildMethodSet(['PATCH', 'DELETE']),
+  },
+  {
+    matches: pathname => COMMISSION_SOURCE_IMAGE_PATH_PATTERN.test(pathname),
+    methods: buildMethodSet(['POST']),
+  },
+  {
+    matches: pathname => pathname.startsWith('/api/admin/source-image/'),
+    methods: buildMethodSet(['GET']),
+  },
+  {
+    matches: pathname => pathname === '/api/admin/aliases/bootstrap',
+    methods: buildMethodSet(['GET']),
+  },
+  {
+    matches: pathname => pathname === '/api/admin/aliases/batch',
+    methods: buildMethodSet(['POST']),
+  },
+  {
+    matches: pathname => pathname === '/api/admin/character-aliases/batch',
+    methods: buildMethodSet(['POST']),
+  },
+  {
+    matches: pathname => pathname === '/api/admin/keyword-aliases/batch',
+    methods: buildMethodSet(['POST']),
+  },
+  {
+    matches: pathname => pathname === '/api/admin/suggestion',
+    methods: buildMethodSet(['GET', 'POST']),
+  },
+  {
+    matches: pathname => pathname === '/api/admin/assets/refresh',
+    methods: buildMethodSet(['POST']),
+  },
+]
 
 function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -190,13 +258,13 @@ async function proxyLegacyAdminRequest(request: Request, env: Env) {
   }
 
   try {
-    const body = request.method === 'GET' || request.method === 'HEAD'
-      ? undefined
-      : await request.text()
+    const bodyBuffer = request.method === 'GET' || request.method === 'HEAD'
+      ? null
+      : await request.arrayBuffer()
     const response = await fetch(targetUrl, {
       method: request.method,
       headers: getProxyRequestHeaders(request),
-      body,
+      body: bodyBuffer && bodyBuffer.byteLength > 0 ? bodyBuffer : undefined,
       redirect: 'manual',
     })
     const headers = new Headers(response.headers)
@@ -225,8 +293,11 @@ async function handleApi(request: Request, env: Env) {
     })
   }
 
-  const bridgedMethods = LEGACY_BRIDGED_ENDPOINTS.get(pathname)
-  if (bridgedMethods?.has(request.method)) {
+  const shouldBridgeLegacyRequest = LEGACY_BRIDGED_ROUTES.some(route =>
+    route.methods.has(request.method) && route.matches(pathname),
+  )
+
+  if (shouldBridgeLegacyRequest) {
     return proxyLegacyAdminRequest(request, env)
   }
 
