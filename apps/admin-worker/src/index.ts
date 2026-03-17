@@ -1,3 +1,6 @@
+import type { Env as AdminApiEnv } from './adminApi'
+import { handleAdminApiRequest } from './adminApi'
+
 interface AssetFetcher {
   fetch: (request: Request) => Promise<Response>
 }
@@ -6,102 +9,13 @@ interface D1DatabaseLike {}
 
 interface R2BucketLike {}
 
-export interface Env {
+export interface Env extends AdminApiEnv {
   ASSETS: AssetFetcher
   DB?: D1DatabaseLike
   IMAGES?: R2BucketLike
-  LEGACY_ADMIN_API_BASE_URL?: string
   ADMIN_USERNAME?: string
   ADMIN_PASSWORD?: string
   ADMIN_REALM?: string
-}
-
-const TRAILING_SLASH_PATTERN = /\/+$/
-const CHARACTER_ITEM_PATH_PATTERN = /^\/api\/admin\/characters\/\d+$/
-const CHARACTER_COMMISSIONS_PATH_PATTERN = /^\/api\/admin\/characters\/\d+\/commissions$/
-const COMMISSION_ITEM_PATH_PATTERN = /^\/api\/admin\/commissions\/\d+$/
-const COMMISSION_SOURCE_IMAGE_PATH_PATTERN = /^\/api\/admin\/commissions\/\d+\/source-image$/
-
-interface LegacyBridgeRoute {
-  matches: (pathname: string) => boolean
-  methods: Set<string>
-}
-
-function buildMethodSet(methods: string[]) {
-  return new Set(methods)
-}
-
-const LEGACY_BRIDGED_ROUTES: LegacyBridgeRoute[] = [
-  {
-    matches: pathname => pathname === '/api/admin/bootstrap',
-    methods: buildMethodSet(['GET']),
-  },
-  {
-    matches: pathname => pathname === '/api/admin/characters',
-    methods: buildMethodSet(['POST']),
-  },
-  {
-    matches: pathname => pathname === '/api/admin/characters/order',
-    methods: buildMethodSet(['PUT']),
-  },
-  {
-    matches: pathname => CHARACTER_ITEM_PATH_PATTERN.test(pathname),
-    methods: buildMethodSet(['PATCH', 'DELETE']),
-  },
-  {
-    matches: pathname => CHARACTER_COMMISSIONS_PATH_PATTERN.test(pathname),
-    methods: buildMethodSet(['GET']),
-  },
-  {
-    matches: pathname => pathname === '/api/admin/commissions',
-    methods: buildMethodSet(['POST']),
-  },
-  {
-    matches: pathname => COMMISSION_ITEM_PATH_PATTERN.test(pathname),
-    methods: buildMethodSet(['PATCH', 'DELETE']),
-  },
-  {
-    matches: pathname => COMMISSION_SOURCE_IMAGE_PATH_PATTERN.test(pathname),
-    methods: buildMethodSet(['POST']),
-  },
-  {
-    matches: pathname => pathname.startsWith('/api/admin/source-image/'),
-    methods: buildMethodSet(['GET']),
-  },
-  {
-    matches: pathname => pathname === '/api/admin/aliases/bootstrap',
-    methods: buildMethodSet(['GET']),
-  },
-  {
-    matches: pathname => pathname === '/api/admin/aliases/batch',
-    methods: buildMethodSet(['POST']),
-  },
-  {
-    matches: pathname => pathname === '/api/admin/character-aliases/batch',
-    methods: buildMethodSet(['POST']),
-  },
-  {
-    matches: pathname => pathname === '/api/admin/keyword-aliases/batch',
-    methods: buildMethodSet(['POST']),
-  },
-  {
-    matches: pathname => pathname === '/api/admin/suggestion',
-    methods: buildMethodSet(['GET', 'POST']),
-  },
-  {
-    matches: pathname => pathname === '/api/admin/assets/refresh',
-    methods: buildMethodSet(['POST']),
-  },
-]
-
-function json(payload: unknown, status = 200) {
-  return new Response(JSON.stringify(payload), {
-    status,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-    },
-  })
 }
 
 function unauthorized(realm: string) {
@@ -222,91 +136,6 @@ function isAuthorized(request: Request, env: Env) {
   return username === expectedUser && password === expectedPassword
 }
 
-function getLegacyAdminUrl(request: Request, env: Env) {
-  const baseUrl = env.LEGACY_ADMIN_API_BASE_URL?.trim()
-  if (!baseUrl) {
-    return null
-  }
-
-  const requestUrl = new URL(request.url)
-  return new URL(`${requestUrl.pathname}${requestUrl.search}`, `${baseUrl.replace(TRAILING_SLASH_PATTERN, '')}/`)
-}
-
-function getProxyRequestHeaders(request: Request) {
-  const headers = new Headers()
-  const accept = request.headers.get('accept')
-  const contentType = request.headers.get('content-type')
-
-  if (accept) {
-    headers.set('accept', accept)
-  }
-
-  if (contentType) {
-    headers.set('content-type', contentType)
-  }
-
-  return headers
-}
-
-async function proxyLegacyAdminRequest(request: Request, env: Env) {
-  const targetUrl = getLegacyAdminUrl(request, env)
-  if (!targetUrl) {
-    return json({
-      status: 'error',
-      message: 'Legacy admin API bridge is not configured.',
-    }, 503)
-  }
-
-  try {
-    const bodyBuffer = request.method === 'GET' || request.method === 'HEAD'
-      ? null
-      : await request.arrayBuffer()
-    const response = await fetch(targetUrl, {
-      method: request.method,
-      headers: getProxyRequestHeaders(request),
-      body: bodyBuffer && bodyBuffer.byteLength > 0 ? bodyBuffer : undefined,
-      redirect: 'manual',
-    })
-    const headers = new Headers(response.headers)
-    headers.set('Cache-Control', 'no-store')
-    return new Response(response.body, {
-      status: response.status,
-      headers,
-    })
-  }
-  catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to reach legacy admin API.'
-    return json({
-      status: 'error',
-      message,
-    }, 502)
-  }
-}
-
-async function handleApi(request: Request, env: Env) {
-  const { pathname } = new URL(request.url)
-
-  if (request.method === 'GET' && pathname === '/api/admin/health') {
-    return json({
-      status: 'ok',
-      message: 'admin worker scaffold is running',
-    })
-  }
-
-  const shouldBridgeLegacyRequest = LEGACY_BRIDGED_ROUTES.some(route =>
-    route.methods.has(request.method) && route.matches(pathname),
-  )
-
-  if (shouldBridgeLegacyRequest) {
-    return proxyLegacyAdminRequest(request, env)
-  }
-
-  return json({
-    status: 'error',
-    message: 'Not Found',
-  }, 404)
-}
-
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const realm = env.ADMIN_REALM ?? 'admin.crystallize.cc'
@@ -321,7 +150,7 @@ export default {
     }
 
     if (pathname.startsWith('/api/admin/')) {
-      return withCorsHeaders(request, await handleApi(request, env))
+      return withCorsHeaders(request, await handleAdminApiRequest(request, env))
     }
 
     return env.ASSETS.fetch(request)

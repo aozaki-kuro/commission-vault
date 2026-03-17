@@ -176,6 +176,7 @@ Additional guidance:
 
 ## Change Log
 
+- Moved standalone admin CRUD route matching/validation into `apps/admin-worker/src/adminApi.ts`, leaving non-migrated source-image/refresh flows on explicit passthrough and adding worker contract tests.
 - Moved Vitest and Playwright configuration to repository-root entrypoints, kept app-owned suites under `apps/*/test`, moved committed Playwright baselines to root `test/visual/apps/*`, routed generated test outputs to root directories, and started downshifting web runtime/build dependencies out of the root workspace manifest.
 - Migrated the standalone `edit` route in `apps/admin`, bridged edit CRUD/source-image/refresh flows through `apps/admin-worker`, and added standalone edit visual regression coverage.
 - Migrated the standalone `create` route in `apps/admin`, bridged create writes through `apps/admin-worker`, and added standalone create visual regression coverage.
