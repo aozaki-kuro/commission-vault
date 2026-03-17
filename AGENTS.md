@@ -175,6 +175,7 @@ Additional guidance:
 
 ## Change Log
 
+- Migrated the standalone `suggestion` route in `apps/admin`, added worker-backed featured-keyword save/load flows, and extended the admin worker legacy bridge to proxy suggestion writes during the migration window.
 - Bridged standalone admin overview data through `apps/admin-worker`, added local worker CORS/dev-auth handling for Vite-to-worker requests, and switched `apps/admin` overview to live worker-backed counts/latest entries.
 - Moved timeline grouping and year-navigation helpers into `packages/domain`, leaving `apps/web` timeline modules as bridge exports.
 - Aligned root ESLint peer dependencies and fixed remaining repo lint violations so `bun run lint` works from the workspace root.

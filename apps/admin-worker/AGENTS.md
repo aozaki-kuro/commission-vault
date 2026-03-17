@@ -4,7 +4,7 @@ This directory contains the standalone admin worker.
 
 ## Tree
 
-- `src/index.ts`: worker entrypoint for auth, API routing, legacy read-bridge, and local-dev CORS handling.
+- `src/index.ts`: worker entrypoint for auth, API routing, legacy read/write bridge, and local-dev CORS handling.
 - `wrangler.jsonc`: worker asset binding, local legacy API bridge origin, and route metadata.
 
 ## Responsibilities
@@ -13,7 +13,7 @@ This directory contains the standalone admin worker.
 - Serve admin API (`/api/admin/*`).
 - Serve admin frontend assets from `apps/admin/dist`.
 - Access D1 and R2 through Worker bindings.
-- Bridge selected legacy read endpoints during migration so standalone admin routes can move incrementally.
+- Bridge selected legacy endpoints during migration so standalone admin routes can move incrementally without changing API shape.
 
 ## Guardrails
 
@@ -21,3 +21,4 @@ This directory contains the standalone admin worker.
 - Keep auth at worker edge, not in client-side JavaScript.
 - Avoid mixing public site routes into this worker.
 - Keep cross-origin allowances limited to local development origins; production should stay same-origin behind the worker.
+- Limit legacy write bridging to explicitly migrated routes; do not silently proxy the whole legacy API surface.

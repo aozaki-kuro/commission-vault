@@ -9,11 +9,17 @@ This directory contains the standalone admin frontend app (`Vite + React`).
 - `src/App.tsx`: path-based page selection for the standalone admin shell.
 - `src/main.tsx`: React entrypoint and global style bootstrap.
 - `src/app/sections.ts`: route definitions, titles, and shared page metadata.
-- `src/app/ui.ts`: shared Tailwind class contracts for admin shell surfaces and status badges.
+- `src/app/ui.ts`: shared Tailwind class contracts for admin shell surfaces, form controls, and status badges.
+- `src/components/AdminSuggestionDashboard.tsx`: migrated standalone suggestion dashboard with the existing drag/drop and save interactions intact.
 - `src/components/AdminLayout.tsx`: top-level layout and page header/nav wrapper.
 - `src/components/AdminSectionNav.tsx`: section navigation for overview/create/edit/aliases/suggestion.
-- `src/lib/adminApi.ts`: worker API URL resolution, retrying JSON fetch, and overview bootstrap helpers.
+- `src/components/FormStatusIndicator.tsx`: shared save/error feedback indicator for standalone admin forms.
+- `src/lib/adminActions.ts`: worker-backed form actions for standalone admin writes.
+- `src/lib/adminApi.ts`: worker API URL resolution, retrying JSON fetch, and overview/suggestion bootstrap helpers.
+- `src/lib/formState.ts`: shared form status types for standalone admin actions.
+- `src/lib/keywords.ts`: keyword normalization/deduplication helpers reused by suggestion UI.
 - `src/pages/AdminOverviewPage.tsx`: standalone overview route that loads real admin counts and latest entries through the worker bridge.
+- `src/pages/AdminSuggestionPage.tsx`: standalone suggestion route that loads and saves featured keywords through the worker bridge.
 - `src/pages/AdminPlaceholderPage.tsx`: per-route placeholder panels until the real pages are ported.
 - `src/styles/globals.css`: migrated global Tailwind/base styles from the legacy admin shell.
 - `src/vite-env.d.ts`: client env typing for `ADMIN_API_BASE_URL`.
@@ -24,7 +30,7 @@ This directory contains the standalone admin frontend app (`Vite + React`).
 - Preserve the existing admin visual design, spacing rhythm, and typography.
 - Reuse existing admin React components and interaction behavior without restyling.
 - Talk only to the admin worker API via `ADMIN_API_BASE_URL`.
-- Keep overview as the first real standalone route; new route migrations should follow the same worker-backed data path instead of reading legacy app internals directly.
+- Keep overview and suggestion on the worker-backed data path; new route migrations should follow the same API boundary instead of reading legacy app internals directly.
 
 ## Guardrails
 
