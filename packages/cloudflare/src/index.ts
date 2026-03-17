@@ -8,7 +8,6 @@ export interface AdminWorkerEnv {
   ADMIN_USERNAME?: string
   ADMIN_PASSWORD?: string
   ADMIN_REALM?: string
-  LEGACY_ADMIN_API_BASE_URL?: string
 }
 
 export function buildJson(payload: unknown, status = 200) {

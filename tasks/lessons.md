@@ -13,3 +13,5 @@
 - 2026-03-17: 后台迁移不能把“页面已经搬过去”和“设计已经 1:1 复刻”混为一谈；route 存在不代表迁移完成。只要 standalone 和 legacy 在视觉、间距、控件形态、交互语义上还有漂移，就必须继续标记为未完成，尤其是 legacy 已使用 shadcn/Radix `Select` / dropdown 的地方，不能退回成原生 `<select>` 或自定义近似实现。
 - 2026-03-17: 只要用户关心“什么时候能真正用远程 D1/R2”，计划里就必须显式区分四件事：`worker 里有 binding-aware code path`、`wrangler 已接真实 bindings`、`admin 后台已能远程读写`、`公开站已脱离本地 SQLite/data/images`。这四层不能再混写成“迁移进行中”。
 - 2026-03-17: 在任何文档里描述迁移进展时，必须强调“worker + D1/R2 是主路径”与“legacy 仅作回滚/bridge”；不要让读者以为 legacy API 仍在接收新功能，否则会破坏迁移方向感。
+- 2026-03-17: 当用户已经明确要舍弃本地兼容/本地预览时，不能继续围绕 fallback 做工程。要先把默认入口切到目标架构，并让缺失的远程依赖显式失败，而不是继续保留隐形回退路径。
+- 2026-03-17: Cloudflare 已支持“本地 `wrangler dev` + remote bindings”时，不要继续默认使用 `wrangler dev --remote` 整段远程预览链。前者更接近目标开发拓扑，也更容易直接暴露本机 HTTP 链路问题。

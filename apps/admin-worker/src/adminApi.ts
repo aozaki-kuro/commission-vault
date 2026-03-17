@@ -5,10 +5,17 @@ import {
   deleteCharacter as persistCharacterDelete,
   updateCharacterOrder as persistCharacterOrderUpdate,
   updateCharacter as persistCharacterUpdate,
+  createCommission as persistCommissionCreate,
+  deleteCommission as persistCommissionDelete,
+  getCommissionFileName as persistCommissionFileName,
+  updateCommission as persistCommissionUpdate,
 } from './adminPersistence'
-import { handleAdminWriteRequest, LEGACY_PASSTHROUGH } from './adminWriteApi'
-
-const TRAILING_SLASH_PATTERN = /\/+$/
+import {
+  removeSourceImageObject,
+  resolveImageWriteBucket,
+  saveSourceImageToBucket,
+} from './adminSourceImages'
+import { handleAdminWriteRequest } from './adminWriteApi'
 
 const CHARACTER_ITEM_PATH_PATTERN = /^\/api\/admin\/characters\/\d+$/
 const CHARACTER_ITEM_ID_PATTERN = /^\/api\/admin\/characters\/(\d+)$/
@@ -17,16 +24,11 @@ const CHARACTER_COMMISSIONS_ID_PATTERN = /^\/api\/admin\/characters\/(\d+)\/comm
 const COMMISSION_ITEM_PATH_PATTERN = /^\/api\/admin\/commissions\/\d+$/
 const COMMISSION_ITEM_ID_PATTERN = /^\/api\/admin\/commissions\/(\d+)$/
 const COMMISSION_SOURCE_IMAGE_PATH_PATTERN = /^\/api\/admin\/commissions\/\d+\/source-image$/
-
-interface LegacyBridgeRoute {
-  matches: (pathname: string) => boolean
-  methods: Set<string>
-}
+const COMMISSION_SOURCE_IMAGE_ID_PATTERN = /^\/api\/admin\/commissions\/(\d+)\/source-image$/
 
 export type CharacterStatus = 'active' | 'stale'
 
 export interface Env {
-  LEGACY_ADMIN_API_BASE_URL?: string
   DB?: unknown
   IMAGES?: unknown
 }
@@ -68,6 +70,12 @@ export interface UpdateCommissionInput extends CommissionFields {
   id: number
 }
 
+export interface ReplaceCommissionSourceImageInput {
+  id: number
+  commissionFileName: string
+  sourceImage: File
+}
+
 export interface AdminCrudBackend {
   getCharacterCommissions: (characterId: number) => Promise<Response>
   createCharacter: (input: CreateCharacterInput) => Promise<Response>
@@ -77,40 +85,7 @@ export interface AdminCrudBackend {
   createCommission: (input: CreateCommissionInput) => Promise<Response>
   updateCommission: (input: UpdateCommissionInput) => Promise<Response>
   deleteCommission: (id: number) => Promise<Response>
-}
-
-function buildMethodSet(methods: string[]) {
-  return new Set(methods)
-}
-
-const LEGACY_PASSTHROUGH_ROUTES: LegacyBridgeRoute[] = [
-  {
-    matches: pathname => pathname === '/api/admin/bootstrap',
-    methods: buildMethodSet(['GET']),
-  },
-  {
-    matches: pathname => pathname.startsWith('/api/admin/source-image/'),
-    methods: buildMethodSet(['GET']),
-  },
-  {
-    matches: pathname => pathname === '/api/admin/aliases/bootstrap',
-    methods: buildMethodSet(['GET']),
-  },
-  {
-    matches: pathname => pathname === '/api/admin/suggestion',
-    methods: buildMethodSet(['GET']),
-  },
-  {
-    matches: pathname => COMMISSION_SOURCE_IMAGE_PATH_PATTERN.test(pathname),
-    methods: buildMethodSet(['POST']),
-  },
-]
-
-class LegacyAdminRequestError extends Error {
-  constructor(message: string, readonly status: number) {
-    super(message)
-    this.name = 'LegacyAdminRequestError'
-  }
+  replaceCommissionSourceImage: (input: ReplaceCommissionSourceImageInput) => Promise<Response>
 }
 
 function json(payload: unknown, status = 200) {
@@ -137,6 +112,23 @@ function failure(message: string, status = 400) {
   } satisfies ApiState, status)
 }
 
+function bindingFailure(message: string) {
+  return failure(message, 503)
+}
+
+function createMissingBindingResponses(hasDb: boolean, hasImages: boolean) {
+  return {
+    dbOnly: () => bindingFailure('Admin worker DB binding is required for this route.'),
+    dbAndImages: () => bindingFailure(
+      hasDb
+        ? 'Admin worker IMAGES binding is required for this route.'
+        : hasImages
+          ? 'Admin worker DB binding is required for this route.'
+          : 'Admin worker DB and IMAGES bindings are required for this route.',
+    ),
+  }
+}
+
 function resolveD1Database(value: unknown): D1DatabaseLike | null {
   if (!value || typeof value !== 'object') {
     return null
@@ -148,99 +140,6 @@ function resolveD1Database(value: unknown): D1DatabaseLike | null {
   }
 
   return value as D1DatabaseLike
-}
-
-function withNoStoreHeaders(response: Response) {
-  const headers = new Headers(response.headers)
-  headers.set('Cache-Control', 'no-store')
-
-  return new Response(response.body, {
-    status: response.status,
-    headers,
-  })
-}
-
-function resolveLegacyAdminUrl(env: Env, pathname: string, search = '') {
-  const baseUrl = env.LEGACY_ADMIN_API_BASE_URL?.trim()
-  if (!baseUrl) {
-    throw new LegacyAdminRequestError('Legacy admin API bridge is not configured.', 503)
-  }
-
-  return new URL(`${pathname}${search}`, `${baseUrl.replace(TRAILING_SLASH_PATTERN, '')}/`)
-}
-
-function getProxyRequestHeaders(request: Request) {
-  const headers = new Headers()
-  const accept = request.headers.get('accept')
-  const contentType = request.headers.get('content-type')
-
-  if (accept) {
-    headers.set('accept', accept)
-  }
-
-  if (contentType) {
-    headers.set('content-type', contentType)
-  }
-
-  return headers
-}
-
-async function forwardLegacyRequest(
-  env: Env,
-  pathname: string,
-  init: RequestInit,
-  fetchImpl: typeof fetch = fetch,
-) {
-  try {
-    const targetUrl = resolveLegacyAdminUrl(env, pathname)
-    const response = await fetchImpl(targetUrl, {
-      ...init,
-      redirect: 'manual',
-    })
-
-    return withNoStoreHeaders(response)
-  }
-  catch (error) {
-    if (error instanceof LegacyAdminRequestError) {
-      throw error
-    }
-
-    const message = error instanceof Error ? error.message : 'Failed to reach legacy admin API.'
-    throw new LegacyAdminRequestError(message, 502)
-  }
-}
-
-async function proxyLegacyAdminRequest(request: Request, env: Env, fetchImpl: typeof fetch = fetch) {
-  try {
-    const requestUrl = new URL(request.url)
-    const targetUrl = resolveLegacyAdminUrl(env, requestUrl.pathname, requestUrl.search)
-    const bodyBuffer = request.method === 'GET' || request.method === 'HEAD'
-      ? null
-      : await request.arrayBuffer()
-
-    const response = await fetchImpl(targetUrl, {
-      method: request.method,
-      headers: getProxyRequestHeaders(request),
-      body: bodyBuffer && bodyBuffer.byteLength > 0 ? bodyBuffer : undefined,
-      redirect: 'manual',
-    })
-
-    return withNoStoreHeaders(response)
-  }
-  catch (error) {
-    if (error instanceof LegacyAdminRequestError) {
-      return json({
-        status: 'error',
-        message: error.message,
-      }, error.status)
-    }
-
-    const message = error instanceof Error ? error.message : 'Failed to reach legacy admin API.'
-    return json({
-      status: 'error',
-      message,
-    }, 502)
-  }
 }
 
 function parseLinks(rawValue: string) {
@@ -342,156 +241,42 @@ async function parseJsonBody(request: Request): Promise<Record<string, unknown>>
   return payload && typeof payload === 'object' ? payload as Record<string, unknown> : {}
 }
 
-function buildCommissionFormData(input: CreateCommissionInput) {
-  const formData = new FormData()
-  formData.set('characterId', String(input.characterId))
-  formData.set('fileName', input.fileName)
-  formData.set('links', input.links.join('\n'))
-  formData.set('design', input.design ?? '')
-  formData.set('description', input.description ?? '')
-  formData.set('keyword', input.keyword ?? '')
-
-  if (input.hidden) {
-    formData.set('hidden', 'on')
-  }
-
-  formData.set('sourceImage', input.sourceImage, input.sourceImage.name)
-  return formData
-}
-
 async function handleCrudBackendRequest(operation: () => Promise<Response>) {
   try {
     return await operation()
   }
   catch (error) {
-    if (error instanceof LegacyAdminRequestError) {
-      return json({
-        status: 'error',
-        message: error.message,
-      }, error.status)
-    }
-
-    const message = error instanceof Error ? error.message : 'Failed to reach legacy admin API.'
+    const message = error instanceof Error ? error.message : 'Admin worker request failed.'
     return json({
       status: 'error',
       message,
-    }, 502)
+    }, 500)
   }
 }
 
-export function createLegacyCrudBackend(env: Env, fetchImpl: typeof fetch = fetch): AdminCrudBackend {
+function createUnavailableCrudBackend(hasDb: boolean, hasImages: boolean): AdminCrudBackend {
+  const missing = createMissingBindingResponses(hasDb, hasImages)
+
   return {
-    getCharacterCommissions(characterId) {
-      return forwardLegacyRequest(
-        env,
-        `/api/admin/characters/${characterId}/commissions`,
-        { method: 'GET' },
-        fetchImpl,
-      )
-    },
-    createCharacter(input) {
-      return forwardLegacyRequest(
-        env,
-        '/api/admin/characters',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(input),
-        },
-        fetchImpl,
-      )
-    },
-    updateCharacter(input) {
-      return forwardLegacyRequest(
-        env,
-        `/api/admin/characters/${input.id}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: input.name,
-            status: input.status,
-          }),
-        },
-        fetchImpl,
-      )
-    },
-    updateCharacterOrder(payload) {
-      return forwardLegacyRequest(
-        env,
-        '/api/admin/characters/order',
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        },
-        fetchImpl,
-      )
-    },
-    deleteCharacter(id) {
-      return forwardLegacyRequest(
-        env,
-        `/api/admin/characters/${id}`,
-        { method: 'DELETE' },
-        fetchImpl,
-      )
-    },
-    createCommission(input) {
-      return forwardLegacyRequest(
-        env,
-        '/api/admin/commissions',
-        {
-          method: 'POST',
-          body: buildCommissionFormData(input),
-        },
-        fetchImpl,
-      )
-    },
-    updateCommission(input) {
-      return forwardLegacyRequest(
-        env,
-        `/api/admin/commissions/${input.id}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            characterId: input.characterId,
-            fileName: input.fileName,
-            links: input.links.join('\n'),
-            design: input.design ?? '',
-            description: input.description ?? '',
-            keyword: input.keyword ?? '',
-            hidden: input.hidden,
-          }),
-        },
-        fetchImpl,
-      )
-    },
-    deleteCommission(id) {
-      return forwardLegacyRequest(
-        env,
-        `/api/admin/commissions/${id}`,
-        { method: 'DELETE' },
-        fetchImpl,
-      )
-    },
+    getCharacterCommissions: async () => missing.dbOnly(),
+    createCharacter: async () => missing.dbOnly(),
+    updateCharacter: async () => missing.dbOnly(),
+    updateCharacterOrder: async () => missing.dbOnly(),
+    deleteCharacter: async () => missing.dbOnly(),
+    createCommission: async () => missing.dbAndImages(),
+    updateCommission: async () => missing.dbOnly(),
+    deleteCommission: async () => missing.dbOnly(),
+    replaceCommissionSourceImage: async () => missing.dbAndImages(),
   }
 }
 
-function createCharacterCrudBackend(
+function createNativeCrudBackend(
   db: D1DatabaseLike,
-  fallbackBackend: AdminCrudBackend,
+  imagesBucket: ReturnType<typeof resolveImageWriteBucket>,
+  unavailableBackend: AdminCrudBackend,
 ): AdminCrudBackend {
   return {
-    ...fallbackBackend,
+    ...unavailableBackend,
     async createCharacter(input) {
       try {
         const name = await persistCharacterCreate(db, input)
@@ -540,18 +325,106 @@ function createCharacterCrudBackend(
         return failure(error instanceof Error ? error.message : 'Failed to delete character.')
       }
     },
+    async createCommission(input) {
+      if (!imagesBucket) {
+        return unavailableBackend.createCommission(input)
+      }
+
+      let uploadedSourceImage: { targetKey: string } | null = null
+
+      try {
+        uploadedSourceImage = await saveSourceImageToBucket(imagesBucket, {
+          commissionFileName: input.fileName,
+          file: input.sourceImage,
+          overwrite: false,
+        })
+      }
+      catch (error) {
+        return failure(error instanceof Error ? error.message : 'Failed to save source image.')
+      }
+
+      try {
+        const { characterName } = await persistCommissionCreate(db, input)
+        return json({
+          status: 'success',
+          message: `Commission "${input.fileName}" added to ${characterName}.`,
+        })
+      }
+      catch (error) {
+        if (uploadedSourceImage) {
+          try {
+            await removeSourceImageObject(imagesBucket, uploadedSourceImage.targetKey)
+          }
+          catch (rollbackError) {
+            const originalMessage = error instanceof Error ? error.message : 'Failed to add commission.'
+            const rollbackMessage = rollbackError instanceof Error
+              ? rollbackError.message
+              : 'Failed to rollback source image.'
+            return failure(`${originalMessage} Rollback cleanup also failed: ${rollbackMessage}`)
+          }
+        }
+
+        return failure(error instanceof Error ? error.message : 'Failed to add commission.')
+      }
+    },
+    async updateCommission(input) {
+      try {
+        await persistCommissionUpdate(db, input)
+        return json({
+          status: 'success',
+          message: `Commission "${input.fileName}" updated.`,
+        })
+      }
+      catch (error) {
+        return failure(error instanceof Error ? error.message : 'Failed to update commission.')
+      }
+    },
+    async deleteCommission(id) {
+      try {
+        await persistCommissionDelete(db, id)
+        return json({
+          status: 'success',
+          message: 'Commission deleted.',
+        })
+      }
+      catch (error) {
+        return failure(error instanceof Error ? error.message : 'Failed to delete commission.')
+      }
+    },
+    async replaceCommissionSourceImage(input) {
+      if (!imagesBucket) {
+        return unavailableBackend.replaceCommissionSourceImage(input)
+      }
+
+      try {
+        const commissionFileName = await persistCommissionFileName(db, input.id)
+        await saveSourceImageToBucket(imagesBucket, {
+          commissionFileName,
+          file: input.sourceImage,
+          overwrite: true,
+        })
+        return json({
+          status: 'success',
+          message: `Source image for "${commissionFileName}" replaced.`,
+        })
+      }
+      catch (error) {
+        return failure(error instanceof Error ? error.message : 'Failed to replace source image.')
+      }
+    },
   }
 }
 
-function createDefaultCrudBackend(env: Env, fetchImpl: typeof fetch = fetch): AdminCrudBackend {
-  const legacyBackend = createLegacyCrudBackend(env, fetchImpl)
+function createDefaultCrudBackend(env: Env): AdminCrudBackend {
   const db = resolveD1Database(env.DB)
+  const imagesBucket = resolveImageWriteBucket(env.IMAGES)
+  const unavailableBackend = createUnavailableCrudBackend(Boolean(db), Boolean(imagesBucket))
 
   if (!db) {
-    return legacyBackend
+    return unavailableBackend
   }
 
-  return createCharacterCrudBackend(db, legacyBackend)
+  return createNativeCrudBackend(db, imagesBucket, unavailableBackend)
 }
 
 async function handleCrudRequest(request: Request, backend: AdminCrudBackend) {
@@ -662,6 +535,30 @@ async function handleCrudRequest(request: Request, backend: AdminCrudBackend) {
     return handleCrudBackendRequest(() => backend.deleteCommission(id))
   }
 
+  if (request.method === 'POST' && COMMISSION_SOURCE_IMAGE_PATH_PATTERN.test(pathname)) {
+    const id = parseIdFromPath(pathname, COMMISSION_SOURCE_IMAGE_ID_PATTERN)
+    if (!id) {
+      return failure('Invalid commission identifier.')
+    }
+
+    const formData = await request.formData()
+    const commissionFileName = formData.get('commissionFileName')?.toString().trim() ?? ''
+    if (!commissionFileName) {
+      return failure('File name is required.')
+    }
+
+    const sourceImage = getUploadedSourceImage(formData)
+    if (!sourceImage) {
+      return failure('Source image is required.')
+    }
+
+    return handleCrudBackendRequest(() => backend.replaceCommissionSourceImage({
+      id,
+      commissionFileName,
+      sourceImage,
+    }))
+  }
+
   return null
 }
 
@@ -669,15 +566,14 @@ export async function handleAdminApiRequest(
   request: Request,
   env: Env,
   backend: AdminCrudBackend | undefined = undefined,
-  fetchImpl: typeof fetch = fetch,
 ) {
   const { pathname } = new URL(request.url)
-  const resolvedBackend = backend ?? createDefaultCrudBackend(env, fetchImpl)
+  const resolvedBackend = backend ?? createDefaultCrudBackend(env)
 
   if (request.method === 'GET' && pathname === '/api/admin/health') {
     return json({
       status: 'ok',
-      message: 'admin worker scaffold is running',
+      message: 'Admin worker D1/R2 runtime is responding.',
     })
   }
 
@@ -692,20 +588,8 @@ export async function handleAdminApiRequest(
   }
 
   const nativeWriteResponse = await handleAdminWriteRequest(request, env)
-  if (nativeWriteResponse === LEGACY_PASSTHROUGH) {
-    return proxyLegacyAdminRequest(request, env, fetchImpl)
-  }
-
   if (nativeWriteResponse) {
     return nativeWriteResponse
-  }
-
-  const shouldPassthroughLegacyRequest = LEGACY_PASSTHROUGH_ROUTES.some(route =>
-    route.methods.has(request.method) && route.matches(pathname),
-  )
-
-  if (shouldPassthroughLegacyRequest) {
-    return proxyLegacyAdminRequest(request, env, fetchImpl)
   }
 
   return notFound()

@@ -56,10 +56,10 @@
 - [x] worker 已原生持有 CRUD 路由契约：命中、入参归一化、错误响应壳
 - [x] `assets/refresh` 已从 legacy passthrough 收口为 worker 原生兼容 no-op
 - [x] `apps/admin-worker/wrangler.jsonc` 已声明 `DB` / `IMAGES` bindings，并接入 D1 migration 目录与本地 bootstrap 脚手架
-- [ ] commission CRUD 持久化执行层仍未原生化；character CRUD 已可在存在 `DB` binding 时优先走 worker-native persistence
-- [x] alias batch 写入与 suggestion 保存已在存在 `DB` binding 时走 worker persistence，缺 binding 时再 fallback
-- [ ] `source-image POST` 仍保留 legacy bridge 或 fallback
-- [ ] 写路径测试矩阵已开始覆盖 alias/suggestion/character CRUD 原生路径，但 commission/source-image 仍未补齐
+- [x] commission CRUD 已由 worker-native D1 persistence 接管，不再依赖 legacy backend
+- [x] alias batch 写入与 suggestion 保存由 worker persistence 接管；已知 admin 写路由缺 binding 时直接失败
+- [x] `source-image POST` 已由 worker-native R2 写路径接管
+- [x] 写路径测试矩阵已覆盖 alias/suggestion/character/commission/source-image 的 worker-native 路径与缺 binding 报错语义
 
 ### 阶段 3：公开站事实源解耦
 
@@ -73,7 +73,7 @@
 
 - [x] 已生成 D1 migration SQL baseline（`apps/admin-worker/migrations/0001_admin_fact_source.sql`）
 - [x] 已定义当前 R2 object key 规则：沿用 source image 原文件名作为 object key
-- [x] 已建立 SQLite -> D1、`data/images/*` -> R2 的一次性迁移路径（local/remote bootstrap scripts）
+- [x] 已建立 SQLite -> D1、`data/images/*` -> R2 的一次性远程迁移路径（remote bootstrap scripts）
 - [ ] 尚未建立 `dirty` / `publishing` / `published` / `failed` 状态流
 - [ ] 尚未建立 publish 锁、重试与失败恢复机制
 
@@ -156,6 +156,25 @@
 
 ## 本轮执行切片（2026-03-17 文档）
 
-- [ ] 在 README、AGENTS、apps/admin-worker/AGENTS 以及任务文档里同步记录 Admin 以 worker + D1/R2 为主、legacy 仅作回滚/bridge 的转换导向。
-- [ ] 在 `tasks/todo.md` 末尾新增本轮切片列表，确保有可勾选项来追踪这轮文档更新的完成状态。
-- [ ] 在 `tasks/lessons.md` 追加本轮用户纠偏经验，总结这次迁移记录需要明确标注 worker code path 与 legacy binding 状态的差异。
+- [x] 在 README、AGENTS、apps/admin-worker/AGENTS 以及任务文档里同步记录 Admin 以 worker + D1/R2 为主、legacy 仅作回滚/bridge 的转换导向。
+- [x] 在 `tasks/todo.md` 末尾新增本轮切片列表，确保有可勾选项来追踪这轮文档更新的完成状态。
+- [x] 在 `tasks/lessons.md` 追加本轮用户纠偏经验，总结这次迁移记录需要明确标注 worker code path 与 legacy binding 状态的差异。
+
+## 本轮执行切片（2026-03-17 admin dev 收口）
+
+- [x] 把根脚本 `bun run dev:admin` 切到 `apps/admin` + 本地 `wrangler dev`（remote bindings） 的统一入口。
+- [x] 移除 standalone admin worker 对 legacy `/api/admin/*` 的运行时 fallback；已知 admin 路由在缺 `DB` / `IMAGES` bindings 时直接失败。
+- [x] 更新 worker contract tests，把“fallback 成功”改成“缺 binding 明确报错”。
+- [x] 更新 README、AGENTS、`apps/admin/AGENTS.md`、`apps/admin-worker/AGENTS.md`，明确 `dev:admin` 与远程 D1/R2 是唯一默认主线。
+- [x] 跑通本轮针对性验证并把结果补到 Review。
+
+## Review（2026-03-17 admin dev 收口）
+
+- [x] `bun run dev:admin` 已改为默认拉起 standalone admin + remote worker。
+- [x] worker 已删除 `LEGACY_ADMIN_API_BASE_URL` 运行时依赖与对应 fallback 路径。
+- [x] bootstrap / suggestion / source-image / CRUD 写路径在缺 binding 时会返回 503，而不是静默回落到 `apps/web`。
+- [x] 任务文档已记录这次“远程 D1/R2 唯一路径”的切换方向。
+- [x] `bun run dev:admin` 已切出 `wrangler dev --remote`，改为本地 `wrangler dev` + `remote: true` bindings，并确认 `GET /api/admin/health`、`/bootstrap`、`/aliases/bootstrap`、`/suggestion` 可正常返回。
+- [x] 已通过 HTTP `POST /api/admin/characters` + 远程 D1 读回 + HTTP `DELETE /api/admin/characters/:id` 完成一次真实远程写入闭环验证。
+- [x] `apps/admin-worker` 的 local-only bootstrap/check/sync 脚本入口已删除，`.wrangler/state` 本地持久态已清除。
+- [x] 已验证：`bunx vitest run -c vitest.config.ts apps/admin-worker/src/adminApi.test.ts`、`bun run --cwd apps/admin-worker typecheck`、`bun run --cwd apps/admin typecheck`、`bun run build:admin`、`bun run lint`。

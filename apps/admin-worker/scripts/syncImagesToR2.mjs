@@ -6,11 +6,9 @@ import process from 'node:process'
 const cwd = process.cwd()
 const imagesDir = path.resolve(cwd, '../web/data/images')
 const wranglerConfigPath = path.resolve(cwd, './wrangler.jsonc')
-const persistToPath = path.resolve(cwd, './.wrangler/state')
 const defaultBucketName = process.env.ADMIN_WORKER_IMAGES_BUCKET?.trim() || 'commission-index-source-images'
 
 const rawArgs = process.argv.slice(2)
-const useRemote = rawArgs.includes('--remote')
 const fromArgIndex = rawArgs.findIndex(arg => arg === '--from')
 const bucketNameArgIndex = rawArgs.findIndex(arg => arg === '--bucket')
 const fromFileName = fromArgIndex >= 0 ? rawArgs[fromArgIndex + 1] || '' : ''
@@ -67,14 +65,8 @@ for (const fileName of imageFiles) {
     path.resolve(imagesDir, fileName),
     '--content-type',
     getMimeType(fileName),
+    '--remote',
   ]
-
-  if (useRemote) {
-    args.push('--remote')
-  }
-  else {
-    args.push('--local', '--persist-to', persistToPath)
-  }
 
   let success = false
 
@@ -96,4 +88,4 @@ for (const fileName of imageFiles) {
   }
 }
 
-console.log(`Uploaded ${imageFiles.length} source images to ${bucketName} (${useRemote ? 'remote' : 'local'}).`)
+console.log(`Uploaded ${imageFiles.length} source images to ${bucketName} (remote).`)

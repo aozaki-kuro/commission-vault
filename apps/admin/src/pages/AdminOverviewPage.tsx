@@ -112,7 +112,7 @@ function getStatusTone(payload: AdminOverviewPayload | null, errorMessage: strin
 
 function getStatusLabel(payload: AdminOverviewPayload | null, errorMessage: string | null, isLoading: boolean) {
   if (errorMessage) {
-    return 'Bridge error'
+    return 'Worker error'
   }
 
   if (payload?.health.status === 'ok') {
@@ -384,7 +384,7 @@ export function AdminOverviewPage() {
               dark:text-gray-300
             "
             >
-              The standalone admin now reads real overview data through the worker bridge.
+              The standalone admin now reads and writes through the remote admin worker.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -463,8 +463,7 @@ export function AdminOverviewPage() {
               dark:text-gray-300
             "
             >
-              Most data health and write flows still remain on the legacy runtime and will move
-              next.
+              All admin reads and writes now go through the worker-backed D1/R2 API.
             </p>
           </article>
         </div>

@@ -8,10 +8,7 @@ const cwd = process.cwd()
 const sourceDbPath = path.resolve(cwd, '../web/data/commissions.db')
 const imagesDir = path.resolve(cwd, '../web/data/images')
 const wranglerConfigPath = path.resolve(cwd, './wrangler.jsonc')
-const persistToPath = path.resolve(cwd, './.wrangler/state')
 const defaultBucketName = process.env.ADMIN_WORKER_IMAGES_BUCKET?.trim() || 'commission-index-source-images'
-const useRemote = process.argv.includes('--remote')
-const modeFlag = useRemote ? '--remote' : '--local'
 const IMAGE_FILE_PATTERN = /\.(?:jpg|jpeg|png)$/i
 
 function runCommand(args) {
@@ -53,7 +50,7 @@ function loadWorkerCounts() {
     '--config',
     wranglerConfigPath,
     '--json',
-    modeFlag,
+    '--remote',
     '--command',
     [
       'SELECT COUNT(*) AS characters_count FROM characters',
@@ -64,10 +61,6 @@ function loadWorkerCounts() {
       'SELECT COUNT(*) AS featured_keywords_count FROM home_featured_search_keywords',
     ].join('; '),
   ]
-
-  if (!useRemote) {
-    args.push('--persist-to', persistToPath)
-  }
 
   const stdout = runCommand(args)
   const payload = JSON.parse(stdout)
@@ -96,12 +89,8 @@ function checkR2Coverage() {
       'get',
       `${defaultBucketName}/${fileName}`,
       '--pipe',
-      modeFlag,
+      '--remote',
     ]
-
-    if (!useRemote) {
-      args.push('--persist-to', persistToPath)
-    }
 
     const result = spawnSync('bunx', ['wrangler', ...args], {
       cwd,
@@ -132,7 +121,7 @@ const mismatchedTables = Object.entries(localCounts)
   }))
 
 const summary = {
-  mode: useRemote ? 'remote' : 'local',
+  mode: 'remote',
   localCounts,
   workerCounts,
   mismatchedTables,

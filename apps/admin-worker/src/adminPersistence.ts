@@ -7,6 +7,7 @@ import {
   normalizeKeywordAliases,
   normalizeKeywordAliasKey,
   normalizeKeywordBaseTerm,
+  splitKeywordTerms,
 } from '../../../packages/domain/src/index'
 
 interface D1ResultLike {
@@ -42,6 +43,25 @@ interface CharacterIdRow {
 
 interface CharacterNameRow {
   name: string
+}
+
+interface CharacterRecordRow {
+  id: number
+  name: string
+}
+
+interface CommissionFileNameRow {
+  fileName: string
+}
+
+interface NormalizedCommissionMutation {
+  characterId: number
+  description: string | null
+  design: string | null
+  fileName: string
+  hidden: number
+  keyword: string | null
+  links: string
 }
 
 interface CharacterOrderPayload {
@@ -82,6 +102,35 @@ const CREATE_HOME_FEATURED_SEARCH_KEYWORDS_TABLE_SQL = `
 
 function normalizeKeyword(value: string) {
   return value.trim().replace(NORMALIZE_SPACES_PATTERN, ' ')
+}
+
+function normalizeCommissionKeyword(value?: string | null) {
+  const keywords = splitKeywordTerms(value)
+  if (keywords.length === 0) {
+    return null
+  }
+
+  return normalizeKeywordAliases(keywords).join(', ')
+}
+
+function normalizeCommissionMutation(input: {
+  characterId: number
+  fileName: string
+  links: string[]
+  design?: string | null
+  description?: string | null
+  keyword?: string | null
+  hidden?: boolean
+}): NormalizedCommissionMutation {
+  return {
+    characterId: input.characterId,
+    fileName: input.fileName.trim(),
+    links: JSON.stringify(input.links),
+    design: input.design ?? null,
+    description: input.description ?? null,
+    keyword: normalizeCommissionKeyword(input.keyword),
+    hidden: input.hidden ? 1 : 0,
+  }
 }
 
 function dedupeKeywords(keywords: Iterable<string>, maxCount = Number.POSITIVE_INFINITY) {
@@ -247,6 +296,177 @@ export async function deleteCharacter(db: D1DatabaseLike, id: number) {
 
   await runStatement(db, 'DELETE FROM commissions WHERE character_id = ?', [id])
   await runStatement(db, 'DELETE FROM characters WHERE id = ?', [id])
+}
+
+export async function createCommission(
+  db: D1DatabaseLike,
+  input: {
+    characterId: number
+    fileName: string
+    links: string[]
+    design?: string | null
+    description?: string | null
+    keyword?: string | null
+    hidden?: boolean
+  },
+) {
+  const normalizedInput = normalizeCommissionMutation(input)
+
+  const characterRecord = await queryFirstRow<CharacterRecordRow>(
+    db,
+    'SELECT id, name FROM characters WHERE id = ? LIMIT 1',
+    [normalizedInput.characterId],
+  )
+
+  if (!characterRecord) {
+    throw new Error('Selected character does not exist.')
+  }
+
+  await runStatement(
+    db,
+    `
+      INSERT INTO commissions (
+        character_id,
+        file_name,
+        links,
+        design,
+        description,
+        keyword,
+        hidden
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+    [
+      characterRecord.id,
+      normalizedInput.fileName,
+      normalizedInput.links,
+      normalizedInput.design,
+      normalizedInput.description,
+      normalizedInput.keyword,
+      normalizedInput.hidden,
+    ],
+  )
+
+  return {
+    characterName: characterRecord.name,
+  }
+}
+
+export async function updateCommission(
+  db: D1DatabaseLike,
+  input: {
+    id: number
+    characterId: number
+    fileName: string
+    links: string[]
+    design?: string | null
+    description?: string | null
+    keyword?: string | null
+    hidden?: boolean
+  },
+) {
+  const normalizedInput = normalizeCommissionMutation(input)
+  const currentCommission = await queryFirstRow<NormalizedCommissionMutation>(
+    db,
+    `
+      SELECT
+        character_id as characterId,
+        file_name as fileName,
+        links as links,
+        design as design,
+        description as description,
+        keyword as keyword,
+        hidden as hidden
+      FROM commissions
+      WHERE id = ?
+      LIMIT 1
+    `,
+    [input.id],
+  )
+
+  if (!currentCommission) {
+    throw new Error('Commission not found.')
+  }
+
+  const characterRecord = await queryFirstRow<CharacterIdRow>(
+    db,
+    'SELECT id FROM characters WHERE id = ? LIMIT 1',
+    [normalizedInput.characterId],
+  )
+
+  if (!characterRecord) {
+    throw new Error('Selected character does not exist.')
+  }
+
+  normalizedInput.characterId = characterRecord.id
+
+  const isUnchanged
+    = currentCommission.characterId === normalizedInput.characterId
+      && currentCommission.fileName === normalizedInput.fileName
+      && currentCommission.links === normalizedInput.links
+      && currentCommission.design === normalizedInput.design
+      && currentCommission.description === normalizedInput.description
+      && currentCommission.keyword === normalizedInput.keyword
+      && Number(currentCommission.hidden) === normalizedInput.hidden
+
+  if (isUnchanged) {
+    return false
+  }
+
+  await runStatement(
+    db,
+    `
+      UPDATE commissions
+      SET
+        character_id = ?,
+        file_name = ?,
+        links = ?,
+        design = ?,
+        description = ?,
+        keyword = ?,
+        hidden = ?
+      WHERE id = ?
+    `,
+    [
+      normalizedInput.characterId,
+      normalizedInput.fileName,
+      normalizedInput.links,
+      normalizedInput.design,
+      normalizedInput.description,
+      normalizedInput.keyword,
+      normalizedInput.hidden,
+      input.id,
+    ],
+  )
+
+  return true
+}
+
+export async function deleteCommission(db: D1DatabaseLike, id: number) {
+  const existing = await queryFirstRow<CommissionFileNameRow>(
+    db,
+    'SELECT file_name as fileName FROM commissions WHERE id = ? LIMIT 1',
+    [id],
+  )
+
+  if (!existing) {
+    return
+  }
+
+  await runStatement(db, 'DELETE FROM commissions WHERE id = ?', [id])
+}
+
+export async function getCommissionFileName(db: D1DatabaseLike, id: number) {
+  const row = await queryFirstRow<CommissionFileNameRow>(
+    db,
+    'SELECT file_name as fileName FROM commissions WHERE id = ? LIMIT 1',
+    [id],
+  )
+
+  if (!row?.fileName) {
+    throw new Error('Commission not found.')
+  }
+
+  return row.fileName
 }
 
 export async function saveCreatorAliasesBatch(

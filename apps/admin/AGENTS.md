@@ -39,12 +39,12 @@ This directory contains the standalone admin frontend app (`Vite + React`).
 - `src/lib/formState.ts`: shared form status types for standalone admin actions.
 - `src/lib/keywords.ts`: keyword normalization/deduplication helpers reused by suggestion UI.
 - `src/lib/search/adminCommissionSearch.ts`: standalone edit-page search-text assembly and matched commission/character resolution.
-- `src/pages/AdminAliasesPage.tsx`: standalone aliases route that loads alias bootstrap data through the worker bridge.
+- `src/pages/AdminAliasesPage.tsx`: standalone aliases route that loads alias bootstrap data through the worker API.
 - `src/pages/AdminCreatePage.tsx`: standalone create route that loads bootstrap data and renders the migrated create dashboard.
 - `src/pages/AdminEditPage.tsx`: standalone edit route that loads bootstrap data, restores scroll on reload, and exposes refresh-assets feedback.
-- `src/pages/AdminOverviewPage.tsx`: standalone overview route that loads real admin counts and latest entries through the worker bridge.
+- `src/pages/AdminOverviewPage.tsx`: standalone overview route that loads real admin counts and latest entries through the worker API.
 - `src/pages/AdminPlaceholderPage.tsx`: per-route placeholder panels until the real pages are ported.
-- `src/pages/AdminSuggestionPage.tsx`: standalone suggestion route that loads and saves featured keywords through the worker bridge.
+- `src/pages/AdminSuggestionPage.tsx`: standalone suggestion route that loads and saves featured keywords through the worker API.
 - `src/styles/globals.css`: migrated global Tailwind/base styles plus the standalone admin font-family contract.
 - `src/vite-env.d.ts`: client env typing for `ADMIN_API_BASE_URL`.
 - `test/visual/admin-create.spec.ts`: standalone admin Playwright visual regression for the create page and its form cluster.
@@ -60,6 +60,7 @@ This directory contains the standalone admin frontend app (`Vite + React`).
 - Reuse existing admin React components and interaction behavior without restyling.
 - Where legacy admin uses shadcn/Radix primitives such as `Select` or dropdown-style overlays, preserve those primitives and behaviors in standalone admin instead of downgrading to native `<select>` or approximate custom controls.
 - Talk only to the admin worker API via `ADMIN_API_BASE_URL`.
+- Default local development for this app is `bun run dev:admin` from the repo root, which pairs this frontend with local `apps/admin-worker` execution backed by remote D1/R2 bindings.
 - Keep overview, create, edit, suggestion, and aliases on the worker-backed data path; new route migrations should follow the same API boundary instead of reading legacy app internals directly.
 - Use `admin-legacy` Playwright baselines as the migration reference until each standalone route fully matches legacy output.
 
@@ -73,5 +74,6 @@ This directory contains the standalone admin frontend app (`Vite + React`).
 
 ## Change Log
 
+- 2026-03-17: Switched the default admin dev entrypoint to `bun run dev:admin`, and updated standalone overview messaging to treat the remote worker + D1/R2 API as the only active admin runtime.
 - 2026-03-17: Migrated the standalone `create` route, moved add-character/add-commission form logic into `apps/admin`, and bridged create writes through the admin worker.
 - 2026-03-17: Migrated the standalone `edit` route, moved `CommissionManager` and edit form logic into `apps/admin`, and extended the admin worker bridge for edit CRUD/source-image/refresh flows.

@@ -5,14 +5,14 @@ This directory contains admin-worker migration scripts.
 ## Tree
 
 - `buildD1SeedSql.mjs`: reads the legacy SQLite truth from `apps/web/data/commissions.db` and generates deterministic seed SQL for D1.
-- `checkFactSourceParity.mjs`: compares local SQLite/image truth with worker-local or remote D1/R2 state and reports mismatches.
-- `syncImagesToR2.mjs`: uploads source images from `apps/web/data/images/*` into the configured R2 bucket for local or remote worker testing.
+- `checkFactSourceParity.mjs`: compares local SQLite/image truth with the remote D1/R2 state and reports mismatches.
+- `syncImagesToR2.mjs`: uploads source images from `apps/web/data/images/*` into the configured remote R2 bucket.
 
 ## Responsibilities
 
 - Keep D1/R2 migration scripts deterministic and repeatable.
 - Treat `apps/web/data/commissions.db` and `apps/web/data/images/*` as the current export source until publish cutover lands.
-- Prefer explicit local/remote flags over hidden environment magic.
+- Target the remote admin fact source directly; do not maintain a second worker-local fact source.
 
 ## Guardrails
 

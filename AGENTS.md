@@ -23,8 +23,12 @@ This repository contains an Astro 6 static site with React 19 islands, written i
 ## Admin migration direction
 
 - Standalone admin is being stabilized on `apps/admin-worker` with D1/R2 bindings; all future admin capabilities (CRUD, asset writes, alias/suggestion tooling) are planned, designed, and validated on the worker + D1/R2 surface instead of augmenting the legacy `/api/admin/*` debugging layer inside `apps/web`.
-- The legacy `/admin` routes together with `/api/admin/*` inside `apps/web` exist only as migration rollback/bridge paths. They are not being extended with new functionality and should only be exercised when the worker-backed routes cannot fulfill the scenario or before the bindings are available.
-- Worker-local D1/R2 bootstrap now lives in `apps/admin-worker/migrations/*` plus `apps/admin-worker/scripts/*`; use those scripts to mirror `apps/web/data/commissions.db` and `apps/web/data/images/*` into worker-local state before validating admin flows against the worker.
+- `bun run dev:admin` is the default standalone admin workflow and must start `apps/admin` plus local `wrangler dev` with remote D1/R2 bindings against the remote fact source.
+- The admin worker must fail fast when `DB` or `IMAGES` bindings are missing from known admin routes; do not restore local SQLite/image fallback into the standalone admin path.
+- The legacy `/admin` routes together with `/api/admin/*` inside `apps/web` exist only as migration rollback/reference paths. They are not part of the default standalone admin dev loop.
+- Worker-backed admin now owns character CRUD, commission CRUD, alias/suggestion writes, source-image GET, and source-image replacement whenever `DB` / `IMAGES` bindings are present.
+- Remote D1/R2 bootstrap now lives in `apps/admin-worker/migrations/*` plus `apps/admin-worker/scripts/*`; use those scripts to mirror `apps/web/data/commissions.db` and `apps/web/data/images/*` into the remote fact source before validating admin flows against the worker.
+- Standalone admin day-to-day development should use `bun run dev:admin`, which starts `apps/admin` plus `apps/admin-worker` in local worker mode with remote bindings and avoids pulling `apps/web` into the loop by default. `bun run dev:admin:remote` remains only as a compatibility alias.
 
 ## Home Rendering Architecture
 
@@ -182,12 +186,14 @@ Additional guidance:
 
 ## Change Log
 
-- Declared `DB` / `IMAGES` bindings plus a D1 migrations directory in `apps/admin-worker/wrangler.jsonc`, and added worker-local bootstrap scripts to mirror the current SQLite/image truth into D1/R2-shaped local state.
+- Added `apps/admin-worker/src/adminSourceImages.ts`, moved worker-native commission CRUD plus `POST /api/admin/commissions/:id/source-image` onto D1/R2-backed execution when bindings exist, and extended admin worker contract tests to cover native create/update/delete/replace behavior.
+- Added root `scripts/devAdminRemote.mjs`, root `dev:admin:remote`, and worker `dev:remote` so standalone admin development can run against remote D1/R2 without depending on `apps/web`.
+- Declared `DB` / `IMAGES` bindings plus a D1 migrations directory in `apps/admin-worker/wrangler.jsonc`, and added remote bootstrap scripts to mirror the current SQLite/image truth into the D1/R2 fact source.
 - Added `apps/admin-worker/src/adminData.ts` so worker read routes can serve bootstrap, aliases, suggestion, character commissions, and source-image GETs from D1/R2 bindings before falling back to the legacy bridge.
-- Added worker-native D1 persistence for character create/update/reorder/delete and made `apps/admin-worker` prefer native character CRUD when `DB` bindings exist, while leaving commission CRUD/source-image writes on explicit migration fallback.
+- Added worker-native D1 persistence for character create/update/reorder/delete and made `apps/admin-worker` prefer native character CRUD when `DB` bindings exist.
 - Added worker-owned D1 persistence for alias batch saves and featured-keyword suggestion writes, removed those routes from the primary legacy passthrough path when bindings exist, and extended admin worker contract coverage.
 - Split worker-owned non-CRUD admin write compatibility handling into `apps/admin-worker/src/adminWriteApi.ts` and moved `/api/admin/assets/refresh` off the legacy passthrough path.
-- Moved standalone admin CRUD route matching/validation into `apps/admin-worker/src/adminApi.ts`, leaving non-migrated source-image/refresh flows on explicit passthrough and adding worker contract tests.
+- Moved standalone admin CRUD route matching/validation into `apps/admin-worker/src/adminApi.ts` and added worker contract tests.
 - Moved Vitest and Playwright configuration to repository-root entrypoints, kept app-owned suites under `apps/*/test`, moved committed Playwright baselines to root `test/visual/apps/*`, routed generated test outputs to root directories, and started downshifting web runtime/build dependencies out of the root workspace manifest.
 - Migrated the standalone `edit` route in `apps/admin`, bridged edit CRUD/source-image/refresh flows through `apps/admin-worker`, and added standalone edit visual regression coverage.
 - Migrated the standalone `create` route in `apps/admin`, bridged create writes through `apps/admin-worker`, and added standalone create visual regression coverage.

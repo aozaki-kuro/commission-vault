@@ -32,6 +32,7 @@ function createCrudBackend(overrides: Partial<AdminCrudBackend> = {}): AdminCrud
     createCommission: vi.fn(async () => createJsonResponse({ status: 'success', message: 'ok' })),
     updateCommission: vi.fn(async () => createJsonResponse({ status: 'success', message: 'ok' })),
     deleteCommission: vi.fn(async () => createJsonResponse({ status: 'success', message: 'ok' })),
+    replaceCommissionSourceImage: vi.fn(async () => createJsonResponse({ status: 'success', message: 'ok' })),
     ...overrides,
   }
 }
@@ -43,6 +44,7 @@ interface StatementExecution {
 
 function createD1Recorder(options: {
   queryResults?: (query: string, values: unknown[]) => unknown[]
+  runBehavior?: (query: string, values: unknown[]) => { success?: boolean } | void
 } = {}) {
   const executions: StatementExecution[] = []
 
@@ -57,7 +59,7 @@ function createD1Recorder(options: {
       },
       async run() {
         executions.push({ query, values })
-        return { success: true }
+        return options.runBehavior?.(query, values) ?? { success: true }
       },
     }
   }
@@ -69,6 +71,48 @@ function createD1Recorder(options: {
       },
     },
     executions,
+  }
+}
+
+function createImagesBucketRecorder(options: {
+  existingKeys?: string[]
+  existingObjects?: Record<string, { body?: ArrayBuffer, contentType?: string }>
+} = {}) {
+  const existingKeys = new Set(options.existingKeys ?? [])
+  const existingObjects = options.existingObjects ?? {}
+  const put = vi.fn(async (_key: string, _value: ArrayBuffer, _options?: { httpMetadata?: { contentType?: string } }) => ({}))
+  const deleteObject = vi.fn(async (_key: string) => ({}))
+  const get = vi.fn(async (key: string) => {
+    if (key in existingObjects) {
+      const object = existingObjects[key]!
+      return {
+        httpMetadata: object.contentType ? { contentType: object.contentType } : undefined,
+        async arrayBuffer() {
+          return object.body ?? new Uint8Array([1, 2, 3]).buffer
+        },
+      }
+    }
+
+    if (!existingKeys.has(key)) {
+      return null
+    }
+
+    return {
+      async arrayBuffer() {
+        return new Uint8Array([1, 2, 3]).buffer
+      },
+    }
+  })
+
+  return {
+    bucket: {
+      delete: deleteObject,
+      get,
+      put,
+    },
+    deleteObject,
+    get,
+    put,
   }
 }
 
@@ -321,7 +365,7 @@ describe('admin worker CRUD contract routing', () => {
 
     const formData = new FormData()
     formData.set('characterId', '7')
-    formData.set('fileName', '  sample-piece  ')
+    formData.set('fileName', '  20250301_sample-piece  ')
     formData.set('links', ' https://a.example \n\nhttps://b.example ')
     formData.set('design', '  outfit  ')
     formData.set('description', '  desc  ')
@@ -346,7 +390,7 @@ describe('admin worker CRUD contract routing', () => {
     const [payload] = createCommission.mock.calls[0] as [CreateCommissionInput]
     expect(payload).toMatchObject({
       characterId: 7,
-      fileName: 'sample-piece',
+      fileName: '20250301_sample-piece',
       links: ['https://a.example', 'https://b.example'],
       design: 'outfit',
       description: 'desc',
@@ -477,8 +521,6 @@ describe('admin worker CRUD contract routing', () => {
         return []
       },
     })
-    const legacyFetch = vi.fn(async () => createJsonResponse({ status: 'success', message: 'legacy' }))
-
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/characters`, {
         method: 'POST',
@@ -490,12 +532,7 @@ describe('admin worker CRUD contract routing', () => {
           status: 'stale',
         }),
       }),
-      {
-        DB: db,
-        LEGACY_ADMIN_API_BASE_URL: 'http://legacy.test',
-      },
-      undefined,
-      legacyFetch,
+      { DB: db },
     )
 
     expect(response.status).toBe(200)
@@ -503,8 +540,6 @@ describe('admin worker CRUD contract routing', () => {
       status: 'success',
       message: 'Character "Alice" created.',
     })
-    expect(legacyFetch).not.toHaveBeenCalled()
-
     const insertOps = executions.filter(item => item.query.includes('INSERT INTO characters'))
     expect(insertOps).toHaveLength(1)
     expect(insertOps[0]?.values).toEqual(['Alice', 'stale', 5])
@@ -520,8 +555,6 @@ describe('admin worker CRUD contract routing', () => {
         return []
       },
     })
-    const legacyFetch = vi.fn(async () => createJsonResponse({ status: 'success', message: 'legacy' }))
-
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/characters/14`, {
         method: 'PATCH',
@@ -533,12 +566,7 @@ describe('admin worker CRUD contract routing', () => {
           status: 'active',
         }),
       }),
-      {
-        DB: db,
-        LEGACY_ADMIN_API_BASE_URL: 'http://legacy.test',
-      },
-      undefined,
-      legacyFetch,
+      { DB: db },
     )
 
     expect(response.status).toBe(200)
@@ -546,8 +574,6 @@ describe('admin worker CRUD contract routing', () => {
       status: 'success',
       message: 'Character "Renamed" updated.',
     })
-    expect(legacyFetch).not.toHaveBeenCalled()
-
     const updateOps = executions.filter(item => item.query.includes('UPDATE characters SET name = ?, status = ?'))
     expect(updateOps).toHaveLength(1)
     expect(updateOps[0]?.values).toEqual(['Renamed', 'active', 14])
@@ -555,8 +581,6 @@ describe('admin worker CRUD contract routing', () => {
 
   it('handles character reordering natively when DB binding exists', async () => {
     const { db, executions } = createD1Recorder()
-    const legacyFetch = vi.fn(async () => createJsonResponse({ status: 'success', message: 'legacy' }))
-
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/characters/order`, {
         method: 'PUT',
@@ -568,12 +592,7 @@ describe('admin worker CRUD contract routing', () => {
           stale: [3],
         }),
       }),
-      {
-        DB: db,
-        LEGACY_ADMIN_API_BASE_URL: 'http://legacy.test',
-      },
-      undefined,
-      legacyFetch,
+      { DB: db },
     )
 
     expect(response.status).toBe(200)
@@ -581,8 +600,6 @@ describe('admin worker CRUD contract routing', () => {
       status: 'success',
       message: 'Character order updated.',
     })
-    expect(legacyFetch).not.toHaveBeenCalled()
-
     const updateOps = executions.filter(item =>
       item.query.includes('UPDATE characters SET sort_order = ?, status = ? WHERE id = ?'),
     )
@@ -604,18 +621,11 @@ describe('admin worker CRUD contract routing', () => {
         return []
       },
     })
-    const legacyFetch = vi.fn(async () => createJsonResponse({ status: 'success', message: 'legacy' }))
-
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/characters/7`, {
         method: 'DELETE',
       }),
-      {
-        DB: db,
-        LEGACY_ADMIN_API_BASE_URL: 'http://legacy.test',
-      },
-      undefined,
-      legacyFetch,
+      { DB: db },
     )
 
     expect(response.status).toBe(200)
@@ -623,27 +633,257 @@ describe('admin worker CRUD contract routing', () => {
       status: 'success',
       message: 'Character deleted.',
     })
-    expect(legacyFetch).not.toHaveBeenCalled()
-
     expect(executions.filter(item => item.query.includes('DELETE FROM commissions WHERE character_id = ?')))
       .toHaveLength(1)
     expect(executions.filter(item => item.query.includes('DELETE FROM characters WHERE id = ?')))
       .toHaveLength(1)
   })
 
+  it('handles create-commission natively when DB and IMAGES bindings exist', async () => {
+    const { db, executions } = createD1Recorder({
+      queryResults(query, values) {
+        if (query.includes('SELECT id, name FROM characters WHERE id = ?')) {
+          return [{ id: Number(values[0]), name: 'Alice' }]
+        }
+
+        return []
+      },
+    })
+    const { bucket, get, put, deleteObject } = createImagesBucketRecorder()
+
+    const formData = new FormData()
+    formData.set('characterId', '7')
+    formData.set('fileName', '  20250301_sample-piece  ')
+    formData.set('links', ' https://a.example \n\nhttps://b.example ')
+    formData.set('design', '  outfit  ')
+    formData.set('description', '  desc  ')
+    formData.set('keyword', '  tag  ')
+    formData.set('hidden', 'on')
+    formData.set('sourceImage', new File(['png'], 'sample.png', { type: 'image/png' }))
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/commissions`, {
+        method: 'POST',
+        body: formData,
+      }),
+      {
+        DB: db,
+        IMAGES: bucket,
+      },
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Commission "20250301_sample-piece" added to Alice.',
+    })
+    expect(get).toHaveBeenCalledTimes(3)
+    expect(get).toHaveBeenNthCalledWith(1, '20250301_sample-piece.jpg')
+    expect(get).toHaveBeenNthCalledWith(2, '20250301_sample-piece.jpeg')
+    expect(get).toHaveBeenNthCalledWith(3, '20250301_sample-piece.png')
+    expect(put).toHaveBeenCalledTimes(1)
+    expect(put.mock.calls[0]?.[0]).toBe('20250301_sample-piece.png')
+    expect(put.mock.calls[0]?.[2]).toEqual({
+      httpMetadata: {
+        contentType: 'image/png',
+      },
+    })
+    expect(deleteObject).not.toHaveBeenCalled()
+
+    const insertOps = executions.filter(item => item.query.includes('INSERT INTO commissions'))
+    expect(insertOps).toHaveLength(1)
+    expect(insertOps[0]?.values).toEqual([
+      7,
+      '20250301_sample-piece',
+      '["https://a.example","https://b.example"]',
+      'outfit',
+      'desc',
+      'tag',
+      1,
+    ])
+  })
+
+  it('rolls back uploaded source image when native create-commission persistence fails', async () => {
+    const { db } = createD1Recorder({
+      queryResults(query, values) {
+        if (query.includes('SELECT id, name FROM characters WHERE id = ?')) {
+          return [{ id: Number(values[0]), name: 'Alice' }]
+        }
+
+        return []
+      },
+      runBehavior(query) {
+        if (query.includes('INSERT INTO commissions')) {
+          return { success: false }
+        }
+
+        return undefined
+      },
+    })
+    const { bucket, put, deleteObject } = createImagesBucketRecorder()
+
+    const formData = new FormData()
+    formData.set('characterId', '7')
+    formData.set('fileName', '20250301_sample-piece')
+    formData.set('sourceImage', new File(['png'], 'sample.png', { type: 'image/png' }))
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/commissions`, {
+        method: 'POST',
+        body: formData,
+      }),
+      {
+        DB: db,
+        IMAGES: bucket,
+      },
+    )
+
+    expect(response.status).toBe(400)
+    expect(await response.json()).toEqual({
+      status: 'error',
+      message: 'D1 write operation failed.',
+    })
+    expect(put).toHaveBeenCalledTimes(1)
+    expect(deleteObject).toHaveBeenCalledTimes(1)
+    expect(deleteObject).toHaveBeenCalledWith('20250301_sample-piece.png')
+  })
+
+  it('handles update-commission natively when DB binding exists', async () => {
+    const { db, executions } = createD1Recorder({
+      queryResults(query, values) {
+        if (query.includes('FROM commissions') && query.includes('WHERE id = ?')) {
+          return [{
+            characterId: 1,
+            fileName: '20250301_sample-piece',
+            links: '["https://a.example"]',
+            design: 'old',
+            description: 'old desc',
+            keyword: 'old',
+            hidden: 0,
+          }]
+        }
+
+        if (query.includes('SELECT id FROM characters WHERE id = ?')) {
+          return [{ id: Number(values[0]) }]
+        }
+
+        return []
+      },
+    })
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/commissions/19`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          characterId: 3,
+          fileName: '20250302_updated-piece',
+          links: ' one \n two ',
+          design: 'new design',
+          description: '',
+          keyword: ' glow ',
+          hidden: true,
+        }),
+      }),
+      { DB: db },
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Commission "20250302_updated-piece" updated.',
+    })
+    const updateOps = executions.filter(item => item.query.includes('UPDATE commissions'))
+    expect(updateOps).toHaveLength(1)
+    expect(updateOps[0]?.values).toEqual([
+      3,
+      '20250302_updated-piece',
+      '["one","two"]',
+      'new design',
+      null,
+      'glow',
+      1,
+      19,
+    ])
+  })
+
+  it('handles delete-commission natively when DB binding exists', async () => {
+    const { db, executions } = createD1Recorder({
+      queryResults(query) {
+        if (query.includes('SELECT file_name as fileName FROM commissions WHERE id = ?')) {
+          return [{ fileName: '20250301_sample-piece' }]
+        }
+
+        return []
+      },
+    })
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/commissions/19`, {
+        method: 'DELETE',
+      }),
+      { DB: db },
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Commission deleted.',
+    })
+    expect(executions.filter(item => item.query.includes('DELETE FROM commissions WHERE id = ?')))
+      .toHaveLength(1)
+  })
+
+  it('handles source-image replacement natively when DB and IMAGES bindings exist', async () => {
+    const { db } = createD1Recorder({
+      queryResults(query) {
+        if (query.includes('SELECT file_name as fileName FROM commissions WHERE id = ?')) {
+          return [{ fileName: '20250301_alice-maker' }]
+        }
+
+        return []
+      },
+    })
+    const { bucket, put, deleteObject, get } = createImagesBucketRecorder()
+
+    const formData = new FormData()
+    formData.set('commissionFileName', 'stale-client-name')
+    formData.set('sourceImage', new File(['jpg'], 'sample.jpg', { type: 'image/jpeg' }))
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/commissions/19/source-image`, {
+        method: 'POST',
+        body: formData,
+      }),
+      {
+        DB: db,
+        IMAGES: bucket,
+      },
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Source image for "20250301_alice-maker" replaced.',
+    })
+    expect(get).not.toHaveBeenCalled()
+    expect(put).toHaveBeenCalledTimes(1)
+    expect(put.mock.calls[0]?.[0]).toBe('20250301_alice-maker.jpg')
+    expect(deleteObject).toHaveBeenCalledTimes(2)
+    expect(deleteObject.mock.calls).toEqual([
+      ['20250301_alice-maker.jpeg'],
+      ['20250301_alice-maker.png'],
+    ])
+  })
+
   it('loads bootstrap data natively when DB binding exists', async () => {
     const backend = createCrudBackend()
     const { db } = createAdminReadD1Database()
-    const legacyFetch = vi.fn(async () => createJsonResponse({ status: 'success', message: 'legacy' }))
 
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/bootstrap`, { method: 'GET' }),
-      {
-        DB: db,
-        LEGACY_ADMIN_API_BASE_URL: 'http://legacy.test',
-      },
+      { DB: db },
       backend,
-      legacyFetch,
     )
 
     expect(response.status).toBe(200)
@@ -702,7 +942,6 @@ describe('admin worker CRUD contract routing', () => {
         },
       ],
     })
-    expect(legacyFetch).not.toHaveBeenCalled()
   })
 
   it('loads aliases bootstrap data natively when DB binding exists', async () => {
@@ -857,7 +1096,6 @@ describe('admin worker CRUD contract routing', () => {
   it('handles suggestion writes natively when DB binding exists', async () => {
     const backend = createCrudBackend()
     const { db, executions } = createD1Recorder()
-    const legacyFetch = vi.fn(async () => createJsonResponse({ status: 'success', message: 'legacy' }))
 
     const request = new Request(`${baseUrl}/api/admin/suggestion`, {
       method: 'POST',
@@ -871,12 +1109,8 @@ describe('admin worker CRUD contract routing', () => {
 
     const response = await handleAdminApiRequest(
       request,
-      {
-        DB: db,
-        LEGACY_ADMIN_API_BASE_URL: 'http://legacy.test',
-      },
+      { DB: db },
       backend,
-      legacyFetch,
     )
 
     expect(response.status).toBe(200)
@@ -884,8 +1118,6 @@ describe('admin worker CRUD contract routing', () => {
       status: 'success',
       message: 'Home featured keywords saved.',
     })
-    expect(legacyFetch).not.toHaveBeenCalled()
-
     const deleteOps = executions.filter(item =>
       item.query.includes('DELETE FROM home_featured_search_keywords'),
     )
@@ -904,7 +1136,6 @@ describe('admin worker CRUD contract routing', () => {
   it('handles creator alias writes natively when DB binding exists', async () => {
     const backend = createCrudBackend()
     const { db, executions } = createD1Recorder()
-    const legacyFetch = vi.fn(async () => createJsonResponse({ status: 'success', message: 'legacy' }))
 
     const request = new Request(`${baseUrl}/api/admin/aliases/batch`, {
       method: 'POST',
@@ -921,12 +1152,8 @@ describe('admin worker CRUD contract routing', () => {
 
     const response = await handleAdminApiRequest(
       request,
-      {
-        DB: db,
-        LEGACY_ADMIN_API_BASE_URL: 'http://legacy.test',
-      },
+      { DB: db },
       backend,
-      legacyFetch,
     )
 
     expect(response.status).toBe(200)
@@ -934,8 +1161,6 @@ describe('admin worker CRUD contract routing', () => {
       status: 'success',
       message: 'Creator aliases saved.',
     })
-    expect(legacyFetch).not.toHaveBeenCalled()
-
     const insertOps = executions.filter(item => item.query.includes('INSERT INTO creator_aliases'))
     expect(insertOps).toHaveLength(1)
     expect(insertOps[0]?.values[0]).toBe('Q')
@@ -976,10 +1201,8 @@ describe('admin worker CRUD contract routing', () => {
     expect(insertOps).toHaveLength(0)
   })
 
-  it('falls back to legacy suggestion write route when DB binding is missing', async () => {
+  it('rejects suggestion writes when DB binding is missing', async () => {
     const backend = createCrudBackend()
-    const legacyFetch = vi.fn(async () =>
-      createJsonResponse({ status: 'success', message: 'legacy suggestion save' }))
 
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/suggestion`, {
@@ -991,36 +1214,53 @@ describe('admin worker CRUD contract routing', () => {
           keywords: ['maid'],
         }),
       }),
-      { LEGACY_ADMIN_API_BASE_URL: 'http://legacy.test' },
+      {},
       backend,
-      legacyFetch,
     )
 
-    expect(response.status).toBe(200)
+    expect(response.status).toBe(503)
     expect(await response.json()).toEqual({
-      status: 'success',
-      message: 'legacy suggestion save',
+      status: 'error',
+      message: 'Admin worker DB binding is required for this route.',
     })
-    expect(legacyFetch).toHaveBeenCalledTimes(1)
   })
 
-  it('falls back to legacy bootstrap route when DB binding is missing', async () => {
+  it('rejects source-image replacement when IMAGES binding is missing', async () => {
+    const { db } = createD1Recorder()
+
+    const formData = new FormData()
+    formData.set('commissionFileName', '20250301_sample-piece')
+    formData.set('sourceImage', new File(['png'], 'sample.png', { type: 'image/png' }))
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/commissions/19/source-image`, {
+        method: 'POST',
+        body: formData,
+      }),
+      { DB: db },
+    )
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({
+      status: 'error',
+      message: 'Admin worker IMAGES binding is required for this route.',
+    })
+  })
+
+  it('rejects bootstrap reads when DB binding is missing', async () => {
     const backend = createCrudBackend()
-    const legacyFetch = vi.fn(async () =>
-      createJsonResponse({ characters: [{ id: 1, name: 'legacy' }] }))
 
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/bootstrap`, { method: 'GET' }),
-      { LEGACY_ADMIN_API_BASE_URL: 'http://legacy.test' },
+      {},
       backend,
-      legacyFetch,
     )
 
-    expect(response.status).toBe(200)
+    expect(response.status).toBe(503)
     expect(await response.json()).toEqual({
-      characters: [{ id: 1, name: 'legacy' }],
+      status: 'error',
+      message: 'Admin worker DB binding is required for this route.',
     })
-    expect(legacyFetch).toHaveBeenCalledTimes(1)
   })
 
   it('handles refresh-assets natively without requiring the legacy bridge', async () => {

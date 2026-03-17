@@ -135,6 +135,14 @@ function failure(message: string, status = 400) {
   } satisfies ApiState, status)
 }
 
+function missingDbBinding() {
+  return failure('Admin worker DB binding is required for this route.', 503)
+}
+
+function missingImagesBinding() {
+  return failure('Admin worker IMAGES binding is required for this route.', 503)
+}
+
 function notFound() {
   return new Response('Not Found', {
     status: 404,
@@ -917,7 +925,7 @@ export async function handleAdminReadRequest(request: Request, env: AdminReadEnv
 
   if (pathname === '/api/admin/bootstrap') {
     if (!db) {
-      return null
+      return missingDbBinding()
     }
 
     try {
@@ -930,7 +938,7 @@ export async function handleAdminReadRequest(request: Request, env: AdminReadEnv
 
   if (pathname === '/api/admin/aliases/bootstrap') {
     if (!db) {
-      return null
+      return missingDbBinding()
     }
 
     try {
@@ -943,7 +951,7 @@ export async function handleAdminReadRequest(request: Request, env: AdminReadEnv
 
   if (pathname === '/api/admin/suggestion') {
     if (!db) {
-      return null
+      return missingDbBinding()
     }
 
     try {
@@ -956,7 +964,7 @@ export async function handleAdminReadRequest(request: Request, env: AdminReadEnv
 
   if (CHARACTER_COMMISSIONS_PATH_PATTERN.test(pathname)) {
     if (!db) {
-      return null
+      return missingDbBinding()
     }
 
     const characterId = parseIdFromPath(pathname, CHARACTER_COMMISSIONS_ID_PATTERN)
@@ -977,7 +985,7 @@ export async function handleAdminReadRequest(request: Request, env: AdminReadEnv
   if (pathname.startsWith('/api/admin/source-image/')) {
     const bucket = resolveImagesBucket(env.IMAGES)
     if (!bucket) {
-      return null
+      return missingImagesBinding()
     }
 
     const encodedFileName = pathname.slice('/api/admin/source-image/'.length)

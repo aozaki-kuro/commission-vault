@@ -15,13 +15,15 @@
       "binding": "DB",
       "database_name": "commission-index-admin-data",
       "database_id": "c448328b-830b-455a-ab90-06a9cf95d8aa",
-      "migrations_dir": "./migrations"
+      "migrations_dir": "./migrations",
+      "remote": true
     }
   ],
   "r2_buckets": [
     {
       "binding": "IMAGES",
-      "bucket_name": "commission-index-source-images"
+      "bucket_name": "commission-index-source-images",
+      "remote": true
     }
   ],
   "routes": [
@@ -30,9 +32,7 @@
       "custom_domain": true
     }
   ],
-  // `database_id` / preview/prod split can be filled by Wrangler auto-provisioning or explicit Cloudflare resource IDs later.
   "vars": {
-    "ADMIN_REALM": "admin.crystallize.cc",
-    "LEGACY_ADMIN_API_BASE_URL": "http://localhost:4321"
+    "ADMIN_REALM": "admin.crystallize.cc"
   }
 }

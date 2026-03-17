@@ -9,9 +9,10 @@
     "packages/*"
   ],
   "scripts": {
-    "admin:data:bootstrap:local": "bun run --cwd apps/admin-worker data:bootstrap:local",
-    "admin:data:bootstrap:remote": "bun run --cwd apps/admin-worker data:bootstrap:remote",
-    "admin:data:check:remote": "bun run --cwd apps/admin-worker data:check:remote",
+    "admin:data:bootstrap": "bun run --cwd apps/admin-worker data:bootstrap",
+    "admin:data:bootstrap:remote": "bun run --cwd apps/admin-worker data:bootstrap",
+    "admin:data:check": "bun run --cwd apps/admin-worker data:check",
+    "admin:data:check:remote": "bun run --cwd apps/admin-worker data:check",
     "build": "bun run build:web",
     "build:admin": "bun run --cwd apps/admin build",
     "build:web": "bun run --cwd apps/web build",
@@ -19,7 +20,8 @@
     "clean": "rm -rf node_modules .wrangler apps/web/.astro apps/web/dist coverage playwright-report test-results && bun i",
     "deploy": "bun run --cwd apps/web deploy",
     "dev": "bun run --cwd apps/web dev",
-    "dev:admin": "bun run --cwd apps/admin dev",
+    "dev:admin": "bun run ./scripts/devAdminRemote.mjs",
+    "dev:admin:remote": "bun run ./scripts/devAdminRemote.mjs",
     "dev:web": "bun run --cwd apps/web dev",
     "dev:worker": "bun run --cwd apps/admin-worker dev",
     "lint": "eslint . --max-warnings=0",

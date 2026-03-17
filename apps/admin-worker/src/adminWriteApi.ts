@@ -6,8 +6,6 @@ import {
   saveKeywordAliasesBatch,
 } from './adminPersistence'
 
-export const LEGACY_PASSTHROUGH = 'legacy_passthrough' as const
-
 interface ApiState {
   status: 'success' | 'error'
   message: string
@@ -39,6 +37,10 @@ function failure(message: string, status = 400) {
     status: 'error',
     message,
   } satisfies ApiState, status)
+}
+
+function missingDbBinding() {
+  return failure('Admin worker DB binding is required for this route.', 503)
 }
 
 async function parseJsonBody(request: Request): Promise<Record<string, unknown>> {
@@ -81,7 +83,7 @@ async function handleCreatorAliasesBatchWrite(request: Request, env: Env) {
 
   const db = resolveD1Database(env.DB)
   if (!db) {
-    return LEGACY_PASSTHROUGH
+    return missingDbBinding()
   }
 
   try {
@@ -117,7 +119,7 @@ async function handleCharacterAliasesBatchWrite(request: Request, env: Env) {
 
   const db = resolveD1Database(env.DB)
   if (!db) {
-    return LEGACY_PASSTHROUGH
+    return missingDbBinding()
   }
 
   try {
@@ -153,7 +155,7 @@ async function handleKeywordAliasesBatchWrite(request: Request, env: Env) {
 
   const db = resolveD1Database(env.DB)
   if (!db) {
-    return LEGACY_PASSTHROUGH
+    return missingDbBinding()
   }
 
   try {
@@ -189,7 +191,7 @@ async function handleSuggestionWrite(request: Request, env: Env) {
 
   const db = resolveD1Database(env.DB)
   if (!db) {
-    return LEGACY_PASSTHROUGH
+    return missingDbBinding()
   }
 
   try {
