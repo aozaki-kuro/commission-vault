@@ -16,10 +16,10 @@ export interface Env {
   ADMIN_REALM?: string
 }
 
-const LEGACY_READ_ENDPOINTS = new Set([
-  '/api/admin/bootstrap',
-  '/api/admin/aliases/bootstrap',
-  '/api/admin/suggestion',
+const LEGACY_BRIDGED_ENDPOINTS = new Map<string, Set<string>>([
+  ['/api/admin/bootstrap', new Set(['GET'])],
+  ['/api/admin/aliases/bootstrap', new Set(['GET'])],
+  ['/api/admin/suggestion', new Set(['GET', 'POST'])],
 ])
 const TRAILING_SLASH_PATTERN = /\/+$/
 
@@ -164,9 +164,14 @@ function getLegacyAdminUrl(request: Request, env: Env) {
 function getProxyRequestHeaders(request: Request) {
   const headers = new Headers()
   const accept = request.headers.get('accept')
+  const contentType = request.headers.get('content-type')
 
   if (accept) {
     headers.set('accept', accept)
+  }
+
+  if (contentType) {
+    headers.set('content-type', contentType)
   }
 
   return headers
@@ -182,9 +187,13 @@ async function proxyLegacyAdminRequest(request: Request, env: Env) {
   }
 
   try {
+    const body = request.method === 'GET' || request.method === 'HEAD'
+      ? undefined
+      : await request.text()
     const response = await fetch(targetUrl, {
       method: request.method,
       headers: getProxyRequestHeaders(request),
+      body,
       redirect: 'manual',
     })
     const headers = new Headers(response.headers)
@@ -213,7 +222,8 @@ async function handleApi(request: Request, env: Env) {
     })
   }
 
-  if (request.method === 'GET' && LEGACY_READ_ENDPOINTS.has(pathname)) {
+  const bridgedMethods = LEGACY_BRIDGED_ENDPOINTS.get(pathname)
+  if (bridgedMethods?.has(request.method)) {
     return proxyLegacyAdminRequest(request, env)
   }
 

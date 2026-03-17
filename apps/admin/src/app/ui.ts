@@ -9,6 +9,9 @@ export const adminInsetCardStyles
 export const adminActionLinkStyles
   = 'inline-flex items-center justify-between rounded-xl border border-gray-300/80 bg-white px-4 py-3 text-sm font-medium text-gray-800 no-underline transition hover:border-gray-400 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-950/40 dark:text-gray-200 dark:hover:border-gray-600 dark:hover:text-gray-100'
 
+export const formControlStyles
+  = 'w-full rounded-lg border border-gray-200 bg-white/80 px-3 py-2.5 text-sm text-gray-900 shadow-sm transition placeholder:text-gray-400 focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-100 dark:focus-visible:ring-offset-gray-900'
+
 export function getStatusBadgeStyles(tone: StatusTone) {
   switch (tone) {
     case 'done':

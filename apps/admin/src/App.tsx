@@ -4,6 +4,7 @@ import { adminActionLinkStyles, adminSurfaceStyles } from './app/ui'
 import { AdminPageShell, AdminRootLayout } from './components/AdminLayout'
 import { AdminOverviewPage } from './pages/AdminOverviewPage'
 import { AdminPlaceholderPage } from './pages/AdminPlaceholderPage'
+import { AdminSuggestionPage } from './pages/AdminSuggestionPage'
 
 function getPublicSiteUrl() {
   if (typeof window === 'undefined') {
@@ -101,6 +102,12 @@ export function App() {
     )
   }
 
+  const page = currentSection.key === 'overview'
+    ? <AdminOverviewPage />
+    : currentSection.key === 'suggestion'
+      ? <AdminSuggestionPage />
+      : <AdminPlaceholderPage section={currentSection} />
+
   return (
     <AdminRootLayout>
       <AdminPageShell
@@ -109,13 +116,7 @@ export function App() {
         description={currentSection.description}
         publicSiteUrl={publicSiteUrl}
       >
-        {currentSection.key === 'overview'
-          ? (
-              <AdminOverviewPage />
-            )
-          : (
-              <AdminPlaceholderPage section={currentSection} />
-            )}
+        {page}
       </AdminPageShell>
     </AdminRootLayout>
   )
