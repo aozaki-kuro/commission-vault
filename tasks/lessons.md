@@ -11,3 +11,4 @@
 - 2026-03-17: 当迁移路线已经从旧方案切到新架构时，必须立即收敛 `tasks/todo.md`，只保留唯一主线；被放弃或暂缓的方案要显式移到“暂停/备选”，不能继续和主计划并排存在。
 - 2026-03-17: 记录 Cloudflare 迁移状态时，必须把“代码支持某个 binding-backed 路径”和“wrangler 已真实配置该 binding”明确分开；条件能力不能写成当前环境真值。
 - 2026-03-17: 后台迁移不能把“页面已经搬过去”和“设计已经 1:1 复刻”混为一谈；route 存在不代表迁移完成。只要 standalone 和 legacy 在视觉、间距、控件形态、交互语义上还有漂移，就必须继续标记为未完成，尤其是 legacy 已使用 shadcn/Radix `Select` / dropdown 的地方，不能退回成原生 `<select>` 或自定义近似实现。
+- 2026-03-17: 只要用户关心“什么时候能真正用远程 D1/R2”，计划里就必须显式区分四件事：`worker 里有 binding-aware code path`、`wrangler 已接真实 bindings`、`admin 后台已能远程读写`、`公开站已脱离本地 SQLite/data/images`。这四层不能再混写成“迁移进行中”。

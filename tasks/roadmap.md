@@ -4,6 +4,7 @@
 
 ## 默认决策与假设
 
+- 在用户关心“什么时候才能真正远程读写”时，优先级最高的不是继续堆 code path，而是先把真实 D1/R2 bindings、secrets、preview/prod 资源和 runbook 接起来
 - 本轮优先收口 `apps/admin-worker` 的 worker-native 写路径：character CRUD 已先行切入，下一步继续推进 commission CRUD 与 `source-image POST`；不新增公共 API
 - `apps/admin-worker` 继续持有 admin API contract；迁移期间允许逐路由替换执行后端，但不允许漂移现有请求/响应形状
 - `apps/admin-worker/src/adminData.ts` 默认保持读侧模型，不继续膨胀成读写混合模块
@@ -173,6 +174,32 @@
   - 写路径 contract tests / integration tests 继续扩到 commission/source-image
   - 继续 route-by-route 去 bridge
 
+### 2.3.1 远程 D1 / R2 可用性里程碑
+
+- `M0 当前真值`
+  - worker 里已经有一部分 binding-aware D1/R2 code path
+  - 但 `apps/admin-worker/wrangler.jsonc` 还没有真实 `DB` / `IMAGES` bindings
+  - 所以 admin 现在不能算“在用远程 D1/R2”；真实事实源仍是本地 `apps/web/data/commissions.db` 与 `apps/web/data/images/*`
+- `M1 接上 bindings 后，立刻可远程的能力`
+  - 读：
+    - `/api/admin/bootstrap`
+    - `/api/admin/aliases/bootstrap`
+    - `/api/admin/suggestion` GET
+    - `/api/admin/characters/:id/commissions` GET
+    - `/api/admin/source-image/:fileName` GET
+  - 写：
+    - alias batch
+    - suggestion save
+    - character CRUD
+- `M2 admin 后台完整远程读写`
+  - 还需要补完：
+    - commission CRUD
+    - `POST /api/admin/commissions/:id/source-image`
+  - 到这一层，才能说 standalone admin 后台已经完整远程化
+- `M3 公开站脱离本地事实源`
+  - 还需要 snapshot contract + publish state machine
+  - 到这一层，才能说整个系统不再依赖本地 SQLite / `data/images/*`
+
 ### 2.4 Public web 事实源解耦
 
 - 状态：`部分完成`
@@ -205,7 +232,7 @@
   - 三个独立 `dev:*` 命令已存在
   - `apps/admin` 与 `apps/web` 的 Playwright 开发服务器已可协同工作
 - 离完成还差什么：
-  - D1/R2 bindings 与 secrets 收口
+  - D1/R2 bindings 与 secrets 收口；这是 admin 后台开始真实远程读写的前置条件
   - preview / production 差异文档
   - 一条命令拉起完整开发栈
   - `apps/admin` 对 worker dev 的真实联调
@@ -225,9 +252,24 @@
   - 保持 `adminApi.ts` 只负责路由、归一化、错误响应、backend 组装
   - 新增独立 persistence backend，不把 SQL / D1 / R2 写逻辑塞回 `adminApi.ts`
 - 下一步：
+  - 先把 `wrangler` 的真实 `DB` / `IMAGES` bindings 接上，让已经完成的远程路径进入主链路
   - 让 `createDefaultCrudBackend()` 在具备持久层 bindings 时优先走 worker persistence backend
   - route-by-route 继续替换 `createCommission` / `updateCommission` / `deleteCommission`，并补齐 `source-image POST`
   - 继续收紧 legacy fallback，只保留尚未原生化的 write 路由
+
+#### `apps/admin-worker/wrangler.jsonc`
+
+- 当前：
+  - 只有 `ASSETS` 与 `LEGACY_ADMIN_API_BASE_URL`
+  - 还没有真实 `DB` / `IMAGES` bindings
+- 这意味着什么：
+  - 当前即使 worker 代码里已经支持 D1/R2，也不会自动开始远程读写
+  - “什么时候能读写远程数据库”的第一道门槛就在这里
+- 下一步：
+  - 为 preview / production 明确 D1 `database_id`
+  - 为 preview / production 明确 R2 bucket
+  - 补齐 secrets / 本地开发策略 / runbook
+  - 接线完成后，先验证 M1 里列出的远程读写能力
 
 #### `apps/admin-worker/src/adminData.ts`
 
