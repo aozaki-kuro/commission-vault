@@ -1,4 +1,4 @@
-import type { CharacterRow, CommissionRow } from '#lib/admin/db'
+import type { AdminCommissionSearchRow, CharacterRow, CommissionRow } from '#lib/admin/db'
 import type { KeyboardEvent } from 'react'
 import type { CharacterItem } from '../hooks/useCommissionManager'
 import { Button } from '#components/ui/button'
@@ -47,6 +47,7 @@ interface SortableCharacterCardProps {
   onToggle: () => void
   onDeleteCommission: (commissionId: number) => void
   charactersForSelect: CharacterRow[]
+  commissionSearchRows: AdminCommissionSearchRow[]
   buttonRefFor: (id: number) => (el: HTMLButtonElement | null) => void
   isEditing: boolean
   editingValue: string
@@ -71,6 +72,7 @@ function SortableCharacterCard({
   onToggle,
   onDeleteCommission,
   charactersForSelect,
+  commissionSearchRows,
   buttonRefFor,
   isEditing,
   editingValue,
@@ -366,6 +368,7 @@ function SortableCharacterCard({
                                 <CommissionEditForm
                                   commission={commission}
                                   characters={charactersForSelect}
+                                  commissionSearchRows={commissionSearchRows}
                                   onDelete={() => onDeleteCommission(commission.id)}
                                 />
                               </Suspense>

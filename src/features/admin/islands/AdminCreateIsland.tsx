@@ -64,7 +64,10 @@ function AdminCreateIsland({ initialPayload = null }: AdminCreateIslandProps) {
   return (
     <section className="space-y-4">
       <AddCharacterForm />
-      <AddCommissionForm characters={characterOptions} />
+      <AddCommissionForm
+        characters={characterOptions}
+        commissionSearchRows={payload.commissionSearchRows}
+      />
     </section>
   )
 }

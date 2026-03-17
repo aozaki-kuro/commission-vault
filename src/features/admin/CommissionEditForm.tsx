@@ -1,4 +1,4 @@
-import type { CharacterRow } from '#lib/admin/db'
+import type { AdminCommissionSearchRow, CharacterRow } from '#lib/admin/db'
 import type { ChangeEvent } from 'react'
 import type { EditableCommission } from './hooks/useCommissionEditState'
 import {
@@ -6,11 +6,13 @@ import {
   replaceCommissionSourceImageAction,
   updateCommissionAction,
 } from '#admin/actions'
+import { findDuplicateCommissionHints } from '#admin/duplicateCommissionHints'
+import DuplicateCommissionNotice from '#admin/DuplicateCommissionNotice'
 
 import { Button } from '#components/ui/button'
 
 import { IconUpload } from '@tabler/icons-react'
-import { useActionState, useEffect, useRef, useState, useTransition } from 'react'
+import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { CommissionHiddenSwitch } from './components/CommissionFormFields'
 import CommissionSharedFields from './components/CommissionSharedFields'
 import { notifyDataUpdate } from './dataUpdateSignal'
@@ -23,6 +25,7 @@ import { adminSurfaceStyles } from './uiStyles'
 interface CommissionEditFormProps {
   commission: EditableCommission
   characters: CharacterRow[]
+  commissionSearchRows: AdminCommissionSearchRow[]
   onDelete?: () => void
 }
 
@@ -35,7 +38,12 @@ function buildPreviewVersionStorageKey(commissionId: number) {
   return `admin-preview-image-version:${commissionId}`
 }
 
-function CommissionEditForm({ commission, characters, onDelete }: CommissionEditFormProps) {
+function CommissionEditForm({
+  commission,
+  characters,
+  commissionSearchRows,
+  onDelete,
+}: CommissionEditFormProps) {
   const [state, formAction] = useActionState(updateCommissionAction, INITIAL_FORM_STATE)
   const [isDeleting, startDelete] = useTransition()
   const [isUploading, startUpload] = useTransition()
@@ -77,6 +85,17 @@ function CommissionEditForm({ commission, characters, onDelete }: CommissionEdit
     setDeleteStatus,
   } = useCommissionEditState({ commission, characters })
   const previewImageSrc = imageVersion > 0 ? `${imageSrc}?v=${imageVersion}` : imageSrc
+  const duplicateHints = useMemo(
+    () =>
+      findDuplicateCommissionHints({
+        commissionId: commission.id,
+        characterId: selectedCharacterId,
+        fileName,
+        keyword: keywordValue,
+        commissions: commissionSearchRows,
+      }),
+    [commission.id, commissionSearchRows, fileName, keywordValue, selectedCharacterId],
+  )
 
   useEffect(() => {
     if (state.status === 'success')
@@ -297,6 +316,8 @@ function CommissionEditForm({ commission, characters, onDelete }: CommissionEdit
             keywordValue={keywordValue}
             onKeywordChange={setKeywordValue}
           />
+
+          <DuplicateCommissionNotice hints={duplicateHints} />
         </div>
       </div>
 

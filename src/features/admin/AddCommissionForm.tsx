@@ -1,6 +1,8 @@
-import type { CharacterStatus } from '#lib/admin/db'
+import type { AdminCommissionSearchRow, CharacterStatus } from '#lib/admin/db'
 import type { ChangeEvent } from 'react'
 import { addCommissionAction } from '#admin/actions'
+import { findDuplicateCommissionHints } from '#admin/duplicateCommissionHints'
+import DuplicateCommissionNotice from '#admin/DuplicateCommissionNotice'
 import { useActionState, useEffect, useMemo, useState } from 'react'
 
 import { isValidCommissionFileName } from './commissionFileName'
@@ -23,6 +25,7 @@ interface CharacterOption {
 
 interface AddCommissionFormProps {
   characters: CharacterOption[]
+  commissionSearchRows: AdminCommissionSearchRow[]
 }
 
 type SourceImageHintTone = 'default' | 'success' | 'error'
@@ -37,11 +40,12 @@ function extractFileNameStem(fileName: string) {
   return trimmed.slice(0, extIndex)
 }
 
-function AddCommissionForm({ characters }: AddCommissionFormProps) {
+function AddCommissionForm({ characters, commissionSearchRows }: AddCommissionFormProps) {
   const [state, formAction] = useActionState(addCommissionAction, INITIAL_FORM_STATE)
   const [characterId, setCharacterId] = useState<number | null>(null)
   const [isHidden, setIsHidden] = useState(false)
   const [fileName, setFileName] = useState('')
+  const [keywordValue, setKeywordValue] = useState('')
   const [sourceImageHint, setSourceImageHint] = useState(DEFAULT_SOURCE_IMAGE_HINT)
   const [sourceImageHintTone, setSourceImageHintTone] = useState<SourceImageHintTone>('default')
 
@@ -53,6 +57,16 @@ function AddCommissionForm({ characters }: AddCommissionFormProps) {
   const options = useMemo(
     () => characters.toSorted((a, b) => a.sortOrder - b.sortOrder),
     [characters],
+  )
+  const duplicateHints = useMemo(
+    () =>
+      findDuplicateCommissionHints({
+        characterId,
+        fileName,
+        keyword: keywordValue,
+        commissions: commissionSearchRows,
+      }),
+    [characterId, commissionSearchRows, fileName, keywordValue],
   )
 
   const handleFileNameChange = (nextValue: string) => {
@@ -131,7 +145,11 @@ function AddCommissionForm({ characters }: AddCommissionFormProps) {
         linksRows={3}
         designPlaceholder="Design reference"
         descriptionPlaceholder="Short description"
+        keywordValue={keywordValue}
+        onKeywordChange={setKeywordValue}
       />
+
+      <DuplicateCommissionNotice hints={duplicateHints} />
 
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-3">

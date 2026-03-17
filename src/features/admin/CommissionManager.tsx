@@ -386,6 +386,7 @@ function CommissionManager({
                     handleDeleteCommission(character.id, commissionId)
                   }}
                   charactersForSelect={orderedCharacters}
+                  commissionSearchRows={commissionSearchRows}
                   buttonRefFor={buttonRefFor}
                   isEditing={editing?.id === character.id}
                   editingValue={editing?.id === character.id ? editing.value : character.name}
