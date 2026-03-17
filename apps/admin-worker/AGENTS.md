@@ -4,7 +4,7 @@ This directory contains the standalone admin worker.
 
 ## Tree
 
-- `src/index.ts`: worker entrypoint for auth, API routing, legacy read/write bridge, and local-dev CORS handling.
+- `src/index.ts`: worker entrypoint for auth, API routing, legacy read/write bridge, and local-dev CORS handling, now including alias batch-write proxy endpoints.
 - `wrangler.jsonc`: worker asset binding, local legacy API bridge origin, and route metadata.
 
 ## Responsibilities

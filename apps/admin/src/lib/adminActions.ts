@@ -6,6 +6,10 @@ export interface AdminApiResponse {
   message: string
 }
 
+interface BatchSavePayload {
+  rows: unknown[]
+}
+
 function toErrorState(error: unknown, fallback: string): FormState {
   return {
     status: 'error',
@@ -62,6 +66,56 @@ async function postAdminJson(pathname: string, payload: unknown) {
   })
 
   return parseResponse(response)
+}
+
+async function saveAliasesBatchAction(
+  pathname: string,
+  fallback: string,
+  formData: FormData,
+): Promise<FormState> {
+  try {
+    return postAdminJson(pathname, {
+      rows: parseJsonFormField<BatchSavePayload['rows']>(formData, 'rowsJson', []),
+    })
+  }
+  catch (error) {
+    return toErrorState(error, fallback)
+  }
+}
+
+export async function saveCreatorAliasesBatchAction(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  void _prevState
+
+  return saveAliasesBatchAction('/api/admin/aliases/batch', 'Failed to save aliases.', formData)
+}
+
+export async function saveCharacterAliasesBatchAction(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  void _prevState
+
+  return saveAliasesBatchAction(
+    '/api/admin/character-aliases/batch',
+    'Failed to save character aliases.',
+    formData,
+  )
+}
+
+export async function saveKeywordAliasesBatchAction(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  void _prevState
+
+  return saveAliasesBatchAction(
+    '/api/admin/keyword-aliases/batch',
+    'Failed to save keyword aliases.',
+    formData,
+  )
 }
 
 export async function saveHomeFeaturedKeywordsAction(

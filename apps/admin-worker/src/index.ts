@@ -19,6 +19,9 @@ export interface Env {
 const LEGACY_BRIDGED_ENDPOINTS = new Map<string, Set<string>>([
   ['/api/admin/bootstrap', new Set(['GET'])],
   ['/api/admin/aliases/bootstrap', new Set(['GET'])],
+  ['/api/admin/aliases/batch', new Set(['POST'])],
+  ['/api/admin/character-aliases/batch', new Set(['POST'])],
+  ['/api/admin/keyword-aliases/batch', new Set(['POST'])],
   ['/api/admin/suggestion', new Set(['GET', 'POST'])],
 ])
 const TRAILING_SLASH_PATTERN = /\/+$/

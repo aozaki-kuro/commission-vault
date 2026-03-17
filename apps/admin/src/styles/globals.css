@@ -5,12 +5,13 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('../../../web/public/fonts/BerkeleyMono-Regular.woff2') format('woff2');
+  src: url('/fonts/BerkeleyMono-Regular.woff2') format('woff2');
 }
 
 @layer base {
   :root {
-    --font-sans: var(--font-ibm-plex-sans, 'IBM Plex Sans'), sans-serif;
+    --font-ibm-plex-sans: 'IBM Plex Sans';
+    --font-sans: var(--font-ibm-plex-sans), sans-serif;
     --font-mono:
       'Berkeley Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
       monospace;

@@ -177,6 +177,7 @@ Additional guidance:
 ## Change Log
 
 - Moved Vitest and Playwright configuration to repository-root entrypoints, kept app-owned suites under `apps/*/test`, moved committed Playwright baselines to root `test/visual/apps/*`, routed generated test outputs to root directories, and started downshifting web runtime/build dependencies out of the root workspace manifest.
+- Migrated the standalone `aliases` route in `apps/admin`, bridged alias batch-save endpoints through `apps/admin-worker`, and added standalone aliases visual regression coverage.
 - Migrated the standalone `suggestion` route in `apps/admin`, added worker-backed featured-keyword save/load flows, and extended the admin worker legacy bridge to proxy suggestion writes during the migration window.
 - Bridged standalone admin overview data through `apps/admin-worker`, added local worker CORS/dev-auth handling for Vite-to-worker requests, and switched `apps/admin` overview to live worker-backed counts/latest entries.
 - Moved timeline grouping and year-navigation helpers into `packages/domain`, leaving `apps/web` timeline modules as bridge exports.
