@@ -114,14 +114,31 @@
 
 ### 2.1 Standalone admin 前端
 
-- 状态：`已完成`
+- 状态：`部分完成`
 - 当前真值：
   - `apps/admin` 已承接 `overview` / `create` / `edit` / `aliases` / `suggestion`
-  - Playwright visual 基线已经建立
-  - 样式契约继续对齐 legacy `/admin/*`
+  - route 已迁入 standalone，但“页面存在”不等于“设计已 1:1 复刻”
+  - Playwright visual 基线已经建立，但当前更偏“迁移参考”而不是“standalone 全面对齐证明”
+  - 样式契约目标仍是 legacy `/admin/*`，当前已有控件级漂移
 - 离完成还差什么：
+  - route-by-route 对齐 legacy `/admin*` 的视觉与交互细节，而不只是大体布局
+  - 把 legacy 已使用 shadcn/Radix `Select` / dropdown 的位置按原控件形态复刻；不要在 standalone 中退回原生 `<select>`
+  - 为 standalone `overview` 补独立 visual regression，并把 create/edit/aliases/suggestion 的验收标准从“可用”收紧到“1:1 对齐 legacy”
   - 还没有独立 smoke 流程
   - 仍依赖 worker API 和 legacy backend 才能真正写入
+
+### 2.1.1 当前已确认的设计漂移
+
+- `apps/web/src/features/admin/AddCharacterForm.tsx`
+  - legacy 这里使用 shadcn/Radix `Select`
+- `apps/admin/src/components/create/AddCharacterForm.tsx`
+  - standalone 这里退回成原生 `<select>`
+- `apps/web/src/features/admin/components/CommissionFormFields.tsx`
+  - legacy 的 character selector 使用 shadcn/Radix `Select`
+- `apps/admin/src/components/create/CommissionFormFields.tsx`
+  - standalone 的 character selector 退回成原生 `<select>`
+- 结论：
+  - 后续计划必须把“控件实现也要复刻 legacy”写成硬性验收，而不是只比对文案和大体排版
 
 ### 2.2 Admin worker 读路径
 

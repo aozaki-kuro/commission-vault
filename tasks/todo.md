@@ -43,8 +43,9 @@
 
 - [x] standalone admin shell 已落地
 - [x] `overview` / `create` / `edit` / `aliases` / `suggestion` 已迁入 `apps/admin`
-- [x] 现有顶层样式契约已延续，未做视觉重设计
-- [x] 已迁移页面均已具备 Playwright 视觉基线
+- [ ] 现有顶层样式契约虽已迁入，但 standalone 设计与 legacy `/admin/*` 仍未完全 1:1 对齐
+- [ ] legacy 已使用 shadcn/Radix `Select` / dropdown 的位置必须按原控件形态与交互复刻；当前 `AddCharacterForm`、`CommissionFormFields` 仍存在原生 `<select>` 漂移
+- [ ] route 级视觉回归仍需覆盖真正的 standalone 对齐，而不只是保留 legacy 参考基线；`overview` 也需要 standalone visual coverage
 - [ ] 仍缺独立 smoke test，当前 admin 自动化仍以视觉回归为主
 
 ### 阶段 2：admin worker 能力补齐
@@ -107,15 +108,17 @@
 - [ ] worker 现在已经不是空壳，但“读路径原生化”容易被误判成“迁移已完成”；真正困难仍在写路径持久层与 publish 闭环
 - [ ] `apps/web` 仍直连本地 SQLite 与本地图像；只要这一点不拆，云端事实源与 publish 都只能停留在脚手架阶段
 - [ ] standalone admin 虽已完成页面迁移，但只要 `apps/web/src/features/admin/*` 和 legacy `/admin/*` 继续存在，就仍有双实现漂移风险
+- [ ] standalone admin 当前已经出现“页面迁入完成但控件/设计未完全复刻”的信号；如果不把 shadcn/ui 与 legacy 交互细节列为硬性验收，视觉漂移会继续扩大
 - [x] `assets/refresh` 已明确为 worker 兼容性 no-op；后续不得再次误用成“发布按钮”
 
 ## 下一步关口
 
 1. 继续完成 worker 写路径原生化设计收口：在已落地 alias/suggestion persistence 的基础上，推进 CRUD backend 与 `source-image POST` 的逐路由替换
-2. 再定义公开站 snapshot contract：至少覆盖 `site payload`、`home-search-entries`、`rss`、`home-character-batches`、`home-timeline-batches`
-3. 在 snapshot contract 稳定后，再推进 D1 / R2 / Publish：把 `Save` 和 `Publish` 拆成两步，而不是继续扩展 legacy refresh
-4. 只有在 worker 原生写链路、snapshot contract、publish 状态机全部稳定后，才删除 `apps/web` legacy admin 与双实现组件
-5. 详细执行顺序、模块级拆解与验收标准统一写入 `tasks/roadmap.md`
+2. 重新收口 standalone admin 的设计复刻验收：按 route 对齐 legacy `/admin*`，把视觉、间距、状态样式、以及 shadcn/Radix `Select` / dropdown 交互恢复成 1:1，而不是“看起来差不多”
+3. 再定义公开站 snapshot contract：至少覆盖 `site payload`、`home-search-entries`、`rss`、`home-character-batches`、`home-timeline-batches`
+4. 在 snapshot contract 稳定后，再推进 D1 / R2 / Publish：把 `Save` 和 `Publish` 拆成两步，而不是继续扩展 legacy refresh
+5. 只有在 worker 原生写链路、standalone admin 设计复刻、snapshot contract、publish 状态机全部稳定后，才删除 `apps/web` legacy admin 与双实现组件
+6. 详细执行顺序、模块级拆解与验收标准统一写入 `tasks/roadmap.md`
 
 ## 当前执行切片（2026-03-17）
 

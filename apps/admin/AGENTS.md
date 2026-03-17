@@ -58,6 +58,7 @@ This directory contains the standalone admin frontend app (`Vite + React`).
 
 - Preserve the existing admin visual design, spacing rhythm, and typography.
 - Reuse existing admin React components and interaction behavior without restyling.
+- Where legacy admin uses shadcn/Radix primitives such as `Select` or dropdown-style overlays, preserve those primitives and behaviors in standalone admin instead of downgrading to native `<select>` or approximate custom controls.
 - Talk only to the admin worker API via `ADMIN_API_BASE_URL`.
 - Keep overview, create, edit, suggestion, and aliases on the worker-backed data path; new route migrations should follow the same API boundary instead of reading legacy app internals directly.
 - Use `admin-legacy` Playwright baselines as the migration reference until each standalone route fully matches legacy output.
@@ -66,6 +67,7 @@ This directory contains the standalone admin frontend app (`Vite + React`).
 
 - Do not redesign admin UI during migration.
 - Keep top-level style contracts aligned with the legacy admin shell.
+- Treat route existence and rough layout parity as insufficient; migration is not done until spacing, states, and legacy control choices are matched route-by-route.
 - Validate every migrated admin page with Playwright visual regression.
 - Keep route paths rooted at `/` on `admin.crystallize.cc`; do not reintroduce the old `/admin/*` public-site coupling.
 
