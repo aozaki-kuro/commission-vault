@@ -23,6 +23,15 @@ Monorepo migration is in progress:
   - `bun run dev:worker`
   - `bun run build:web`
   - `bun run build:admin`
+  - `bun run admin:data:bootstrap:local`
+  - `bun run admin:data:bootstrap:remote`
+
+## Admin migration direction
+
+- Standalone admin capability work now lands on `apps/admin-worker` with `DB` / `IMAGES` bindings and D1/R2 migration scripts; future CRUD, asset writes, and admin tooling should target the worker + D1/R2 surface instead of expanding the legacy `/api/admin/*` layer inside `apps/web`.
+- The legacy `/admin` pages together with `/api/admin/*` in `apps/web` are preserved strictly as migration rollback/bridge paths. They may remain temporarily for fallback, but they are no longer the place to add new admin behavior.
+- To initialize the current local SQLite/images truth into worker-local D1/R2 state, run `bun run admin:data:bootstrap:local`.
+- `apps/admin-worker/wrangler.jsonc` now declares `DB` / `IMAGES` bindings plus the D1 migrations directory. Preview/production resource IDs and the final remote runbook remain follow-up work.
 
 ## Tests
 
@@ -39,7 +48,10 @@ Asset generation is shared by Astro:
 
 ### Dev ports
 
-- `PORT` controls Astro dev port (default `5173`).
+- `apps/web` Astro dev defaults to `4321`.
+- `apps/admin-worker` Wrangler dev defaults to `8787`.
+- `apps/admin` Vite dev runs on `4174`.
+- `PORT` still overrides the Astro dev port when you need a different `apps/web` port.
 
 ### Production `/admin` verification
 

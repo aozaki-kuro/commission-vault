@@ -5,6 +5,17 @@
   "private": true,
   "scripts": {
     "dev": "wrangler dev --config wrangler.jsonc",
+    "d1:migrate:local": "wrangler d1 migrations apply DB --config wrangler.jsonc --local --persist-to ./.wrangler/state",
+    "d1:migrate:remote": "wrangler d1 migrations apply DB --config wrangler.jsonc --remote",
+    "d1:seed:sql": "mkdir -p ./.wrangler/tmp && bun run ./scripts/buildD1SeedSql.mjs ./.wrangler/tmp/admin-seed.sql",
+    "d1:seed:local": "bun run d1:seed:sql && wrangler d1 execute DB --config wrangler.jsonc --local --persist-to ./.wrangler/state --file ./.wrangler/tmp/admin-seed.sql",
+    "d1:seed:remote": "bun run d1:seed:sql && wrangler d1 execute DB --config wrangler.jsonc --remote --file ./.wrangler/tmp/admin-seed.sql",
+    "r2:sync:local": "bun run ./scripts/syncImagesToR2.mjs --local",
+    "r2:sync:remote": "bun run ./scripts/syncImagesToR2.mjs --remote",
+    "data:check:local": "bun run ./scripts/checkFactSourceParity.mjs --local",
+    "data:check:remote": "bun run ./scripts/checkFactSourceParity.mjs --remote",
+    "data:bootstrap:local": "bun run d1:migrate:local && bun run d1:seed:local && bun run r2:sync:local",
+    "data:bootstrap:remote": "bun run d1:migrate:remote && bun run d1:seed:remote && bun run r2:sync:remote",
     "deploy": "wrangler deploy --config wrangler.jsonc",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },

@@ -9,6 +9,9 @@
     "packages/*"
   ],
   "scripts": {
+    "admin:data:bootstrap:local": "bun run --cwd apps/admin-worker data:bootstrap:local",
+    "admin:data:bootstrap:remote": "bun run --cwd apps/admin-worker data:bootstrap:remote",
+    "admin:data:check:remote": "bun run --cwd apps/admin-worker data:check:remote",
     "build": "bun run build:web",
     "build:admin": "bun run --cwd apps/admin build",
     "build:web": "bun run --cwd apps/web build",

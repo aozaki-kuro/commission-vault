@@ -20,6 +20,12 @@ This repository contains an Astro 6 static site with React 19 islands, written i
   - Shared package scaffolds now exist under `packages/domain`, `packages/ui`, `packages/cloudflare`, and `packages/config`.
   - Public web runtime source of truth is now `apps/web/*`; admin/admin-worker cutover remains in progress.
 
+## Admin migration direction
+
+- Standalone admin is being stabilized on `apps/admin-worker` with D1/R2 bindings; all future admin capabilities (CRUD, asset writes, alias/suggestion tooling) are planned, designed, and validated on the worker + D1/R2 surface instead of augmenting the legacy `/api/admin/*` debugging layer inside `apps/web`.
+- The legacy `/admin` routes together with `/api/admin/*` inside `apps/web` exist only as migration rollback/bridge paths. They are not being extended with new functionality and should only be exercised when the worker-backed routes cannot fulfill the scenario or before the bindings are available.
+- Worker-local D1/R2 bootstrap now lives in `apps/admin-worker/migrations/*` plus `apps/admin-worker/scripts/*`; use those scripts to mirror `apps/web/data/commissions.db` and `apps/web/data/images/*` into worker-local state before validating admin flows against the worker.
+
 ## Home Rendering Architecture
 
 - Home page static markup is Astro-first:
@@ -176,6 +182,7 @@ Additional guidance:
 
 ## Change Log
 
+- Declared `DB` / `IMAGES` bindings plus a D1 migrations directory in `apps/admin-worker/wrangler.jsonc`, and added worker-local bootstrap scripts to mirror the current SQLite/image truth into D1/R2-shaped local state.
 - Added `apps/admin-worker/src/adminData.ts` so worker read routes can serve bootstrap, aliases, suggestion, character commissions, and source-image GETs from D1/R2 bindings before falling back to the legacy bridge.
 - Added worker-native D1 persistence for character create/update/reorder/delete and made `apps/admin-worker` prefer native character CRUD when `DB` bindings exist, while leaving commission CRUD/source-image writes on explicit migration fallback.
 - Added worker-owned D1 persistence for alias batch saves and featured-keyword suggestion writes, removed those routes from the primary legacy passthrough path when bindings exist, and extended admin worker contract coverage.
