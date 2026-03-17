@@ -1,3 +1,4 @@
+import { handleAdminReadRequest } from './adminData'
 import { handleAdminWriteRequest, LEGACY_PASSTHROUGH } from './adminWriteApi'
 
 const TRAILING_SLASH_PATTERN = /\/+$/
@@ -20,6 +21,7 @@ export type CharacterStatus = 'active' | 'stale'
 export interface Env {
   LEGACY_ADMIN_API_BASE_URL?: string
   DB?: unknown
+  IMAGES?: unknown
 }
 
 export interface ApiState {
@@ -588,6 +590,11 @@ export async function handleAdminApiRequest(
       status: 'ok',
       message: 'admin worker scaffold is running',
     })
+  }
+
+  const nativeReadResponse = await handleAdminReadRequest(request, env)
+  if (nativeReadResponse) {
+    return nativeReadResponse
   }
 
   const nativeCrudResponse = await handleCrudRequest(request, backend)

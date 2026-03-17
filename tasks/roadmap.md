@@ -34,7 +34,7 @@
 
 - `apps/web`：成熟。它仍是公开站生产源代码，同时继续持有 dev-only admin 页面、legacy admin API、SQLite 读写、本地图片读写与公开站构建链
 - `apps/admin`：前端迁移已完成。五个主页面都在这里，视觉基线存在，但它还没有脱离 worker API 依赖
-- `apps/admin-worker`：部分完成。worker 入口、Basic Auth、本地 CORS、远端读路径、CRUD 壳已存在；真正写持久层还没有从 legacy app 脱离
+- `apps/admin-worker`：部分完成。worker 入口、Basic Auth、本地 CORS、`adminData` 读侧、CRUD 壳已存在；真正写持久层还没有从 legacy app 脱离
 - `packages/domain`：成熟并已在主链路使用，承担 admin/web 共享 DTO 与纯逻辑
 - `packages/cloudflare`：脚手架。只有占位 env 类型，尚未承接真正的 auth / binding / helper
 - `packages/ui`：脚手架。没有实际共享 UI 被两个 app 复用
@@ -89,7 +89,7 @@
 - `apps/admin-worker/src/adminApi.ts`
   - 当前已原生处理一部分 GET 路由与 CRUD 路由壳
   - 默认 CRUD backend 仍是 `createLegacyCrudBackend`
-  - passthrough allowlist 仍包含：
+  - passthrough allowlist 仍包含以下 fallback 路径；当 `adminData`/native write 能处理时会先于它命中：
     - `/api/admin/bootstrap`
     - `/api/admin/aliases/bootstrap`
     - `/api/admin/aliases/batch`
@@ -124,6 +124,7 @@
 - 状态：`部分完成`
 - 当前真值：
   - `apps/admin-worker/src/index.ts` 已提供 Basic Auth、同源/CORS 处理、静态资源托管
+  - `apps/admin-worker/src/adminData.ts` 已承接读侧聚合与 R2 source-image 读取
   - `apps/admin-worker/src/adminApi.ts` 已在有 `DB` / `IMAGES` bindings 时原生处理：
     - `/api/admin/health`
     - `/api/admin/bootstrap`
@@ -207,7 +208,7 @@
 #### `apps/admin-worker/src/adminData.ts`
 
 - 当前：
-  - 只覆盖远端读模型：bootstrap、aliases、suggestion、character commissions、source image GET、health
+  - 当前承接远端读模型：bootstrap、aliases、suggestion、character commissions、source image GET
 - 默认方案：
   - 保持读侧职责，不继续混入写 SQL
 - 下一步：

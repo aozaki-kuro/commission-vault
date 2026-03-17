@@ -13,12 +13,17 @@ interface D1ResultLike {
   success?: boolean
 }
 
-interface D1BoundStatementLike {
+export interface D1ResultSetLike<TRow = Record<string, unknown>> {
+  results?: TRow[]
+}
+
+export interface D1BoundStatementLike {
+  all: <TRow = Record<string, unknown>>() => Promise<D1ResultSetLike<TRow>>
   run: () => Promise<D1ResultLike>
 }
 
-interface D1PreparedStatementLike extends D1BoundStatementLike {
-  bind: (...values: unknown[]) => D1BoundStatementLike
+export interface D1PreparedStatementLike extends D1BoundStatementLike {
+  bind: (...values: unknown[]) => D1PreparedStatementLike
 }
 
 export interface D1DatabaseLike {

@@ -13,7 +13,7 @@
 
 - `apps/web`：当前公开站真实运行时，同时继续承载 dev-only legacy `/admin/*`、本地 SQLite、`data/images/*`、legacy admin 数据层与本地图片写入逻辑
 - `apps/admin`：standalone 管理端前端已完成五个主页面迁移，视觉基线已建立，但运行仍依赖 worker API
-- `apps/admin-worker`：已有 worker 入口、Basic Auth、local-dev CORS、D1/R2 读路径与 CRUD 路由契约壳，以及 alias/suggestion 的 D1 写持久层；CRUD 默认 backend 与 source-image POST 仍依赖 legacy bridge 或 fallback
+- `apps/admin-worker`：已有 worker 入口、Basic Auth、local-dev CORS、`adminData` 读侧模块、D1/R2 读路径与 CRUD 路由契约壳，以及 alias/suggestion 的 D1 写持久层；CRUD 默认 backend 与 source-image POST 仍依赖 legacy bridge 或 fallback
 - `packages/domain`：已承接共享类型与纯逻辑，是当前唯一进入主链路的共享包
 - `packages/cloudflare`：仅有占位类型与 env 约束，尚未承接实际 worker 共享能力
 - `packages/ui`：仅有占位导出，尚未吸收 admin/web 的共享 UI
@@ -127,3 +127,4 @@
 - [x] `apps/admin-worker` 已原生接管 `assets/refresh` 兼容 no-op，legacy passthrough allowlist 缩减一项
 - [x] `apps/admin-worker` 已新增独立写侧持久层模块，用于 alias/suggestion 的 worker-native D1 写入
 - [x] alias batch 与 suggestion POST 已从 worker legacy passthrough 主路径中收紧，相关 contract tests 已补入
+- [x] `apps/admin-worker` 已新增 `src/adminData.ts`，让 bootstrap / aliases / suggestion / character commissions / source-image GET 在存在 `DB` / `IMAGES` bindings 时走 worker-native 读侧
