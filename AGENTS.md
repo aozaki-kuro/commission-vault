@@ -133,7 +133,7 @@ This repository contains an Astro 6 static site with React 19 islands, written i
 Run checks in this order before pushing:
 
 1. `bun dev` — smoke-check local startup and key page routing (including `/admin` in development).
-2. `bun run lint` — run ESLint with auto-fix (`eslint --fix`) and resolve any remaining issues.
+2. `bun run lint` — run ESLint in check mode and resolve any remaining issues.
 3. `bun run check` — run Astro type-check diagnostics for `.astro`/TypeScript integration.
 4. `bun run test` — run unit/component tests (Vitest).
 5. `bun run test:visual` — run Playwright visual regression when changing layout, iconography, spacing, floating menus, or admin/home shells.
@@ -142,6 +142,7 @@ Run checks in this order before pushing:
 Additional guidance:
 
 - For docs-only edits, `bun run lint` is still recommended; `bun run build` can be skipped only when no runtime-related files changed.
+- Use `bun run lint:fix` only when you explicitly want ESLint to rewrite files.
 - If `data/commissions.db`, `server/adminApi.ts`, or admin/data-access code changed, `bun run build` is mandatory.
 - If `.astro` files or Astro script blocks are modified, `bun run check` is mandatory.
 - Run `bun run test` whenever you modify:
@@ -170,6 +171,8 @@ Additional guidance:
 
 ## Change Log
 
+- Tightened admin write gating to `NODE_ENV=development` only, moved the shared runtime check to `src/lib/admin/environment.ts`, and added admin-side data health / duplicate-entry warnings for safer maintenance.
+- Unified the 404 implementation on the Astro route and removed the redundant static `public/404.html` fallback that was shadowing `src/pages/404.astro` during build.
 - Split home client boot into critical immediate mounts (`view sync` + deferred-content loaders + scroll restore) and idle-mounted non-critical enhancers (`sidebar/hamburger/language/tabs/unpublished-interest`) inside `src/features/home/homePageClient.ts`.
 - Updated `src/features/home/commission/timelineViewLoader.ts` to pipeline timeline batch fetches with bounded concurrency before ordered DOM mounting, reducing RTT chaining when loading multiple timeline batches.
 - Moved deferred timeline sections from inline templates to external locale-aware batch JSON routes, and switched timeline loader mounting to manifest-driven fetch/render with legacy template fallback.
@@ -221,7 +224,7 @@ Additional guidance:
 
 ## Code Style
 
-- Format code with ESLint auto-fix (`bun run lint`): single quotes, no semicolons, trailing commas, `arrowParens: avoid`, width 100.
+- Format code with ESLint auto-fix (`bun run lint:fix`): single quotes, no semicolons, trailing commas, `arrowParens: avoid`, width 100.
 - ESLint uses a TypeScript baseline; keep the code free of lint errors.
 
 ## Images
