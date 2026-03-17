@@ -6,7 +6,7 @@
 
 - `domain`: shared content/admin/search contracts and pure domain helpers.
 - `ui`: shared React UI primitives that do not alter visual contracts.
-- `cloudflare`: worker runtime types and helpers for D1/R2/auth.
+- `cloudflare`: placeholder worker env/types for future D1/R2/auth sharing; it is not in the main runtime path yet.
 - `config`: shared configuration presets.
 
 ## Dependency boundaries

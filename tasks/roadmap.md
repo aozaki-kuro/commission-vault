@@ -34,9 +34,9 @@
 
 - `apps/web`：成熟。它仍是公开站生产源代码，同时继续持有 dev-only admin 页面、legacy admin API、SQLite 读写、本地图片读写与公开站构建链
 - `apps/admin`：前端迁移已完成。五个主页面都在这里，视觉基线存在，但它还没有脱离 worker API 依赖
-- `apps/admin-worker`：部分完成。worker 入口、Basic Auth、本地 CORS、`adminData` 读侧、CRUD 壳已存在；真正写持久层还没有从 legacy app 脱离
+- `apps/admin-worker`：部分完成。worker 入口、Basic Auth、本地 CORS、`adminData` 读侧、CRUD 壳已存在；但 `wrangler` 尚未接入真实 D1/R2 bindings，真正写持久层也还没有从 legacy app 脱离
 - `packages/domain`：成熟并已在主链路使用，承担 admin/web 共享 DTO 与纯逻辑
-- `packages/cloudflare`：脚手架。只有占位 env 类型，尚未承接真正的 auth / binding / helper
+- `packages/cloudflare`：脚手架。只有占位 env 类型，当前也未进入主链路，尚未承接真正的 auth / binding / helper
 - `packages/ui`：脚手架。没有实际共享 UI 被两个 app 复用
 - `packages/config`：脚手架。只有 README，占位意图明确，内容未落地
 
@@ -60,6 +60,9 @@
 - 当前部署边界：
   - `crystallize.cc` -> `apps/web`
   - `admin.crystallize.cc` -> `apps/admin-worker` + `apps/admin/dist`
+- 当前 deploy 真值：
+  - 根脚本实际走 `apps/web/wrangler.jsonc` / `apps/admin-worker/wrangler.jsonc`
+  - 根目录 `wrangler.jsonc` 目前不是 deploy/source-of-truth，只是遗留配置
 - 当前本地联调边界：
   - `apps/web` dev 默认承载 legacy `/admin/*` 与 `/api/admin/*`
   - `apps/admin` 通过 `ADMIN_API_BASE_URL` 调用 admin API
@@ -81,8 +84,9 @@
   - `apps/web/src/lib/admin/db.ts`
   - `apps/web/src/features/admin/imageUpload.ts`
 - worker 当前远端读取入口：
-  - D1 读：admin bootstrap / aliases / suggestion / character commissions
-  - R2 读：source image GET
+  - 代码已支持在存在 bindings 时走 D1 读：admin bootstrap / aliases / suggestion / character commissions
+  - 代码已支持在存在 bindings 时走 R2 读：source image GET
+  - 当前 `apps/admin-worker/wrangler.jsonc` 仍未声明 `DB` / `IMAGES` bindings
 
 ### 1.5 当前 legacy bridge 边界
 
@@ -132,6 +136,7 @@
     - `/api/admin/suggestion` GET
     - `/api/admin/characters/:id/commissions` GET
     - `/api/admin/source-image/:fileName` GET
+  - 以上能力当前仍停留在 code path 层面，因为 `apps/admin-worker/wrangler.jsonc` 还没有接入真实 `DB` / `IMAGES` bindings
   - `apps/admin-worker/src/adminApi.test.ts` 已覆盖 CRUD 壳与远端读路径
 - 离完成还差什么：
   - 读路径仍与 passthrough allowlist 并存，fallback 边界需要继续收紧
@@ -178,7 +183,7 @@
 
 - 状态：`部分完成`
 - 当前真值：
-  - 两个域名路由骨架与 admin Basic Auth 已存在
+  - 两个 app-local `wrangler.jsonc` 都已有域名路由骨架，admin Basic Auth 也已存在
   - 三个独立 `dev:*` 命令已存在
   - `apps/admin` 与 `apps/web` 的 Playwright 开发服务器已可协同工作
 - 离完成还差什么：
@@ -197,6 +202,7 @@
   - 读路径部分 D1/R2 化
   - 写路径默认仍是 `createLegacyCrudBackend`
   - CRUD 壳已经在 worker，不再是原始白名单代理
+  - 但这些 binding-aware 路径尚未通过 `wrangler` 真实接线
 - 默认方案：
   - 保持 `adminApi.ts` 只负责路由、归一化、错误响应、backend 组装
   - 新增独立 persistence backend，不把 SQL / D1 / R2 写逻辑塞回 `adminApi.ts`

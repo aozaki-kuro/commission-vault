@@ -12,4 +12,4 @@
 
 - `web` depends on shared domain/build logic from `packages/*`.
 - `admin` depends on shared domain/ui packages and calls `admin-worker`.
-- `admin-worker` depends on shared cloudflare/domain packages and D1/R2 bindings.
+- `admin-worker` depends on shared `domain` code today; `cloudflare` types and D1/R2 bindings are still migration scaffolds, not a fully wired runtime dependency yet.

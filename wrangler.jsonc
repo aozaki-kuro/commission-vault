@@ -1,5 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
+  // Legacy root config retained for compatibility. Current deploy scripts use app-local wrangler files.
   "name": "commission-index",
   "compatibility_date": "2026-02-05",
   "vars": {},

@@ -13,20 +13,20 @@
 
 - `apps/web`：当前公开站真实运行时，同时继续承载 dev-only legacy `/admin/*`、本地 SQLite、`data/images/*`、legacy admin 数据层与本地图片写入逻辑
 - `apps/admin`：standalone 管理端前端已完成五个主页面迁移，视觉基线已建立，但运行仍依赖 worker API
-- `apps/admin-worker`：已有 worker 入口、Basic Auth、local-dev CORS、`adminData` 读侧模块、D1/R2 读路径与 CRUD 路由契约壳，以及 alias/suggestion 的 D1 写持久层；CRUD 默认 backend 与 source-image POST 仍依赖 legacy bridge 或 fallback
+- `apps/admin-worker`：已有 worker 入口、Basic Auth、local-dev CORS、`adminData` 读侧模块、binding-aware 的 D1/R2 读路径与 CRUD 路由契约壳，以及 alias/suggestion 的 D1 写持久层；但 `wrangler` 里尚未接入真实 `DB` / `IMAGES` bindings，CRUD 默认 backend 与 source-image POST 仍依赖 legacy bridge 或 fallback
 - `packages/domain`：已承接共享类型与纯逻辑，是当前唯一进入主链路的共享包
-- `packages/cloudflare`：仅有占位类型与 env 约束，尚未承接实际 worker 共享能力
+- `packages/cloudflare`：仅有占位 env 类型，当前未被主链路引用，也尚未承接实际 worker 共享能力
 - `packages/ui`：仅有占位导出，尚未吸收 admin/web 的共享 UI
 - `packages/config`：仅有 README 占位，尚未承接 tsconfig / lint / build 共享配置
 
 ## 当前进度总览
 
 - `已完成` Standalone admin 前端：`overview` / `create` / `edit` / `aliases` / `suggestion` 已全部迁入 `apps/admin`
-- `部分完成` Admin worker 读路径：`/api/admin/health`、`/api/admin/bootstrap`、`/api/admin/aliases/bootstrap`、`/api/admin/suggestion` GET、`/api/admin/characters/:id/commissions` GET、`/api/admin/source-image/:fileName` GET 已可在存在 `DB` / `IMAGES` bindings 时走 D1/R2
+- `部分完成` Admin worker 读路径：`/api/admin/health`、`/api/admin/bootstrap`、`/api/admin/aliases/bootstrap`、`/api/admin/suggestion` GET、`/api/admin/characters/:id/commissions` GET、`/api/admin/source-image/:fileName` 的 worker-native code path 已具备，但当前 `wrangler` 仍未配置真实 `DB` / `IMAGES` bindings
 - `部分完成` Admin worker 写路径：CRUD 路由命中、入参归一化、错误响应壳已在 worker；`alias batch` 与 `suggestion` 保存已可在存在 `DB` binding 时走 worker 原生持久层；默认 CRUD backend 与 `source-image POST` 仍未原生化，`assets/refresh` 已收口为 worker 原生兼容 no-op
 - `部分完成` Public web 事实源解耦：`packages/domain` 已承接一部分纯逻辑，但 `apps/web` 渲染/构建链仍直接读取本地 SQLite 与 `data/images/*`
 - `未开始` 云端事实源与 Publish：尚未建立 D1 migration、R2 object key 规则、publish-status、锁与恢复策略
-- `部分完成` 部署、认证、本地联调：域名路由、admin worker Basic Auth、独立 `dev:web` / `dev:admin` / `dev:worker` 已有，但尚无统一联调命令与完整 bindings/runbook
+- `部分完成` 部署、认证、本地联调：域名路由、admin worker Basic Auth、独立 `dev:web` / `dev:admin` / `dev:worker` 已有，但尚无统一联调命令、完整 bindings/runbook，且根目录 `wrangler.jsonc` 不是当前 deploy 真值
 
 ## 阶段状态
 
@@ -50,7 +50,7 @@
 ### 阶段 2：admin worker 能力补齐
 
 - [x] worker 入口、路由分发、Basic Auth、local-dev CORS 已落地
-- [x] worker 已原生持有 `health` 与一组 D1/R2 读路径
+- [x] worker 已原生持有 `health` 与一组 binding-aware D1/R2 读路径
 - [x] worker 已原生持有 CRUD 路由契约：命中、入参归一化、错误响应壳
 - [x] `assets/refresh` 已从 legacy passthrough 收口为 worker 原生兼容 no-op
 - [ ] CRUD 持久化执行层仍未原生化，默认 backend 仍是 `createLegacyCrudBackend`
@@ -79,7 +79,7 @@
 - [x] `apps/web/wrangler.jsonc` 与 `apps/admin-worker/wrangler.jsonc` 已有域名路由骨架
 - [x] `apps/admin-worker/src/index.ts` 已有 Basic Auth 与本地同源/CORS 处理
 - [x] 根脚本已有 `dev:web` / `dev:admin` / `dev:worker`
-- [ ] D1 / R2 bindings、secrets、preview / production 差异仍未文档化
+- [ ] D1 / R2 bindings、secrets、preview / production 差异仍未文档化，也尚未真正配置到 `apps/admin-worker/wrangler.jsonc`
 - [ ] 尚无一条命令同时拉起 `apps/web` + `apps/admin` + `apps/admin-worker`
 - [ ] `apps/admin` 当前 Playwright 仍通过 `ADMIN_API_BASE_URL=http://127.0.0.1:4173` 访问 legacy dev server，而不是 worker dev
 
@@ -128,3 +128,4 @@
 - [x] `apps/admin-worker` 已新增独立写侧持久层模块，用于 alias/suggestion 的 worker-native D1 写入
 - [x] alias batch 与 suggestion POST 已从 worker legacy passthrough 主路径中收紧，相关 contract tests 已补入
 - [x] `apps/admin-worker` 已新增 `src/adminData.ts`，让 bootstrap / aliases / suggestion / character commissions / source-image GET 在存在 `DB` / `IMAGES` bindings 时走 worker-native 读侧
+- [x] 已把 D1/R2 的“条件 code path”与“wrangler 已配置真实 bindings”重新拆开描述，避免把未来接线写成当前真值

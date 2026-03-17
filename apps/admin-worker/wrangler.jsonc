@@ -16,7 +16,7 @@
       "custom_domain": true
     }
   ],
-  // D1/R2 bindings are intentionally added in Stage 10 during real cloud resource binding.
+  // D1/R2 bindings are not configured yet. Add them when the real bindings/runbook phase lands.
   "vars": {
     "ADMIN_REALM": "admin.crystallize.cc",
     "LEGACY_ADMIN_API_BASE_URL": "http://localhost:4321"
