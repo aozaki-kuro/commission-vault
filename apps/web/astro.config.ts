@@ -1,6 +1,7 @@
 import react from '@astrojs/react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, fontProviders } from 'astro/config'
+import { fileURLToPath } from 'node:url'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { assetsPipelineIntegration } from './server/assetsPipelineAstro'
 import { devAdminIntegration } from './server/devAdminAstro'
@@ -29,6 +30,11 @@ export default defineConfig({
   integrations: [react(), assetsPipelineIntegration(), devAdminIntegration()],
   vite: {
     plugins: [tailwindcss(), tsconfigPaths()],
+    resolve: {
+      alias: {
+        '@astrojs/react/server.js': fileURLToPath(new URL('./src/config/astroReactServerShim.ts', import.meta.url)),
+      },
+    },
     build: {
       rollupOptions: {
         output: {

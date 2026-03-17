@@ -6,16 +6,16 @@ Personal use only
 
 ## Development
 
-- `bun run dev` — run Astro web in development mode (`/api/admin/*` handled inside Astro dev middleware).
+- `bun run dev` — run `apps/web` Astro app in development mode (`/api/admin/*` handled inside Astro dev middleware).
 - Admin pages (`/admin`, `/admin/aliases`) are injected only in development and are not part of production build output.
 - Admin route shells are Astro pages; interactive admin state is mounted via React islands.
-- `bun run build` — run Astro static build output to `dist/`.
+- `bun run build` — run Astro static build output to `apps/web/dist/`.
 - `bun run preview` — preview static output locally.
 - Admin page includes a dev-only floating `Refresh Assets Cache` button to force a fresh admin bootstrap fetch.
 
 Monorepo migration is in progress:
 
-- Root app (`src/*`) is still the active runtime source of truth.
+- Public runtime source of truth is `apps/web/*`.
 - New scaffolds are available at `apps/admin`, `apps/admin-worker`, and `apps/web`.
 - New workspace scripts:
   - `bun run dev:web`
@@ -35,7 +35,7 @@ Asset generation is shared by Astro:
 - Home update summary is computed during page rendering.
 - `/search/home-search-entries.json` is served by an Astro route at request/build time.
 - `/rss.xml` is served by an Astro route at request/build time.
-- Source images under `data/images` are imported by Astro Image at runtime; in dev, image add/change/remove triggers a full page reload automatically.
+- Source images under `apps/web/data/images` are imported by Astro Image at runtime; in dev, image add/change/remove triggers a full page reload automatically.
 
 ### Dev ports
 
@@ -45,7 +45,7 @@ Asset generation is shared by Astro:
 
 - Production deployment is static-only (no Worker entrypoint).
 - `/admin` and `/api/admin/*` return 404 from static `assets.not_found_handling = "404-page"`.
-- `/admin` and `/api/admin/*` are explicitly mapped to `404` in `public/_redirects`.
+- `/admin` and `/api/admin/*` are explicitly mapped to `404` in `apps/web/public/_redirects`.
 - `vite preview` does not validate edge HTTP status behavior for static host routing.
 - Verify using deployed Cloudflare URL:
 

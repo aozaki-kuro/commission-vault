@@ -69,6 +69,10 @@
       "name": "@commission-index/admin-worker",
       "version": "0.0.0",
     },
+    "apps/web": {
+      "name": "@commission-index/web",
+      "version": "0.0.0",
+    },
     "packages/cloudflare": {
       "name": "@commission-index/cloudflare",
       "version": "0.0.0",
@@ -186,6 +190,8 @@
     "@commission-index/domain": ["@commission-index/domain@workspace:packages/domain"],
 
     "@commission-index/ui": ["@commission-index/ui@workspace:packages/ui"],
+
+    "@commission-index/web": ["@commission-index/web@workspace:apps/web"],
 
     "@cspotcode/source-map-support": ["@cspotcode/source-map-support@0.8.1", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.9" } }, "sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw=="],
 

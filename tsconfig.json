@@ -3,18 +3,17 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "#layouts/*": ["src/layouts/*"],
-      "#features/*": ["src/features/*"],
-      "#components/*": ["src/components/*"],
-      "#images/*": ["public/images/*"],
-      "#admin/actions": ["src/features/admin/actions.client.ts"],
-      "#admin/*": ["src/features/admin/*"],
-      "#data/*": ["data/*"],
-      "#lib/*": ["src/lib/*"],
-      "#styles/*": ["src/styles/*"],
-      "#config/*": ["src/config/*"]
+      "#layouts/*": ["apps/web/src/layouts/*"],
+      "#features/*": ["apps/web/src/features/*"],
+      "#components/*": ["apps/web/src/components/*"],
+      "#images/*": ["apps/web/public/images/*"],
+      "#admin/actions": ["apps/web/src/features/admin/actions.client.ts"],
+      "#admin/*": ["apps/web/src/features/admin/*"],
+      "#data/*": ["apps/web/data/*"],
+      "#lib/*": ["apps/web/src/lib/*"],
+      "#styles/*": ["apps/web/src/styles/*"],
+      "#config/*": ["apps/web/src/config/*"]
     },
-    "typeRoots": ["./node_modules/@types", "./types"],
     "types": ["node"]
   },
   "include": [".astro/types.d.ts", "**/*.ts", "**/*.tsx", "**/*.astro"],

@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "#layouts/*": ["src/layouts/*"],
+      "#features/*": ["src/features/*"],
+      "#components/*": ["src/components/*"],
+      "#images/*": ["public/images/*"],
+      "#admin/actions": ["src/features/admin/actions.client.ts"],
+      "#admin/*": ["src/features/admin/*"],
+      "#data/*": ["data/*"],
+      "#lib/*": ["src/lib/*"],
+      "#styles/*": ["src/styles/*"],
+      "#config/*": ["src/config/*"]
+    },
+    "types": ["node"]
+  },
+  "include": [".astro/types.d.ts", "**/*.ts", "**/*.tsx", "**/*.astro"],
+  "exclude": ["node_modules"]
+}
