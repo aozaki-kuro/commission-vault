@@ -104,7 +104,7 @@ interface CommissionSourceImageFieldProps {
 
 export function CommissionSourceImageField({
   accept = 'image/jpeg,image/png,.jpg,.jpeg,.png',
-  helperMessage = 'Upload JPG/PNG. It will be saved to data/images using this file name and then imported automatically.',
+  helperMessage = 'Upload JPG/PNG. It will be stored in the remote source-image bucket using this file name.',
   helperTone = 'default',
   required = false,
   onChange,

@@ -31,6 +31,7 @@ export interface GeneratedSourceImageManifestFile {
   relativePath: string
   mimeType: string
   byteSize: number | null
+  sha256: string
 }
 
 export interface GeneratedSourceImageManifestMissing {

@@ -7,8 +7,10 @@ import {
   updateCharacter as persistCharacterUpdate,
   createCommission as persistCommissionCreate,
   deleteCommission as persistCommissionDelete,
+  deleteCommissionByFileName as persistCommissionDeleteByFileName,
   getCommissionFileName as persistCommissionFileName,
   updateCommission as persistCommissionUpdate,
+  saveSourceImageMetadata as persistSourceImageMetadata,
 } from './adminPersistence'
 import {
   removeSourceImageObject,
@@ -330,7 +332,7 @@ function createNativeCrudBackend(
         return unavailableBackend.createCommission(input)
       }
 
-      let uploadedSourceImage: { targetKey: string } | null = null
+      let uploadedSourceImage: Awaited<ReturnType<typeof saveSourceImageToBucket>> | null = null
 
       try {
         uploadedSourceImage = await saveSourceImageToBucket(imagesBucket, {
@@ -345,6 +347,7 @@ function createNativeCrudBackend(
 
       try {
         const { characterName } = await persistCommissionCreate(db, input)
+        await persistSourceImageMetadata(db, uploadedSourceImage)
         return json({
           status: 'success',
           message: `Commission "${input.fileName}" added to ${characterName}.`,
@@ -353,6 +356,7 @@ function createNativeCrudBackend(
       catch (error) {
         if (uploadedSourceImage) {
           try {
+            await persistCommissionDeleteByFileName(db, uploadedSourceImage.commissionFileName)
             await removeSourceImageObject(imagesBucket, uploadedSourceImage.targetKey)
           }
           catch (rollbackError) {
@@ -398,11 +402,12 @@ function createNativeCrudBackend(
 
       try {
         const commissionFileName = await persistCommissionFileName(db, input.id)
-        await saveSourceImageToBucket(imagesBucket, {
+        const savedSourceImage = await saveSourceImageToBucket(imagesBucket, {
           commissionFileName,
           file: input.sourceImage,
           overwrite: true,
         })
+        await persistSourceImageMetadata(db, savedSourceImage)
         return json({
           status: 'success',
           message: `Source image for "${commissionFileName}" replaced.`,

@@ -22,7 +22,21 @@ export interface R2WriteBucketLike {
 }
 
 export interface SavedSourceImage {
+  byteSize: number
+  commissionFileName: string
+  mimeType: string
+  objectKey: string
+  sha256: string
   targetKey: string
+}
+
+function toHex(buffer: ArrayBuffer) {
+  return Array.from(new Uint8Array(buffer), part => part.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+async function hashArrayBuffer(buffer: ArrayBuffer) {
+  return toHex(await crypto.subtle.digest('SHA-256', buffer))
 }
 
 function hasControlCharacter(value: string) {
@@ -160,6 +174,8 @@ export async function saveSourceImageToBucket(
   const fileName = normalizeCommissionFileName(input.commissionFileName)
   const targetKey = `${fileName}${extension}`
   const candidateKeys = buildSourceImageCandidateKeys(fileName)
+  const imageBuffer = await input.file.arrayBuffer()
+  const mimeType = getSourceImageContentType(extension)
 
   if (!input.overwrite) {
     for (const key of candidateKeys) {
@@ -170,9 +186,9 @@ export async function saveSourceImageToBucket(
     }
   }
 
-  await bucket.put(targetKey, await input.file.arrayBuffer(), {
+  await bucket.put(targetKey, imageBuffer, {
     httpMetadata: {
-      contentType: getSourceImageContentType(extension),
+      contentType: mimeType,
     },
   })
 
@@ -186,7 +202,14 @@ export async function saveSourceImageToBucket(
     }
   }
 
-  return { targetKey }
+  return {
+    byteSize: imageBuffer.byteLength,
+    commissionFileName: fileName,
+    mimeType,
+    objectKey: targetKey,
+    sha256: await hashArrayBuffer(imageBuffer),
+    targetKey,
+  }
 }
 
 export async function removeSourceImageObject(bucket: R2WriteBucketLike, key: string) {

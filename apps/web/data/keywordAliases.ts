@@ -5,55 +5,14 @@ import {
   normalizeKeywordAliasKey,
   parseKeywordAliasesJson,
 } from '#lib/keywordAliases/shared'
-import { queryAll } from './sqlite'
-
-interface RawKeywordAliasRow {
-  baseKeyword: string
-  aliasesJson: string
-}
+import { getGeneratedFactSourceContent } from './generatedFactSource'
 
 const isDevelopment = process.env.NODE_ENV === 'development'
-let cachedHasKeywordAliasesTable: boolean | null = null
 let cachedKeywordAliases: KeywordAliasEntry[] | null = null
 
-function hasKeywordAliasesTable(): boolean {
-  if (!isDevelopment && cachedHasKeywordAliasesTable !== null) {
-    return cachedHasKeywordAliasesTable
-  }
-
-  const rows = queryAll<{ name?: string }>(
-    'SELECT name FROM sqlite_master WHERE type = \'table\' AND name = ? LIMIT 1',
-    ['keyword_aliases'],
-  )
-  const exists = rows[0]?.name === 'keyword_aliases'
-
-  if (!isDevelopment) {
-    cachedHasKeywordAliasesTable = exists
-  }
-
-  return exists
-}
-
-export function getKeywordAliases(): KeywordAliasEntry[] {
-  if (!isDevelopment && cachedKeywordAliases) {
-    return cachedKeywordAliases
-  }
-
-  if (!hasKeywordAliasesTable())
-    return []
-
-  const rows = queryAll<RawKeywordAliasRow>(
-    `
-      SELECT
-        base_keyword as baseKeyword,
-        aliases as aliasesJson
-      FROM keyword_aliases
-      ORDER BY base_keyword ASC
-    `,
-  )
-
+function loadKeywordAliases(): KeywordAliasEntry[] {
   const aliasMap = new Map<string, { baseKeyword: string, aliases: string[] }>()
-  rows.forEach((row) => {
+  getGeneratedFactSourceContent().keywordAliases.forEach((row) => {
     const normalizedBaseKeyword = row.baseKeyword.trim()
     if (!normalizedBaseKeyword)
       return
@@ -62,7 +21,7 @@ export function getKeywordAliases(): KeywordAliasEntry[] {
     if (!key)
       return
 
-    const aliases = parseKeywordAliasesJson(row.aliasesJson)
+    const aliases = parseKeywordAliasesJson(JSON.stringify(row.aliases))
     const previous = aliasMap.get(key)
     aliasMap.set(key, {
       baseKeyword: previous?.baseKeyword ?? normalizedBaseKeyword,
@@ -70,8 +29,16 @@ export function getKeywordAliases(): KeywordAliasEntry[] {
     })
   })
 
-  const result = [...aliasMap.values()].toSorted((a, b) =>
+  return [...aliasMap.values()].toSorted((a, b) =>
     a.baseKeyword.localeCompare(b.baseKeyword, 'ja'))
+}
+
+export function getKeywordAliases(): KeywordAliasEntry[] {
+  if (!isDevelopment && cachedKeywordAliases) {
+    return cachedKeywordAliases
+  }
+
+  const result = loadKeywordAliases()
 
   if (!isDevelopment) {
     cachedKeywordAliases = result

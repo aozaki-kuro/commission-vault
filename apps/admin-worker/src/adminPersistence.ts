@@ -69,6 +69,14 @@ interface CharacterOrderPayload {
   stale: number[]
 }
 
+interface SourceImageMetadataInput {
+  byteSize: number
+  commissionFileName: string
+  mimeType: string
+  objectKey: string
+  sha256: string
+}
+
 const MAX_FEATURED_SEARCH_KEYWORDS = 6
 const NORMALIZE_SPACES_PATTERN = /\s+/g
 
@@ -97,6 +105,17 @@ const CREATE_HOME_FEATURED_SEARCH_KEYWORDS_TABLE_SQL = `
   CREATE TABLE IF NOT EXISTS home_featured_search_keywords (
     keyword TEXT PRIMARY KEY,
     sort_order INTEGER NOT NULL
+  )
+`
+
+const CREATE_SOURCE_IMAGES_TABLE_SQL = `
+  CREATE TABLE IF NOT EXISTS source_images (
+    commission_file_name TEXT PRIMARY KEY,
+    object_key TEXT NOT NULL UNIQUE,
+    mime_type TEXT NOT NULL,
+    byte_size INTEGER NOT NULL,
+    sha256 TEXT NOT NULL,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )
 `
 
@@ -202,6 +221,10 @@ async function ensureKeywordAliasesTable(db: D1DatabaseLike) {
 
 async function ensureHomeFeaturedSearchKeywordsTable(db: D1DatabaseLike) {
   await runStatement(db, CREATE_HOME_FEATURED_SEARCH_KEYWORDS_TABLE_SQL)
+}
+
+async function ensureSourceImagesTable(db: D1DatabaseLike) {
+  await runStatement(db, CREATE_SOURCE_IMAGES_TABLE_SQL)
 }
 
 export async function createCharacter(
@@ -438,6 +461,10 @@ export async function updateCommission(
     ],
   )
 
+  if (currentCommission.fileName !== normalizedInput.fileName) {
+    await deleteSourceImageMetadata(db, currentCommission.fileName)
+  }
+
   return true
 }
 
@@ -452,7 +479,13 @@ export async function deleteCommission(db: D1DatabaseLike, id: number) {
     return
   }
 
+  await deleteSourceImageMetadata(db, existing.fileName)
   await runStatement(db, 'DELETE FROM commissions WHERE id = ?', [id])
+}
+
+export async function deleteCommissionByFileName(db: D1DatabaseLike, fileName: string) {
+  await deleteSourceImageMetadata(db, fileName)
+  await runStatement(db, 'DELETE FROM commissions WHERE file_name = ?', [fileName])
 }
 
 export async function getCommissionFileName(db: D1DatabaseLike, id: number) {
@@ -467,6 +500,48 @@ export async function getCommissionFileName(db: D1DatabaseLike, id: number) {
   }
 
   return row.fileName
+}
+
+export async function saveSourceImageMetadata(
+  db: D1DatabaseLike,
+  input: SourceImageMetadataInput,
+) {
+  await ensureSourceImagesTable(db)
+  await runStatement(
+    db,
+    `
+      INSERT INTO source_images (
+        commission_file_name,
+        object_key,
+        mime_type,
+        byte_size,
+        sha256,
+        updated_at
+      ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(commission_file_name) DO UPDATE SET
+        object_key = excluded.object_key,
+        mime_type = excluded.mime_type,
+        byte_size = excluded.byte_size,
+        sha256 = excluded.sha256,
+        updated_at = CURRENT_TIMESTAMP
+    `,
+    [
+      input.commissionFileName,
+      input.objectKey,
+      input.mimeType,
+      input.byteSize,
+      input.sha256,
+    ],
+  )
+}
+
+export async function deleteSourceImageMetadata(db: D1DatabaseLike, commissionFileName: string) {
+  await ensureSourceImagesTable(db)
+  await runStatement(
+    db,
+    'DELETE FROM source_images WHERE commission_file_name = ?',
+    [commissionFileName],
+  )
 }
 
 export async function saveCreatorAliasesBatch(

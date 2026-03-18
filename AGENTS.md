@@ -13,8 +13,8 @@ This repository contains an Astro 6 static site with React 19 islands, written i
   - If the project ever adopts Astro content collections, use the Content Layer API only: `apps/web/src/content.config.ts` + `astro/loaders` + `astro/zod`. Do not introduce legacy collections.
   - Do not enable Astro CSP casually. In the current stack it still carries validation friction (`dev` cannot verify it, and Shiki inline styles conflict with it). If you revisit it later, use `security.csp` and remember that analytics needs `https://sight.crystallize.cc` on the script allowlist.
 - **Path aliases:** Prefer `#layouts/*`, `#features/*`, `#components/*`, `#images/*`, `#data/*`, `#lib/*`, `#styles/*`, `#config/*`, and `#admin/*` (`#admin/actions` points to the HTTP client action wrappers).
-- **Data source:** Commission content lives in `apps/web/data/commissions.db`; access it through `apps/web/data/sqlite.ts` (Bun uses `bun:sqlite`, Node falls back to `better-sqlite3`).
-  - Admin-managed search configuration tables include `character_aliases`, `creator_aliases`, `keyword_aliases`, and `home_featured_search_keywords`.
+- **Data source:** Public-site build input lives under `apps/web/generated/*` and is exported from the remote D1/R2 fact source by `apps/admin-worker/scripts/exportWebFactSource.ts`.
+  - Admin-managed search configuration tables live in remote D1 (`character_aliases`, `creator_aliases`, `keyword_aliases`, `home_featured_search_keywords`), and source-image metadata lives in remote D1 `source_images`.
 - **Monorepo migration scaffold (in progress):**
   - New app scaffolds now exist under `apps/admin`, `apps/admin-worker`, and `apps/web`.
   - Shared package scaffolds now exist under `packages/domain`, `packages/ui`, `packages/cloudflare`, and `packages/config`.
@@ -27,7 +27,6 @@ This repository contains an Astro 6 static site with React 19 islands, written i
 - The admin worker must fail fast when `DB` or `IMAGES` bindings are missing from known admin routes; do not restore local SQLite/image fallback into the standalone admin path.
 - The legacy `/admin` routes together with `/api/admin/*` inside `apps/web` exist only as migration rollback/reference paths. They are not part of the default standalone admin dev loop.
 - Worker-backed admin now owns character CRUD, commission CRUD, alias/suggestion writes, source-image GET, and source-image replacement whenever `DB` / `IMAGES` bindings are present.
-- Remote D1/R2 bootstrap now lives in `apps/admin-worker/migrations/*` plus `apps/admin-worker/scripts/*`; use those scripts to mirror `apps/web/data/commissions.db` and `apps/web/data/images/*` into the remote fact source before validating admin flows against the worker.
 - Standalone admin day-to-day development should use `bun run dev:admin`, which starts `apps/admin` plus `apps/admin-worker` in local worker mode with remote bindings and avoids pulling `apps/web` into the loop by default. `bun run dev:admin:remote` remains only as a compatibility alias.
 
 ## Home Rendering Architecture
@@ -113,19 +112,17 @@ This repository contains an Astro 6 static site with React 19 islands, written i
 
 ## Admin Rendering Architecture
 
-- Admin routes are Astro page shells in dev-only entrypoints:
+- Legacy admin routes now exist only as unmounted reference Astro page shells:
   - `apps/web/src/devAdmin/pages/adminIndex.astro`
   - `apps/web/src/devAdmin/pages/adminCreate.astro`
   - `apps/web/src/devAdmin/pages/adminEdit.astro`
   - `apps/web/src/devAdmin/pages/adminAliases.astro`
   - `apps/web/src/devAdmin/pages/adminSuggestion.astro`
-- Static page structure (title/description/navigation/fallback) stays in Astro templates.
-- Admin interactive state is isolated to React islands:
+- Their static page structure (title/description/navigation/fallback) stays in Astro templates.
+- Their interactive admin state is isolated to React islands:
   - `apps/web/src/features/admin/islands/AdminCreateIsland.tsx`
   - `apps/web/src/features/admin/islands/AdminEditIsland.tsx`
-- `/admin/aliases` mounts `apps/web/src/features/admin/aliases/AliasesDashboard.tsx` directly as its sole React island.
-- `/admin/suggestion` mounts `apps/web/src/features/admin/suggestion/SuggestionDashboard.tsx` directly as its sole React island.
-- Feature-heavy admin UI remains React:
+- Reference-only admin UI remains React:
   - `apps/web/src/features/admin/AddCharacterForm.tsx`
   - `apps/web/src/features/admin/AddCommissionForm.tsx`
   - `apps/web/src/features/admin/CommissionManager.tsx`
@@ -137,17 +134,16 @@ This repository contains an Astro 6 static site with React 19 islands, written i
 
 ## Dev/Admin Responsibilities (must follow)
 
-- `apps/web/src/devAdmin` route shells and `apps/web/src/features/admin` UI are **development-only data maintenance surfaces** served at `/admin`.
+- `apps/web/src/devAdmin` route shells and `apps/web/src/features/admin` UI are legacy reference code. Standalone admin work must happen in `apps/admin` + `apps/admin-worker`, not inside `apps/web`.
 - In production behavior, `/admin` should not expose editing and must return 404 via route guards + static redirect rules.
 - All write operations (`create*`, `update*`, `deleteCommission`, `save*`) are valid only when `NODE_ENV=development`.
 - Always import actions from `#admin/actions` so components stay on the HTTP API wrapper path.
-- Any admin edit that changes content must include the related `apps/web/data/commissions.db` update in the same commit.
 
 ## Build Timing & Validation Gates
 
 Run checks in this order before pushing:
 
-1. `bun dev` — smoke-check local startup and key page routing (including `/admin` in development).
+1. `bun dev` — smoke-check local startup and key public page routing.
 2. `bun run lint` — run ESLint in check mode and resolve any remaining issues.
 3. `bun run check` — run Astro type-check diagnostics for `.astro`/TypeScript integration.
 4. `bun run test` — run unit/component tests (Vitest).
@@ -158,7 +154,7 @@ Additional guidance:
 
 - For docs-only edits, `bun run lint` is still recommended; `bun run build` can be skipped only when no runtime-related files changed.
 - Use `bun run lint:fix` only when you explicitly want ESLint to rewrite files.
-- If `apps/web/data/commissions.db`, `apps/web/server/adminApi.ts`, or admin/data-access code changed, `bun run build` is mandatory.
+- If `apps/web/server/adminApi.ts` or admin/data-access code changed, `bun run build` is mandatory.
 - If `.astro` files or Astro script blocks are modified, `bun run check` is mandatory.
 - Run `bun run test` whenever you modify:
   - `apps/web/src/devAdmin/*`, `#admin/actions`, `apps/web/server/adminApi.ts`, `apps/web/src/lib/admin/db.ts`, `apps/web/astro.config.ts`
@@ -173,11 +169,11 @@ Additional guidance:
 
 ## Server Runtime Architecture
 
-- Astro dev integration for admin route injection and dev-only API middleware:
+- Legacy Astro dev integration for admin route injection and dev-only API middleware (currently not wired into `astro.config.ts`):
   - `apps/web/server/devAdminAstro.ts`
 - Standalone dev admin API server:
   - `apps/web/server/adminApi.ts`
-- API route handler:
+- Legacy API route handler reference:
   - `apps/web/server/adminApiHandler.ts`
 - Shared Node/Web bridge helpers:
   - `apps/web/server/httpBridge.ts`
@@ -265,10 +261,10 @@ Additional guidance:
 
 ## Images
 
-- Frontend listing images are rendered with Astro Image (`astro:assets`) from `apps/web/data/images/*.{jpg,jpeg,png}` source files.
+- Frontend listing images are rendered with Astro Image (`astro:assets`) from `apps/web/generated/source-images/*.{jpg,jpeg,png}` source files.
 - Source file resolution is centralized in `apps/web/src/lib/images/sourceImageRegistry.ts`; keep commission `fileName` and source image stem aligned.
 - Home listing image widths are fixed at `768/960/1280` and `sizes="(max-width: 768px) 92vw, 640px"` to keep analytics variant labels stable.
-- Dev mode includes a source-image watcher (`apps/web/server/assetsPipelineAstro.ts`) that full-reloads when `apps/web/data/images` changes.
+- Dev mode includes a generated fact-source watcher (`apps/web/server/assetsPipelineAstro.ts`) that full-reloads when `apps/web/generated/*` changes.
 - Admin preview image URL uses dev-only API: `GET /api/admin/source-image/:fileName`.
 - `/images/webp/*` is no longer a supported runtime contract.
 
@@ -276,7 +272,6 @@ Additional guidance:
 
 - Commit only source files; exclude generated or build artifacts such as `dist/`, `.next/`, `out/`, etc.
 - Keep each commit focused on one objective.
-- For data edits, include both code changes and the matching `apps/web/data/commissions.db` update in one commit.
 - Use this commit message format: `type(scope): short summary`.
 - Allowed `type` values: `feat`, `fix`, `docs`, `refactor`, `chore`, `test`, `style`, `perf`, `build`, `ci`, `revert`, `data`.
 - Keep `short summary` in imperative mood, lowercase first letter, and under 72 characters.

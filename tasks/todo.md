@@ -11,9 +11,9 @@
 
 ## 当前仓库结构真值
 
-- `apps/web`：当前公开站真实运行时，同时继续承载 dev-only legacy `/admin/*`、本地 SQLite、`data/images/*`、legacy admin 数据层与本地图片写入逻辑
+- `apps/web`：当前公开站真实运行时，公开构建链只读 `generated/*`；仓库内本地 SQLite/源图已删除，legacy `/admin/*` 代码仅剩未挂载的参考实现
 - `apps/admin`：standalone 管理端前端已完成五个主页面迁移，视觉基线已建立，但运行仍依赖 worker API
-- `apps/admin-worker`：已有 worker 入口、Basic Auth、local-dev CORS、`adminData` 读侧、`adminPersistence` 写侧，以及 character/commission CRUD、alias/suggestion 写入、source-image GET/POST 的 D1/R2 主路径；当前主缺口不再是 admin route 能力，而是 `apps/web` 构建仍未直接消费远端事实源结果
+- `apps/admin-worker`：已有 worker 入口、Basic Auth、local-dev CORS、`adminData` 读侧、`adminPersistence` 写侧，以及 character/commission CRUD、alias/suggestion 写入、source-image GET/POST 的 D1/R2 主路径；`source_images` 元数据表、seed/export 增量校验也已接入
 - `packages/domain`：已承接共享类型与纯逻辑，是当前唯一进入主链路的共享包
 - `packages/cloudflare`：仅有占位 env 类型，当前未被主链路引用，也尚未承接实际 worker 共享能力
 - `packages/ui`：仅有占位导出，尚未吸收 admin/web 的共享 UI
@@ -24,9 +24,9 @@
 - `已完成` Standalone admin 前端：`overview` / `create` / `edit` / `aliases` / `suggestion` 已全部迁入 `apps/admin`
 - `部分完成` Admin worker 读路径：`/api/admin/health`、`/api/admin/bootstrap`、`/api/admin/aliases/bootstrap`、`/api/admin/suggestion` GET、`/api/admin/characters/:id/commissions` GET、`/api/admin/source-image/:fileName` 的 worker-native code path 已具备，且 `wrangler` 已声明 `DB` / `IMAGES` bindings；但 remote preview / production 资源仍未验真
 - `部分完成` Admin worker 写路径：CRUD、alias、suggestion、source-image 的 worker-native D1/R2 主路径已齐，`assets/refresh` 已收口为 worker 原生兼容 no-op；当前剩余的是 deployed worker smoke check 与 legacy bridge 进一步缩边
-- `部分完成` 远程 D1/R2 实际使用：production D1 migration 已应用，production D1 表计数已与本地 SQLite 对齐，production R2 source images 已按本地 127 文件真值全量同步；但 admin 端到端远程写链路与 deployed worker smoke check 仍未收口
-- `当前主攻` Public web 事实源解耦：`apps/web` 渲染/构建链仍直接读取本地 SQLite 与 `data/images/*`，下一步必须先把 build input 切到 D1/R2 导出的 generated artifacts
-- `部分完成` 云端事实源与 Publish：D1 schema baseline、R2 object key、remote bootstrap 脚手架已经存在，但 build-input contract、publish-status、锁与恢复策略尚未落地
+- `部分完成` 远程 D1/R2 实际使用：production D1 migrations `0001` / `0002` 已应用，production R2 source images 已同步，`source_images` 已记录 `commission_file_name/object_key/mime_type/byte_size/sha256`，导出脚本已能按扩展名与 hash 增量复用；但 admin 端到端远程写链路与 deployed worker smoke check 仍未收口
+- `已完成` Public web 事实源解耦：`apps/web` 渲染/构建链已改为消费 `apps/admin-worker/scripts/exportWebFactSource.ts` 生成的 `generated/*`，公开站 build 不再读取本地 SQLite 与 `data/images/*`
+- `当前主攻` 云端事实源与 Publish：build-input contract 已落地，下一步主线转为 publish-status、锁与恢复策略，以及 deployed worker / admin 远端 smoke check
 - `部分完成` 部署、认证、本地联调：域名路由、admin worker Basic Auth、独立 `dev:web` / `dev:admin` / `dev:worker` 已有，但尚无统一联调命令、完整 bindings/runbook，且根目录 `wrangler.jsonc` 不是当前 deploy 真值
 
 ## 阶段状态
@@ -65,18 +65,20 @@
 
 - [x] `packages/domain` 已承接一部分类型与纯逻辑
 - [x] `apps/web` 的 build input contract 已定稿首版：覆盖 `generated/fact-source/content.json`、`generated/fact-source/source-images-manifest.json`、`generated/source-images/*`
-- [x] `apps/admin-worker/scripts/exportWebFactSource.mjs` 已可把远端 D1/R2 结果导出到 `apps/web/generated/*`
-- [ ] `apps/web/data/sqlite.ts` 仍是公开站读取本地 SQLite 的入口
-- [ ] `apps/web/data/commissionRecords.ts`、`creatorAliases.ts`、`characterAliases.ts`、`keywordAliases.ts`、`homeFeaturedSearchKeywords.ts` 仍直接或间接依赖 SQLite
-- [ ] `apps/web/src/lib/images/sourceImageRegistry.ts` 仍直接导入本地 `data/images/*`
-- [ ] `apps/web/src/lib/home/buildSitePayload.ts`、`apps/web/src/pages/search/*.ts`、`apps/web/src/pages/rss.xml.ts` 仍直接建立在本地 records / aliases / images 之上
-- [ ] 仍未证明 `bun run build:web` 在不依赖本地 `apps/web/data/commissions.db` / `apps/web/data/images/*` 的情况下可通过
+- [x] `apps/admin-worker/scripts/exportWebFactSource.ts` 已可把远端 D1/R2 结果导出到 `apps/web/generated/*`
+- [x] `apps/web/data/sqlite.ts` 已退出公开站 build 主路径，并从 `apps/web/data` 删除
+- [x] `apps/web/data/commissionRecords.ts`、`creatorAliases.ts`、`characterAliases.ts`、`keywordAliases.ts`、`homeFeaturedSearchKeywords.ts` 已改为只读 generated fact-source content
+- [x] `apps/web/src/lib/images/sourceImageRegistry.ts` 已改为只读 generated source-images manifest 与 `/generated/source-images/*`
+- [x] `apps/web/src/lib/home/buildSitePayload.ts`、`apps/web/src/pages/search/*.ts`、`apps/web/src/pages/rss.xml.ts` 已通过下游 data module 间接消费 generated inputs
+- [x] 已证明 `bun run build:web` 在不依赖本地 `apps/web/data/commissions.db` / `apps/web/data/images/*` 的情况下可通过
 
 ### 阶段 4：D1 / R2 / Publish 模型
 
 - [x] 已生成 D1 migration SQL baseline（`apps/admin-worker/migrations/0001_admin_fact_source.sql`）
+- [x] 已新增 `apps/admin-worker/migrations/0002_source_image_metadata.sql`，把源图扩展名/hash/大小元数据纳入 D1 `source_images`
 - [x] 已定义当前 R2 object key 规则：沿用 source image 原文件名作为 object key
-- [x] 已建立 SQLite -> D1、`data/images/*` -> R2 的一次性远程迁移路径（remote bootstrap scripts）
+- [x] 已完成最后一次 SQLite -> D1、`data/images/*` -> R2 的迁移，并删除仓库内本地 bootstrap/check/sync 脚本与数据副本
+- [x] 远端导出已支持按 `commission_file_name + object_key + byte_size + sha256` 增量复用生成图，不匹配时才重新下载并回写 D1 元数据
 - [ ] 尚未建立 `dirty` / `publishing` / `published` / `failed` 状态流
 - [ ] 尚未建立 publish 锁、重试与失败恢复机制
 
@@ -91,43 +93,39 @@
 
 ### 阶段 6：遗留实现清理与收尾
 
-- [ ] `apps/web/src/devAdmin/pages/*` 仍保留
-- [ ] `apps/web/server/devAdminAstro.ts` 仍保留
+- [ ] `apps/web/src/devAdmin/pages/*` 仍保留为未挂载参考代码
+- [ ] `apps/web/server/devAdminAstro.ts` 仍保留为未接线参考代码
 - [ ] `apps/web/server/adminApiHandler.ts` 仍是 legacy admin 真正写入执行者
 - [ ] `apps/web/src/features/admin/*` 与 `apps/admin/src/*` 仍双实现并存
 - [ ] README / AGENTS / runbook 尚未在 cutover 前后统一收口
 
 ## 当前遗留耦合
 
-- [ ] `apps/web/server/devAdminAstro.ts`：继续把 legacy `/admin/*` 注入 Astro dev
-- [ ] `apps/web/server/adminApiHandler.ts`：继续承担 commission CRUD 默认写入 fallback 与 source-image 处理；alias/suggestion/character CRUD 不再是首选执行路径
-- [ ] `apps/web/src/lib/admin/db.ts`：继续承担本地 SQLite 读写与隐式 schema 自修复
-- [ ] `apps/web/src/features/admin/imageUpload.ts`：继续承担本地文件系统图片写入/替换
-- [ ] `apps/web/data/sqlite.ts`：继续承担公开站对本地 SQLite 的只读访问
-- [ ] `apps/web/src/lib/images/sourceImageRegistry.ts`：继续承担公开站对本地 `data/images/*` 的直接导入
+- [x] `apps/web/server/devAdminAstro.ts`：已从 `astro.config.ts` 断开，不再把 legacy `/admin/*` 注入 Astro dev
+- [ ] `apps/web/server/adminApiHandler.ts`：仍保留为 legacy admin 写路径参考代码，但不再是默认运行链
+- [ ] `apps/web/src/lib/admin/db.ts`：仍保留为 legacy 本地写路径参考代码，但仓库内本地 SQLite 已删除
+- [ ] `apps/web/src/features/admin/imageUpload.ts`：仍保留为 legacy 本地图片写路径参考代码，但仓库内本地图源图已删除
+- [x] `apps/web/data/sqlite.ts`：已删除
+- [x] `apps/web/src/lib/images/sourceImageRegistry.ts`：已切到 generated source images
 - [ ] `apps/web/src/devAdmin/pages/*`：继续保留 legacy admin 页面壳
 - [ ] `apps/web/src/features/admin/*` 与 `apps/admin/src/*`：继续双实现并存，存在重复维护风险
 
 ## 当前主要风险 / 阻塞
 
-- [ ] 远程 D1/R2 的资源初始化已经完成，但如果 `apps/web` 继续读本地 SQLite / `data/images/*`，公开站仍不会真正消费远端事实源
-- [ ] 不能把“web 直接应用 D1/R2 结果”理解成“在页面层临时加远端查询”；静态构建和 `astro:assets` 图片链决定了必须先有 generated build-input layer
-- [ ] `home-character-batches` / `home-timeline-batches` 的图片 payload 依赖 `getImage()`；因此最终 batch JSON 不能在 D1/R2 导出脚本里预生成，必须由 Astro build 基于 generated source images 再推导
-- [ ] `apps/web` 仍直连本地 SQLite 与本地图像；只要这一点不拆，云端事实源与 publish 都只能停留在脚手架阶段
+- [ ] build-input hard cutover 已完成，但 publish state / current pointer 仍未建立；现在还不能把“远端事实源”直接等同于“对外发布闭环”
+- [ ] `home-character-batches` / `home-timeline-batches` 的图片 payload 依赖 `getImage()`；因此最终 batch JSON 仍不能在 D1/R2 导出脚本里预生成，必须继续由 Astro build 基于 generated source images 推导
+- [ ] `source_images` 元数据已经让导出变成增量，但这套 hash/扩展名契约必须持续由 worker 写路径、seed 脚本和导出脚本共同维护，不能再次漂移
 - [ ] standalone admin 虽已完成页面迁移，但只要 `apps/web/src/features/admin/*` 和 legacy `/admin/*` 继续存在，就仍有双实现漂移风险
 - [ ] standalone admin 当前已经出现“页面迁入完成但控件/设计未完全复刻”的信号；如果不把 shadcn/ui 与 legacy 交互细节列为硬性验收，视觉漂移会继续扩大
 - [x] `assets/refresh` 已明确为 worker 兼容性 no-op；后续不得再次误用成“发布按钮”
 
 ## 下一步关口
 
-1. 定稿 `apps/web/generated/fact-source/content.json`、`apps/web/generated/fact-source/source-images-manifest.json`、`apps/web/generated/source-images/*` 这套 build-input contract
-2. 新增 D1/R2 -> `apps/web/generated/*` 的远端导出脚本，并接到 `build:web` 前置步骤
-3. 保持 `apps/web/data/*` 对上层 API 不变，只替换其内部事实源到 generated content bundle
-4. 把 `apps/web/src/lib/images/sourceImageRegistry.ts` 从本地 `data/images/*` 切到 generated source images
-5. 直接拔掉本地 `apps/web/data/commissions.db` / `apps/web/data/images/*` 的 build 入口，并证明 `bun run build:web` 仍可通过
-6. 在 web build 远端事实源切换稳定后，再定义 publish bundle / current pointer / `Save` vs `Publish`
-7. 再收口 remote runbook、单命令联调，以及 deployed worker 的远端 smoke check
-8. 最后再删除 `apps/web` legacy admin 与双实现组件，并回头收口 standalone admin 的视觉/交互对齐
+1. 定义 publish bundle / current pointer / `Save` vs `Publish`，把“构建吃什么”与“哪一版对外生效”真正闭环起来
+2. 给 deployed worker 与 standalone admin 补远端 smoke check，证明远端写入后的读取、构建、图片访问都能闭环
+3. 收口 remote runbook、单命令联调，以及 preview / production 资源切换规则
+4. 继续清理 `apps/web` legacy admin 与双实现组件
+5. 回头收口 standalone admin 的视觉/交互 1:1 对齐
 
 ## 当前执行切片（2026-03-18 web build 远端事实源切换）
 
@@ -136,8 +134,8 @@
 - [x] 把这条主线的详细流程、边界、约束与验收写入 `tasks/roadmap.md` 与 `tasks/todo.md`
 - [x] 定义 `content.json` 与 `source-images-manifest.json` 的精确字段契约，并沉淀到 `packages/domain/src/factSource.ts`
 - [x] 新增远端导出脚本，把 D1/R2 结果落到 `apps/web/generated/*`
-- [ ] 让 `apps/web/data/*` 与 `sourceImageRegistry.ts` 切到 generated inputs
-- [ ] 直接拔掉本地 `apps/web/data/commissions.db` / `apps/web/data/images/*` 的 build 依赖并跑通 `bun run build:web`
+- [x] 让 `apps/web/data/*` 与 `sourceImageRegistry.ts` 切到 generated inputs
+- [x] 直接拔掉本地 `apps/web/data/commissions.db` / `apps/web/data/images/*` 的 build 依赖并跑通 `bun run build:web`
 
 ## Review（2026-03-18 web build 远端事实源切换）
 
@@ -148,6 +146,42 @@
 - [x] `bun run --cwd packages/domain typecheck` 通过。
 - [x] `bun run --cwd apps/admin-worker web:fact-source:export --output-root ./.wrangler/tmp/web-fact-source-export` 通过，产出 `12 characters / 16 creator aliases / 3 character aliases / 8 keyword aliases / 6 featured keywords / 123 source images / 0 missing`。
 - [x] `bun run lint` 通过。
+
+## 本轮执行切片（2026-03-18 D1 源图元数据增量导出）
+
+- [x] 在 D1 新增 `source_images` 元数据表迁移，存储 `commission_file_name`、`object_key`、`mime_type`、`byte_size`、`sha256`
+- [x] 让 worker 的 source-image 创建/替换路径在写 R2 后同步回写 D1 元数据
+- [x] 让 `buildD1SeedSql.mjs` 把本地 bootstrap 图片的扩展名/hash/大小写进 seed SQL
+- [x] 让 `exportWebFactSource.ts` 优先使用 D1 元数据判断本地 generated 图片是否可复用，不匹配时才重新下载并补写元数据
+- [x] 跑通类型检查、测试、lint、双次导出、`check` 与 `build`
+
+## Review（2026-03-18 D1 源图元数据增量导出）
+
+- [x] `bun run --cwd apps/admin-worker typecheck` 通过。
+- [x] `bunx vitest run -c vitest.config.ts apps/admin-worker/src/adminApi.test.ts` 通过（30 tests）。
+- [x] `bun run lint` 通过。
+- [x] 连续两次 `bun run web:fact-source:export` 都得到 `materializedImages=123 | downloadedImages=0 | reusedImages=123 | metadataUpserts=0 | missingImages=0`。
+- [x] `bun run test` 通过（51 files / 184 tests）。
+- [x] `bun run check` 通过（0 errors / 0 warnings）。
+- [x] `bun run build` 通过。
+
+## 本轮执行切片（2026-03-18 删除本地数据源）
+
+- [x] 删除仓库内 `apps/web/data/commissions.db`
+- [x] 删除仓库内 `apps/web/data/images/*`
+- [x] 删除依赖本地 SQLite/源图的 bootstrap/check/sync 脚本入口与对应根脚本
+- [x] 断开 `apps/web` 的 legacy dev admin 注入，避免本地开发继续命中本地数据入口
+- [x] 删除以本地 SQLite/图片目录为前提的测试与测试工具
+- [x] 跑通本轮删源后的 lint/test/check/build
+
+## Review（2026-03-18 删除本地数据源）
+
+- [x] `bun run lint` 通过。
+- [x] `bun run test` 通过（44 files / 172 tests）。
+- [x] `bun run build:admin` 通过。
+- [x] `bun run check` 通过（0 errors / 0 warnings）。
+- [x] `bun run build` 通过。
+- [x] `bun run build` / `bun run check` 均在仓库内已无 `apps/web/data/commissions.db` 与 `apps/web/data/images/*` 的前提下完成。
 
 ## 本轮执行切片（2026-03-17 文档）
 

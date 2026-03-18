@@ -7,52 +7,50 @@ describe('commissionRecords', () => {
   })
 
   afterEach(() => {
-    vi.doUnmock('./sqlite')
+    vi.doUnmock('./generatedFactSource')
     vi.unstubAllEnvs()
     vi.resetModules()
   })
 
-  it('caches schema probing across repeated development reads', async () => {
-    const queryAll = vi.fn((sql: string) => {
-      if (sql.startsWith('PRAGMA table_info(commissions)')) {
-        return [{ name: 'keyword' }]
-      }
+  it('reloads generated fact-source content across repeated development reads', async () => {
+    const getGeneratedFactSourceContent = vi.fn(() => ({
+      meta: {
+        schemaVersion: 1,
+        source: 'remote-admin-fact-source',
+        exportedAt: '2026-03-18T00:00:00.000Z',
+        databaseBinding: 'DB',
+        imagesBucket: 'commission-index-source-images',
+      },
+      characters: [
+        {
+          id: 1,
+          name: 'Lucia',
+          status: 'active',
+          sortOrder: 1,
+          commissions: [
+            {
+              fileName: '20260101_creator_lucia',
+              Links: [],
+              Keyword: 'maid',
+              Hidden: false,
+            },
+          ],
+        },
+      ],
+      creatorAliases: [],
+      characterAliases: [],
+      keywordAliases: [],
+      featuredSearchKeywords: [],
+    }))
 
-      if (sql.includes('FROM characters')) {
-        return [
-          {
-            id: 1,
-            name: 'Lucia',
-            status: 'active',
-            sort_order: 1,
-            file_name: '20260101_creator_lucia',
-            links: '[]',
-            design: null,
-            description: null,
-            keyword: 'maid',
-            hidden: 0,
-          },
-        ]
-      }
-
-      throw new Error(`unexpected query: ${sql}`)
-    })
-
-    vi.doMock('./sqlite', () => ({
-      queryAll,
+    vi.doMock('./generatedFactSource', () => ({
+      getGeneratedFactSourceContent,
     }))
 
     const { getCharacterRecords } = await import('./commissionRecords')
 
     expect(getCharacterRecords()).toHaveLength(1)
     expect(getCharacterRecords()).toHaveLength(1)
-    expect(
-      queryAll.mock.calls.filter(([sql]) =>
-        String(sql).startsWith('PRAGMA table_info(commissions)'),
-      ),
-    ).toHaveLength(1)
-    expect(
-      queryAll.mock.calls.filter(([sql]) => String(sql).includes('FROM characters')),
-    ).toHaveLength(3)
+    expect(getGeneratedFactSourceContent).toHaveBeenCalledTimes(3)
   })
 })

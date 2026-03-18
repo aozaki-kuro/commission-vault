@@ -6,14 +6,13 @@ Personal use only
 
 ## Development
 
-- `bun run dev` — run `apps/web` Astro app in development mode (`/api/admin/*` handled inside Astro dev middleware).
+- `bun run dev` — run the public `apps/web` Astro app in development mode.
 - `bun run dev:admin` — start the standalone admin frontend plus `apps/admin-worker` in local `wrangler dev` mode with remote D1/R2 bindings enabled by config.
 - `bun run dev:admin:remote` — compatibility alias for `bun run dev:admin`.
-- Admin pages (`/admin`, `/admin/aliases`) are injected only in development and are not part of production build output.
+- `apps/web` no longer mounts the legacy `/admin` pages in local dev; use `bun run dev:admin` for admin work.
 - Admin route shells are Astro pages; interactive admin state is mounted via React islands.
 - `bun run build` — run Astro static build output to `apps/web/dist/`.
 - `bun run preview` — preview static output locally.
-- Admin page includes a dev-only floating `Refresh Assets Cache` button to force a fresh admin bootstrap fetch.
 
 Monorepo migration is in progress:
 
@@ -26,23 +25,14 @@ Monorepo migration is in progress:
   - `bun run dev:worker`
   - `bun run build:web`
   - `bun run build:admin`
-  - `bun run admin:data:bootstrap`
-  - `bun run admin:data:bootstrap:remote`
-  - `bun run admin:data:check`
-  - `bun run admin:data:check:remote`
 
 ## Admin migration direction
 
-- Standalone admin capability work now lands on `apps/admin-worker` with `DB` / `IMAGES` bindings and D1/R2 migration scripts; future CRUD, asset writes, and admin tooling should target the worker + D1/R2 surface instead of expanding the legacy `/api/admin/*` layer inside `apps/web`.
+- Standalone admin capability work now lands on `apps/admin-worker` with `DB` / `IMAGES` bindings; future CRUD, asset writes, and admin tooling should target the worker + D1/R2 surface instead of expanding the legacy `/api/admin/*` layer inside `apps/web`.
 - `bun run dev:admin` is now the default standalone admin workflow. It starts `apps/admin` plus `apps/admin-worker` in local `wrangler dev` mode against the configured remote D1/R2 resources, without pulling in `apps/web`.
 - The admin worker no longer falls back to the legacy local SQLite/image path when `DB` or `IMAGES` bindings are missing. Known admin routes fail fast until the remote D1/R2-backed runtime is available.
-- The legacy `/admin` pages together with `/api/admin/*` in `apps/web` are preserved only as migration rollback/reference code. They are not part of the default admin dev loop anymore.
-- To initialize or re-check the worker fact source, use:
-  - `bun run admin:data:bootstrap`
-  - `bun run admin:data:bootstrap:remote`
-  - `bun run admin:data:check`
-  - `bun run admin:data:check:remote`
-- `apps/admin-worker/wrangler.jsonc` now declares the real production `DB` / `IMAGES` bindings plus the D1 migrations directory, and the current SQLite/image truth has already been mirrored to those production resources.
+- The legacy `/admin` pages together with `/api/admin/*` in `apps/web` are now reference-only code paths and are not mounted by default.
+- `apps/admin-worker/wrangler.jsonc` now declares the real production `DB` / `IMAGES` bindings plus the D1 migrations directory, and the current remote D1/R2 fact source is the only supported admin/runtime truth.
 
 ## Tests
 
@@ -55,7 +45,7 @@ Asset generation is shared by Astro:
 - Home update summary is computed during page rendering.
 - `/search/home-search-entries.json` is served by an Astro route at request/build time.
 - `/rss.xml` is served by an Astro route at request/build time.
-- Source images under `apps/web/data/images` are imported by Astro Image at runtime; in dev, image add/change/remove triggers a full page reload automatically.
+- Source images are imported from `apps/web/generated/source-images/*`; in dev, generated fact-source/image changes trigger a full page reload automatically.
 
 ### Dev ports
 

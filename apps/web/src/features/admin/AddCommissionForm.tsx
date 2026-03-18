@@ -30,7 +30,7 @@ interface AddCommissionFormProps {
 
 type SourceImageHintTone = 'default' | 'success' | 'error'
 const DEFAULT_SOURCE_IMAGE_HINT
-  = 'Upload JPG/PNG. Source image is required and will be saved to data/images using this file name.'
+  = 'Upload JPG/PNG. Source image is required and will be stored in the remote source-image bucket using this file name.'
 
 function extractFileNameStem(fileName: string) {
   const trimmed = fileName.trim()

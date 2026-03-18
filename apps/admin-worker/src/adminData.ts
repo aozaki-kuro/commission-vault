@@ -64,6 +64,10 @@ interface FileNameRow {
   fileName: string
 }
 
+interface SourceImageObjectKeyRow {
+  objectKey: string
+}
+
 interface AliasJsonRow {
   aliasesJson: string
 }
@@ -339,6 +343,15 @@ async function queryRows<TRow>(
   const statement = values.length > 0 ? db.prepare(query).bind(...values) : db.prepare(query)
   const result = await statement.all<TRow>()
   return Array.isArray(result.results) ? result.results : []
+}
+
+async function queryFirstRow<TRow>(
+  db: D1DatabaseLike,
+  query: string,
+  values: unknown[] = [],
+): Promise<TRow | null> {
+  const rows = await queryRows<TRow>(db, query, values)
+  return rows[0] ?? null
 }
 
 async function hasTable(db: D1DatabaseLike, tableName: string) {
@@ -882,14 +895,34 @@ function getSourceImageMimeType(key: string, object: R2ObjectBodyLike) {
   return 'image/jpeg'
 }
 
-async function loadSourceImageResponse(bucket: R2BucketLike, rawFileName: string) {
+async function loadSourceImageResponse(
+  bucket: R2BucketLike,
+  rawFileName: string,
+  db?: D1DatabaseLike | null,
+) {
   const validationError = validateSourceImageFileName(rawFileName)
   if (validationError) {
     return failure(validationError)
   }
 
   const fileName = rawFileName.trim()
-  const candidateKeys = [`${fileName}.jpg`, `${fileName}.jpeg`, `${fileName}.png`]
+  const preferredKeys: string[] = []
+  if (db && await hasTable(db, 'source_images')) {
+    const row = await queryFirstRow<SourceImageObjectKeyRow>(
+      db,
+      'SELECT object_key as objectKey FROM source_images WHERE commission_file_name = ? LIMIT 1',
+      [fileName],
+    )
+    if (row?.objectKey) {
+      preferredKeys.push(row.objectKey)
+    }
+  }
+  const candidateKeys = [
+    ...preferredKeys,
+    ...[`${fileName}.jpg`, `${fileName}.jpeg`, `${fileName}.png`].filter(
+      key => !preferredKeys.includes(key),
+    ),
+  ]
 
   for (const key of candidateKeys) {
     const object = await bucket.get(key)
@@ -995,7 +1028,7 @@ export async function handleAdminReadRequest(request: Request, env: AdminReadEnv
 
     try {
       const fileName = decodeURIComponent(encodedFileName)
-      return await loadSourceImageResponse(bucket, fileName)
+      return await loadSourceImageResponse(bucket, fileName, db)
     }
     catch (error) {
       if (error instanceof URIError) {

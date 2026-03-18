@@ -4,7 +4,6 @@ import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, fontProviders } from 'astro/config'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { assetsPipelineIntegration } from './server/assetsPipelineAstro'
-import { devAdminIntegration } from './server/devAdminAstro'
 
 export default defineConfig({
   output: 'static',
@@ -27,7 +26,7 @@ export default defineConfig({
     },
   ],
 
-  integrations: [react(), assetsPipelineIntegration(), devAdminIntegration()],
+  integrations: [react(), assetsPipelineIntegration()],
   vite: {
     plugins: [tailwindcss(), tsconfigPaths()],
     resolve: {

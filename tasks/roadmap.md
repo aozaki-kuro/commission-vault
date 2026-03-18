@@ -2,6 +2,14 @@
 
 `tasks/todo.md` 只维护状态与关口；本文件维护可执行的迁移路线、模块级拆解、默认决策与验收标准。
 
+## 2026-03-18 真值更新
+
+- 公开站 build cutover 已完成：`apps/web` 只消费 `apps/web/generated/*`，不再读取本地 SQLite 或 `data/images/*`
+- 仓库内本地 `apps/web/data/commissions.db` 与 `apps/web/data/images/*` 已删除；依赖这些文件的 bootstrap/check/sync 脚本也已下线
+- `apps/web` 本地 dev 不再注入 legacy `/admin/*`；后台开发主线只剩 `bun run dev:admin`
+- 远端 D1 `source_images` 现已持有 `commission_file_name/object_key/mime_type/byte_size/sha256`，`exportWebFactSource.ts` 会按扩展名/hash 增量复用 generated 图片，不匹配才重拉
+- 若本页后文仍出现“本地 SQLite / 本地图像 / bootstrap 脚本”描述，请将其视为已完成切片的历史记录，以本节为准
+
 ## 默认决策与假设
 
 - 在用户关心“什么时候才能真正让公开站吃到远端事实源”时，下一阶段重点不再是继续补 admin 写路由，而是让 `apps/web` 的 build input 从本地 SQLite / `data/images/*` 切到 D1/R2 导出的 generated artifacts
@@ -488,7 +496,7 @@
   - 保持 route 形状不变
   - 让其通过 generated fact-source 间接吃到远端结果
 
-#### `apps/admin-worker/scripts/exportWebFactSource.mjs`（新增推荐）
+#### `apps/admin-worker/scripts/exportWebFactSource.ts`（新增推荐）
 
 - 目标：
   - 从远端 D1/R2 导出 `apps/web` 构建所需的 generated inputs
@@ -641,7 +649,7 @@
   - remote D1/R2 parity 已完成第一次验证
   - admin worker 的远端读写已足够稳定
 - 具体改动面：
-  - 新增 `apps/admin-worker/scripts/exportWebFactSource.mjs`
+  - 新增 `apps/admin-worker/scripts/exportWebFactSource.ts`
   - 新增 `apps/web/generated/fact-source/*` 与 `apps/web/generated/source-images/*` 约定
   - 新增 generated fact-source loader
   - 改造 `apps/web/data/commissionRecords.ts`、`creatorAliases.ts`、`characterAliases.ts`、`keywordAliases.ts`、`homeFeaturedSearchKeywords.ts`

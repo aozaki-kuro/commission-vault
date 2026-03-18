@@ -5,7 +5,6 @@
 test/
 
 - `setup.tsx`: Vitest DOM/global setup shared by React unit tests.
-- `utils/tempCommissionDb.ts`: temporary SQLite fixture helper for admin/data tests.
 - `visual/icon-regression.spec.ts`: Playwright visual regression suite for home high-risk UI shells.
 
 Repo root:

@@ -1093,6 +1093,50 @@ describe('admin worker CRUD contract routing', () => {
     expect(await response.arrayBuffer()).toEqual(imageBody)
   })
 
+  it('loads source images via D1 metadata before probing fallback extensions', async () => {
+    const backend = createCrudBackend()
+    const { db } = createD1Recorder({
+      queryResults(query, values) {
+        if (query.includes('sqlite_master')) {
+          return [{ name: String(values[1] ?? '') }]
+        }
+
+        if (query.includes('FROM source_images')) {
+          return [{ objectKey: '20250301_alice-maker.png' }]
+        }
+
+        return []
+      },
+    })
+    const imageBody = new Uint8Array([137, 80, 78, 71]).buffer
+    const get = vi.fn(async (key: string) => {
+      if (key !== '20250301_alice-maker.png') {
+        return null
+      }
+
+      return {
+        httpMetadata: {
+          contentType: 'image/png',
+        },
+        async arrayBuffer() {
+          return imageBody
+        },
+      }
+    })
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/source-image/20250301_alice-maker`, { method: 'GET' }),
+      { DB: db, IMAGES: { get } },
+      backend,
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Content-Type')).toBe('image/png')
+    expect(get).toHaveBeenCalledTimes(1)
+    expect(get).toHaveBeenCalledWith('20250301_alice-maker.png')
+    expect(await response.arrayBuffer()).toEqual(imageBody)
+  })
+
   it('handles suggestion writes natively when DB binding exists', async () => {
     const backend = createCrudBackend()
     const { db, executions } = createD1Recorder()

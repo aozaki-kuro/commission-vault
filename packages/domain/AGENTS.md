@@ -5,7 +5,7 @@
 ## Tree
 
 - `src/content.ts`: public content model types shared by data loaders and rendering code.
-- `src/factSource.ts`: generated public-site fact-source contract for remote D1/R2 export and web build inputs.
+- `src/factSource.ts`: generated public-site fact-source contract for remote D1/R2 export and web build inputs, including source-image manifest hash/size metadata.
 - `src/aliases.ts`: shared alias entry/admin row types.
 - `src/admin.ts`: admin-facing DTO and bootstrap payload types.
 - `src/search.ts`: search/suggestion type contracts.

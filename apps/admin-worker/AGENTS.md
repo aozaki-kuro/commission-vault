@@ -9,12 +9,11 @@ This directory contains the standalone admin worker.
 - `src/adminData.ts`: worker-owned read-side loader for bootstrap, aliases, suggestion, character-commission, and source-image GET routes on the D1/R2 admin fact source.
 - `src/adminSourceImages.ts`: worker-owned R2 source-image validation and write helpers shared by commission create and source-image replace flows.
 - `src/adminWriteApi.ts`: worker-owned non-CRUD write-route shell for compatibility responses and binding-enforced D1 writes.
-- `src/adminPersistence.ts`: worker-native D1 persistence helpers for character CRUD, commission CRUD, aliases, suggestion, and commission file-name lookup.
+- `src/adminPersistence.ts`: worker-native D1 persistence helpers for character CRUD, commission CRUD, aliases, suggestion, commission file-name lookup, and `source_images` metadata.
 - `src/adminApi.test.ts`: contract tests that lock CRUD route normalization and failure responses so standalone admin and worker do not drift apart.
 - `migrations/0001_admin_fact_source.sql`: worker-owned D1 schema baseline for characters, commissions, aliases, and featured keyword state.
-- `scripts/buildD1SeedSql.mjs`: deterministic SQLite -> D1 seed export for the current admin fact source.
-- `scripts/exportWebFactSource.mjs`: remote D1/R2 -> `apps/web/generated/*` export for the public-site build inputs.
-- `scripts/syncImagesToR2.mjs`: remote image uploader that mirrors `apps/web/data/images/*` into the configured R2 bucket.
+- `migrations/0002_source_image_metadata.sql`: D1 source-image metadata table for extension/hash/size-based export reuse.
+- `scripts/exportWebFactSource.ts`: remote D1/R2 -> `apps/web/generated/*` export for the public-site build inputs.
 - `wrangler.jsonc`: worker asset binding, D1/R2 binding declarations, and route metadata.
 
 ## Responsibilities
@@ -25,6 +24,7 @@ This directory contains the standalone admin worker.
 - Use the worker + D1/R2 surface as the only active admin runtime for standalone development.
 - Own read-side bootstrap/aliases/suggestion/character-commission/source-image GET routes directly on D1/R2.
 - Own character CRUD, commission CRUD, source-image replacement, alias writes, and suggestion writes directly on D1/R2.
+- Keep `source_images` metadata in D1 aligned with R2 objects so web fact-source export can reuse generated images incrementally.
 - Fail fast when `DB` or `IMAGES` bindings are missing from known admin routes; do not silently proxy writes back into `apps/web`.
 - Keep the standalone admin dev loop aligned with deployment topology by defaulting to `bun run dev:admin` / local `wrangler dev` with remote bindings, not `apps/web`.
 - Treat the legacy `/api/admin/*` code in `apps/web` as rollback/reference only, not as part of the default runtime path.
@@ -49,4 +49,5 @@ This directory contains the standalone admin worker.
 - 2026-03-17: Split worker-owned non-CRUD write routes into `src/adminWriteApi.ts` and moved `assets/refresh` to a native compatibility no-op instead of legacy passthrough.
 - 2026-03-17: Moved `create` / `edit` CRUD routes from raw whitelist proxying to native worker route handling with a swappable backend adapter.
 - 2026-03-17: Added worker-side CRUD contract tests to lock request normalization and error response shape.
-- 2026-03-18: Added `scripts/exportWebFactSource.mjs` so the public Astro build can materialize generated fact-source inputs from remote D1/R2 instead of continuing to rely on local SQLite and `data/images/*`.
+- 2026-03-18: Added `scripts/exportWebFactSource.ts` so the public Astro build can materialize generated fact-source inputs from remote D1/R2 instead of continuing to rely on local SQLite and `data/images/*`.
+- 2026-03-18: Added `migrations/0002_source_image_metadata.sql`, made worker writes persist `source_images` metadata, and taught export to reuse generated images by D1 extension/hash metadata instead of bulk re-downloading.

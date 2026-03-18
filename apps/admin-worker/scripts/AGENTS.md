@@ -1,23 +1,19 @@
 # AGENTS
 
-This directory contains admin-worker migration scripts.
+This directory contains admin-worker export scripts.
 
 ## Tree
 
-- `buildD1SeedSql.mjs`: reads the legacy SQLite truth from `apps/web/data/commissions.db` and generates deterministic seed SQL for D1.
-- `checkFactSourceParity.mjs`: compares local SQLite/image truth with the remote D1/R2 state and reports mismatches.
-- `exportWebFactSource.mjs`: exports the remote D1/R2 fact source into `apps/web/generated/*` so the public Astro build can stop reading local SQLite and `data/images/*`.
-- `syncImagesToR2.mjs`: uploads source images from `apps/web/data/images/*` into the configured remote R2 bucket.
+- `exportWebFactSource.ts`: exports the remote D1/R2 fact source into `apps/web/generated/*`, reuses generated images when D1 `source_images` metadata still matches, and re-downloads only on extension/hash drift or missing files.
 
 ## Responsibilities
 
-- Keep D1/R2 migration scripts deterministic and repeatable.
-- Treat `apps/web/data/commissions.db` and `apps/web/data/images/*` as the current export source until publish cutover lands.
-- Target the remote admin fact source directly; do not maintain a second worker-local fact source.
+- Keep remote fact-source export deterministic and repeatable.
+- Target the remote admin fact source directly; do not recreate a local SQLite/image bootstrap path.
 - Treat `apps/web/generated/*` as disposable build input, not committed source.
 
 ## Guardrails
 
-- Do not mutate the source SQLite database or image directory.
 - Keep temporary script outputs under `.wrangler/` when validating, and keep default public build inputs under gitignored `apps/web/generated/`.
 - Preserve the current source-image key contract: object key equals the original source filename.
+- Preserve the `source_images` metadata contract: `commission_file_name`, `object_key`, `mime_type`, `byte_size`, and `sha256` must stay aligned with the remote R2 object so incremental reuse decisions remain correct.

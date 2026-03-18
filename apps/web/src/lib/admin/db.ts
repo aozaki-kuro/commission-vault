@@ -44,10 +44,12 @@ type BetterSqlite3Database = Database.Database
 
 const databasePath = path.join(process.cwd(), 'data', 'commissions.db')
 let hasCommissionKeywordColumnCache: boolean | null = null
+const LEGACY_LOCAL_ADMIN_REMOVED_MESSAGE
+  = 'Legacy local admin data source was removed. Use the standalone admin worker with remote D1/R2 instead.'
 
 function ensureDatabaseExists() {
   if (!fs.existsSync(databasePath)) {
-    throw new Error(`SQLite database not found at ${databasePath}.`)
+    throw new Error(LEGACY_LOCAL_ADMIN_REMOVED_MESSAGE)
   }
 }
 
