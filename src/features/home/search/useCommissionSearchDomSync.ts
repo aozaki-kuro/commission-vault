@@ -147,12 +147,16 @@ function syncSectionVisibility({
 function syncStaleDividerVisibility({
   staleDivider,
   hasDeferredQuery,
+  staleBatchCount,
+  staleVisible,
   visibleActiveSections,
   visibleStaleSections,
   previousVisible,
 }: {
   staleDivider: HTMLElement | null
   hasDeferredQuery: boolean
+  staleBatchCount: number
+  staleVisible: boolean
   visibleActiveSections: number
   visibleStaleSections: number
   previousVisible: boolean
@@ -162,7 +166,12 @@ function syncStaleDividerVisibility({
   }
 
   const shouldShowDivider
-    = !hasDeferredQuery || (visibleActiveSections > 0 && visibleStaleSections > 0)
+    = staleVisible
+      && (
+        hasDeferredQuery
+          ? visibleActiveSections > 0 && visibleStaleSections > 0
+          : staleBatchCount > 0
+      )
 
   if (shouldShowDivider === previousVisible) {
     return { didLayoutChange: false, nextVisible: previousVisible }
@@ -177,6 +186,8 @@ interface UseCommissionSearchDomSyncOptions {
   hasDeferredQuery: boolean
   matchedIds: Set<number>
   resolvedIndex: SearchIndex
+  staleBatchCount: number
+  staleVisible: boolean
   statusMessage: string
   visibleEntriesCount: number
 }
@@ -186,6 +197,8 @@ export function useCommissionSearchDomSync({
   hasDeferredQuery,
   matchedIds,
   resolvedIndex,
+  staleBatchCount,
+  staleVisible,
   statusMessage,
   visibleEntriesCount,
 }: UseCommissionSearchDomSyncOptions) {
@@ -193,7 +206,7 @@ export function useCommissionSearchDomSync({
   const previousMatchedIdsRef = useRef<Set<number>>(new Set())
   const previousFilterIndexRef = useRef<SearchIndex | null>(null)
   const sectionVisibilityRef = useRef(new Map<string, boolean>())
-  const staleDividerVisibilityRef = useRef(true)
+  const staleDividerVisibilityRef = useRef(false)
 
   useEffect(() => {
     if (disableDomFiltering) {
@@ -253,6 +266,8 @@ export function useCommissionSearchDomSync({
     const dividerSyncResult = syncStaleDividerVisibility({
       staleDivider,
       hasDeferredQuery,
+      staleBatchCount,
+      staleVisible,
       visibleActiveSections: sectionSyncResult.visibleActiveSections,
       visibleStaleSections: sectionSyncResult.visibleStaleSections,
       previousVisible: staleDividerVisibilityRef.current,
@@ -270,6 +285,8 @@ export function useCommissionSearchDomSync({
     hasDeferredQuery,
     matchedIds,
     resolvedIndex,
+    staleBatchCount,
+    staleVisible,
     statusMessage,
     visibleEntriesCount,
   ])

@@ -313,6 +313,58 @@ describe('commissionSearch', () => {
     }
   })
 
+  it('keeps the archived divider hidden after clearing search while stale sections stay collapsed', async () => {
+    document.body.innerHTML = `
+      <div
+        data-commission-view-panel="character"
+        data-commission-view-active="true"
+        data-active-sections-loaded="true"
+        data-stale-loaded="false"
+        data-stale-visibility="hidden"
+        data-stale-batches-loaded-count="0"
+      >
+        <section id="active" data-character-section="true" data-character-status="active">
+          <div data-commission-entry="true" data-character-section-id="active" data-commission-search-key="active::20240101_alpha"></div>
+        </section>
+        <div data-stale-sections-placeholder="true">Archived Characters</div>
+        <div data-stale-divider="true" class="hidden"><hr /></div>
+      </div>
+    `
+
+    const entries: CommissionSearchEntrySource[] = [
+      {
+        id: 1,
+        domKey: 'active::20240101_alpha',
+        searchText: 'alpha',
+      },
+      {
+        id: 2,
+        domKey: 'stale::20240102_beta',
+        searchText: 'beta',
+      },
+    ]
+
+    renderSearchWithDomFiltering(entries)
+
+    const input = screen.getByLabelText('Search commissions') as HTMLInputElement
+    const staleDivider = document.querySelector<HTMLElement>('[data-stale-divider="true"]')
+    expect(staleDivider).toHaveClass('hidden')
+
+    fireEvent.input(input, { target: { value: 'alpha' } })
+
+    await waitFor(() => {
+      expect(screen.getByText('Search results: 1 of 1 commissions shown.')).toBeInTheDocument()
+    })
+    expect(staleDivider).toHaveClass('hidden')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear search' }))
+
+    await waitFor(() => {
+      expect(input.value).toBe('')
+    })
+    expect(staleDivider).toHaveClass('hidden')
+  })
+
   it('shows shared alias suffix for keyword and character suggestions', async () => {
     const entries: CommissionSearchEntrySource[] = [
       {

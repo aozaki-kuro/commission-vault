@@ -430,6 +430,8 @@ export function useCommissionSearchModel({
     hasDeferredQuery,
     matchedIds,
     resolvedIndex,
+    staleBatchCount,
+    staleVisible,
     statusMessage,
     visibleEntriesCount,
   })
