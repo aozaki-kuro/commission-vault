@@ -7,7 +7,7 @@
 - `astro.config.ts`: Astro app config and dev integrations.
 - `package.json`: web app scripts (`dev/build/check/deploy`) plus wrappers that delegate shared test commands back to the repo root.
 - `tsconfig.json`: web-local alias and TypeScript config.
-- `wrangler.jsonc`: public site deployment config for `crystallize.cc`.
+- `wrangler.jsonc`: app-local public-site Worker config for `crystallize.cc`; Cloudflare Workers Builds for this site must be rooted at `apps/web`, and the file must retain read-only `DB` / `IMAGES` bindings for fact-source export during web builds.
 - `src/`: Astro pages, islands, i18n, home logic, and legacy admin reference code.
 - `src/config/`: site metadata and workspace-local runtime shims such as the React server renderer bridge.
 - `server/`: Astro dev integrations and admin API handler bridge.
@@ -29,3 +29,4 @@
 - Admin React frontend migration target remains `apps/admin`; do not add new production admin features into this app.
 - Worker runtime migration target remains `apps/admin-worker`; web output stays static-first.
 - Remote D1/R2 access belongs to `apps/admin-worker/scripts/exportWebFactSource.ts`; `apps/web` only consumes the generated snapshot it writes.
+- Web-owned builds must drive that export through `apps/web/wrangler.jsonc`, not by implicitly borrowing `apps/admin-worker`'s default config.

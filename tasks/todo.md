@@ -27,7 +27,7 @@
 - `部分完成` 远程 D1/R2 实际使用：production D1 migrations `0001` / `0002` 已应用，production R2 source images 已同步，`source_images` 已记录 `commission_file_name/object_key/mime_type/byte_size/sha256`，导出脚本已能按扩展名与 hash 增量复用；但 admin 端到端远程写链路与 deployed worker smoke check 仍未收口
 - `已完成` Public web 事实源解耦：`apps/web` 渲染/构建链已改为消费 `apps/admin-worker/scripts/exportWebFactSource.ts` 生成的 `generated/*`，公开站 build 不再读取本地 SQLite 与 `data/images/*`
 - `当前主攻` 云端事实源与 Publish：build-input contract 已落地，下一步主线转为 publish-status、锁与恢复策略，以及 deployed worker / admin 远端 smoke check
-- `部分完成` 部署、认证、本地联调：域名路由、独立 `dev:web` / `dev:admin` / `dev:worker` 已有，仓库根已补齐 `deploy:web` / `deploy:admin` 与 Cloudflare Builds 友好命令，且 web/admin 两侧 `wrangler.jsonc` 已写入 custom build command；worker 内置密码已删除，生产认证边界改由 Cloudflare Zero Trust 承担；但尚无统一联调命令、完整 bindings/runbook，也还没在 Dashboard 上验真 push build/deploy
+- `部分完成` 部署、认证、本地联调：域名路由、独立 `dev:web` / `dev:admin` / `dev:worker` 已有，仓库根保留 `deploy:web` / `deploy:admin` 作为手工入口，真实 Worker 配置只存在于 `apps/web/wrangler.jsonc` 与 `apps/admin-worker/wrangler.jsonc`；worker 内置密码已删除，生产认证边界改由 Cloudflare Zero Trust 承担；但尚无统一联调命令、完整 bindings/runbook，也还没在 Dashboard 上验真 push build/deploy
 
 ## 阶段状态
 
@@ -88,8 +88,8 @@
 - [x] `apps/admin-worker/src/index.ts` 已收口为无内置密码的静态托管/API 入口，并保留本地同源/CORS 处理
 - [x] 根脚本已有 `dev:web` / `dev:admin` / `dev:worker`
 - [x] 根脚本已补齐独立 deploy 入口：`bun run deploy:web` / `bun run deploy:admin`
-- [x] 根脚本已补齐 Cloudflare Workers Builds 友好入口：`bun run build:web:cf` / `deploy:web:cf` / `build:admin:cf` / `deploy:admin:cf`
-- [x] `apps/web/wrangler.jsonc` 与 `apps/admin-worker/wrangler.jsonc` 已写入 custom build command，手动 `wrangler deploy` 时不再需要脚本层重复前置 build
+- [x] 两个 Worker 现在各自持有唯一的 app-local `wrangler.jsonc`，手工部署统一走 `bun run deploy:web` / `bun run deploy:admin`
+- [x] Cloudflare Workers Builds 已明确收口为“同一 repo 连接两个 Worker，Dashboard root directory 分别指向 `apps/web` / `apps/admin-worker`”
 - [ ] D1 / R2 secrets、preview / production 差异与 remote 验证 runbook 仍未文档化；`apps/admin-worker/wrangler.jsonc` 已声明 bindings，但远程资源切换策略仍待定稿
 - [ ] 尚无一条命令同时拉起 `apps/web` + `apps/admin` + `apps/admin-worker`
 - [ ] `apps/admin` 当前 Playwright 仍通过 `ADMIN_API_BASE_URL=http://127.0.0.1:4173` 访问 legacy dev server，而不是 worker dev
@@ -276,3 +276,32 @@
 - [x] `bun run build:web:cf` 通过。
 - [x] 在 `apps/web` 目录下执行 `bun run build:web:cf || bun run --cwd ../.. build:web:cf` 通过。
 - [x] `bunx wrangler deploy --config apps/web/wrangler.jsonc --dry-run` 通过。
+
+## 本轮执行切片（2026-03-18 monorepo Wrangler 入口收口）
+
+- [x] 删除仓库根 `wrangler.jsonc`，避免 repo-root 自动发现把两个 Worker 混成一个入口
+- [x] 把 `apps/web/wrangler.jsonc` 收口到 workspace-local `bun run build`
+- [x] 给 `apps/admin-worker/package.json` 新增 `build:assets`，并让 `apps/admin-worker/wrangler.jsonc` 只调用这个本地脚本
+- [x] 更新 README、AGENTS、`apps/web/AGENTS.md`、`apps/admin-worker/AGENTS.md`，明确 Cloudflare Workers Builds 必须按 `apps/web` / `apps/admin-worker` 两个 root directory 接同一 repo
+- [x] 用针对性命令复核新的本地 deploy/build 链路
+
+## Review（2026-03-18 monorepo Wrangler 入口收口）
+
+- [x] `bun run --cwd apps/web deploy -- --dry-run` 通过；命中 workspace-local `wrangler 4.74.0`，custom build 为 `bun run build`，并成功完成 fact-source 导出与 Astro static build。
+- [x] `bun run --cwd apps/admin-worker build:assets` 通过；成功构建 `apps/admin/dist`。
+- [x] `bun run --cwd apps/admin-worker deploy -- --dry-run` 通过；命中 workspace-local `wrangler 4.74.0`，custom build 为 `bun run build:assets`，并正确识别 `DB` / `IMAGES` / `ASSETS` bindings。
+- [x] 额外确认：直接执行全局 `wrangler 4.22.0` 会对 `remote: true` bindings 给旧 schema 警告，因此仓库约定必须继续通过 workspace 脚本而不是全局 CLI 触发 deploy。
+
+## 本轮执行切片（2026-03-18 web build 绑定上下文收口）
+
+- [x] 确认 `apps/web` 构建链当前通过 `apps/admin-worker/scripts/exportWebFactSource.ts` 拉取远端事实源
+- [x] 让导出脚本支持显式指定 `FACT_SOURCE_WRANGLER_CONFIG`，避免继续隐式依赖 admin-worker 默认 config
+- [x] 给 `apps/web/wrangler.jsonc` 补齐只读 `DB` / `IMAGES` bindings，使 web Worker 项目本身持有构建时所需的远端资源上下文
+- [x] 更新 README、AGENTS、`apps/web/AGENTS.md`、`apps/admin-worker/AGENTS.md`，明确 web build 的绑定来源
+- [x] 用 web 侧脚本与 dry-run 验证新的拉数链路
+
+## Review（2026-03-18 web build 绑定上下文收口）
+
+- [x] `bun run --cwd apps/web fact-source:export` 通过；命令行明确显示 `FACT_SOURCE_WRANGLER_CONFIG=../web/wrangler.jsonc`，并成功导出远端事实源到 `apps/web/generated`。
+- [x] `bun run --cwd apps/web deploy -- --dry-run` 通过；custom build 链路继续可用，且 dry-run 已显示 web Worker 持有 `env.DB` 与 `env.IMAGES` 两个远端绑定。
+- [x] `bun run --cwd apps/admin-worker typecheck` 通过；`exportWebFactSource.ts` 的新路径解析与环境变量收口未引入类型错误。

@@ -14,6 +14,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 import {
   GENERATED_FACT_SOURCE_SCHEMA_VERSION,
   GENERATED_FACT_SOURCE_SOURCE,
@@ -101,13 +102,28 @@ interface ExportSourceImagesResult {
   reusedCount: number
 }
 
-const cwd = process.cwd()
-const wranglerConfigPath = path.resolve(cwd, './wrangler.jsonc')
-const localWranglerBinPath = path.resolve(cwd, '../../node_modules/.bin/wrangler')
-const localWranglerCmdBinPath = path.resolve(cwd, '../../node_modules/.bin/wrangler.cmd')
-const defaultOutputRoot = path.resolve(cwd, '../web/generated')
-const defaultDatabaseBinding = process.env.ADMIN_WORKER_DB_BINDING?.trim() || 'DB'
-const defaultBucketName = process.env.ADMIN_WORKER_IMAGES_BUCKET?.trim() || 'commission-index-source-images'
+const invocationCwd = process.cwd()
+const scriptDir = path.dirname(fileURLToPath(import.meta.url))
+const adminWorkerRoot = path.resolve(scriptDir, '..')
+const repoRoot = path.resolve(adminWorkerRoot, '../..')
+const configuredWranglerConfigPath = process.env.FACT_SOURCE_WRANGLER_CONFIG?.trim()
+const wranglerConfigPath = path.resolve(
+  adminWorkerRoot,
+  configuredWranglerConfigPath && configuredWranglerConfigPath.length > 0
+    ? configuredWranglerConfigPath
+    : './wrangler.jsonc',
+)
+const localWranglerBinPath = path.resolve(repoRoot, 'node_modules/.bin/wrangler')
+const localWranglerCmdBinPath = path.resolve(repoRoot, 'node_modules/.bin/wrangler.cmd')
+const defaultOutputRoot = path.resolve(adminWorkerRoot, '../web/generated')
+const defaultDatabaseBinding
+  = process.env.FACT_SOURCE_DB_BINDING?.trim()
+    || process.env.ADMIN_WORKER_DB_BINDING?.trim()
+    || 'DB'
+const defaultBucketName
+  = process.env.FACT_SOURCE_IMAGES_BUCKET?.trim()
+    || process.env.ADMIN_WORKER_IMAGES_BUCKET?.trim()
+    || 'commission-index-source-images'
 const imageOutputDirectoryName = 'source-images'
 const factSourceDirectoryName = 'fact-source'
 const normalizeSpacesPattern = /\s+/g
@@ -150,7 +166,7 @@ function parseArgs(argv: string[]): ParsedArgs {
         throw new Error('--output-root requires a path value.')
       }
 
-      outputRoot = path.resolve(cwd, nextValue)
+      outputRoot = path.resolve(invocationCwd, nextValue)
       index += 1
       continue
     }
@@ -167,7 +183,7 @@ function runWrangler(args: string[]): SpawnSyncReturns<string> {
     : (existsSync(localWranglerCmdBinPath) ? localWranglerCmdBinPath : 'wrangler')
 
   return spawnSync(wranglerCommand, args, {
-    cwd,
+    cwd: adminWorkerRoot,
     encoding: 'utf8',
   })
 }

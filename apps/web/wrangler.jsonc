@@ -1,14 +1,32 @@
 {
-  // Build command invoked by `wrangler deploy --config apps/web/wrangler.jsonc`:
-  // `bun run build:web:cf`
-  // Repo-root deploy command:
-  // `bun run deploy:web:cf`
+  // Manual/local deploy entrypoint from this workspace:
+  // `bun run deploy`
+  // Cloudflare Workers Builds should connect the repo to this worker with:
+  // Root directory = `apps/web`
+  // Build command = `bun run build`
+  // Deploy command = `bun run deploy`
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "commission-index-web",
   "compatibility_date": "2026-03-17",
   "build": {
-    "command": "bun run build:web:cf || bun run --cwd ../.. build:web:cf"
+    "command": "bun run build"
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "commission-index-admin-data",
+      "database_id": "c448328b-830b-455a-ab90-06a9cf95d8aa",
+      "migrations_dir": "../admin-worker/migrations",
+      "remote": true
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "IMAGES",
+      "bucket_name": "commission-index-source-images",
+      "remote": true
+    }
+  ],
   "assets": {
     "directory": "./dist",
     "html_handling": "auto-trailing-slash",

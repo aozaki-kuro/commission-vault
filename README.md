@@ -34,6 +34,30 @@ Monorepo migration is in progress:
 - The legacy `/admin` pages together with `/api/admin/*` in `apps/web` are now reference-only code paths and are not mounted by default.
 - `apps/admin-worker/wrangler.jsonc` now declares the real production `DB` / `IMAGES` bindings plus the D1 migrations directory, and the current remote D1/R2 fact source is the only supported admin/runtime truth.
 
+## Cloudflare deploy layout
+
+- Do not keep a repo-root `wrangler.jsonc` for deployment. Each Worker owns its own app-local config.
+- Public site Worker config lives at `apps/web/wrangler.jsonc`.
+- Admin Worker config lives at `apps/admin-worker/wrangler.jsonc`.
+- `apps/web/wrangler.jsonc` also carries read-only `DB` / `IMAGES` bindings so the public-site build can export `generated/*` from remote D1/R2 before Astro builds static assets.
+- Manual deploy entrypoints stay at the repo root:
+  - `bun run deploy:web`
+  - `bun run deploy:admin`
+- Cloudflare Workers Builds must connect the same Git repo to two separate Workers with different root directories:
+  - `commission-index-web`
+    - Root directory: `apps/web`
+    - Build command: `bun run build`
+    - Deploy command: `bun run deploy`
+  - `commission-index-admin`
+    - Root directory: `apps/admin-worker`
+    - Build command: `bun run build:assets`
+    - Deploy command: `bun run deploy`
+- Recommended watch paths:
+  - Web: `apps/web/**`, `packages/**`, `apps/admin-worker/scripts/exportWebFactSource.ts`
+  - Admin: `apps/admin-worker/**`, `apps/admin/**`, `packages/**`
+- Workers Builds does not infer monorepo intent from the repo root. Push-triggered builds are recognized from the Worker's Dashboard settings plus the `wrangler.jsonc` that lives under that worker's root directory.
+- `apps/web` build does not talk to D1/R2 directly at runtime. It shells into `apps/admin-worker/scripts/exportWebFactSource.ts`, but that export is now explicitly driven by `apps/web/wrangler.jsonc` during web builds so the web Worker project owns the bindings needed for push-triggered exports.
+
 ## Tests
 
 - `bun run test` — run the full Vitest suite.

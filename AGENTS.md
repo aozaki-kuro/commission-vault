@@ -15,7 +15,8 @@ This repository contains an Astro 6 static site with React 19 islands, written i
 - **Path aliases:** Prefer `#layouts/*`, `#features/*`, `#components/*`, `#images/*`, `#data/*`, `#lib/*`, `#styles/*`, `#config/*`, and `#admin/*` (`#admin/actions` points to the HTTP client action wrappers).
 - **Data source:** Public-site build input lives under `apps/web/generated/*` and is exported from the remote D1/R2 fact source by `apps/admin-worker/scripts/exportWebFactSource.ts`.
   - Admin-managed search configuration tables live in remote D1 (`character_aliases`, `creator_aliases`, `keyword_aliases`, `home_featured_search_keywords`), and source-image metadata lives in remote D1 `source_images`.
-- **Cloudflare deploy commands:** manual repo-level deploy entrypoints are `bun run deploy:web` and `bun run deploy:admin`. Both app-local `wrangler.jsonc` files now carry the exact custom build commands for manual `wrangler deploy`; Cloudflare Workers Builds should still use `bun run build:web:cf` / `deploy:web:cf` and `bun run build:admin:cf` / `deploy:admin:cf` because Workers Builds does not read `wrangler` custom build settings.
+- **Web build bindings:** `apps/web/wrangler.jsonc` must keep read-only `DB` / `IMAGES` bindings aligned with `apps/admin-worker/wrangler.jsonc` so push-triggered web builds can export fresh generated fact-source inputs before Astro runs.
+- **Cloudflare deploy commands:** manual repo-level deploy entrypoints are `bun run deploy:web` and `bun run deploy:admin`, which delegate into each workspace-local `wrangler.jsonc`. Do not restore a repo-root `wrangler.jsonc`; Cloudflare Workers Builds must connect the same repo to two Workers with root directories `apps/web` and `apps/admin-worker`, because push-triggered builds are resolved from Dashboard root/build/deploy settings, not from a shared repo-root config.
 - **Admin auth boundary:** `apps/admin-worker` no longer implements worker-side Basic Auth; production access to `admin.crystallize.cc` is expected to be enforced by Cloudflare Zero Trust in front of the worker.
 - **Monorepo migration scaffold (in progress):**
   - New app scaffolds now exist under `apps/admin`, `apps/admin-worker`, and `apps/web`.
@@ -185,6 +186,7 @@ Additional guidance:
 
 ## Change Log
 
+- Removed the repo-root `wrangler.jsonc`, localized deploy/build intent to `apps/web/wrangler.jsonc` and `apps/admin-worker/wrangler.jsonc`, added `apps/admin-worker` `build:assets`, and documented the required Cloudflare Workers Builds root/build/deploy settings for push-triggered monorepo deploys.
 - Added `apps/admin-worker/src/adminSourceImages.ts`, moved worker-native commission CRUD plus `POST /api/admin/commissions/:id/source-image` onto D1/R2-backed execution when bindings exist, and extended admin worker contract tests to cover native create/update/delete/replace behavior.
 - Added root `scripts/devAdminRemote.ts`, root `dev:admin:remote`, repo-level Cloudflare Builds/deploy helper scripts, and worker `dev:remote` so standalone admin development and Cloudflare deployment can run from the workspace root without depending on `apps/web`.
 - Removed worker-side Basic Auth from `apps/admin-worker` and moved production admin authentication responsibility to Cloudflare Zero Trust in front of `admin.crystallize.cc`.

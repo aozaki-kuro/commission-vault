@@ -60,12 +60,8 @@
   - `bun run build`
   - `bun run build:web`
   - `bun run build:admin`
-  - `bun run build:web:cf`
-  - `bun run build:admin:cf`
   - `bun run deploy:web`
   - `bun run deploy:admin`
-  - `bun run deploy:web:cf`
-  - `bun run deploy:admin:cf`
   - `bun run lint`
   - `bun run check`
   - `bun run test`
@@ -78,17 +74,21 @@
   - `admin.crystallize.cc` -> `apps/admin-worker` + `apps/admin/dist`（前置 Cloudflare Zero Trust）
 - 当前 deploy 真值：
   - 根脚本实际走 `apps/web/wrangler.jsonc` / `apps/admin-worker/wrangler.jsonc`
-  - 根目录 `wrangler.jsonc` 目前不是 deploy/source-of-truth，只是遗留配置
+  - 仓库根不再保留 `wrangler.jsonc`；避免 repo-root 自动发现把两个 Worker 混成一个入口
   - 两个 app-local `wrangler.jsonc` 已写入 custom build command，手动 `wrangler deploy` 时会先执行对应 build
   - 手动独立上线入口已明确：
     - 公开站：`bun run deploy:web`
     - Admin：`bun run deploy:admin`
-  - Cloudflare Workers Builds 友好入口已明确：
-    - 公开站 build：`bun run build:web:cf`
-    - 公开站 deploy：`bun run deploy:web:cf`
-    - Admin build：`bun run build:admin:cf`
-    - Admin deploy：`bun run deploy:admin:cf`
-  - 注意：Workers Builds 不读取 `wrangler` custom build；build/deploy 命令必须在 Cloudflare Dashboard 单独填写
+  - Cloudflare Workers Builds 需把同一 repo 连接到两个 Worker，并在 Dashboard 单独填写：
+    - `commission-index-web`
+      - Root directory：`apps/web`
+      - Build command：`bun run build`
+      - Deploy command：`bun run deploy`
+    - `commission-index-admin`
+      - Root directory：`apps/admin-worker`
+      - Build command：`bun run build:assets`
+      - Deploy command：`bun run deploy`
+  - 注意：Workers Builds 不读取 `wrangler` custom build；push 识别依赖 Dashboard 的 root/build/deploy 配置
 - 当前本地联调边界：
   - `apps/web` dev 只服务公开站，不再注入 legacy `/admin/*`
   - `apps/admin` 通过 `ADMIN_API_BASE_URL` 调用 admin API
@@ -279,12 +279,7 @@
   - 主站与 admin 都已具备独立 `wrangler` 上线入口：
     - `bun run deploy:web`
     - `bun run deploy:admin`
-  - 仓库根已补齐 Cloudflare Workers Builds 友好命令：
-    - `bun run build:web:cf`
-    - `bun run deploy:web:cf`
-    - `bun run build:admin:cf`
-    - `bun run deploy:admin:cf`
-  - Cloudflare Dashboard 必须单独配置 build/deploy command，因为 Workers Builds 不读取 `wrangler` custom build
+  - Cloudflare Dashboard 必须把同一 repo 分别接到 `apps/web` / `apps/admin-worker` 两个 root directory，因为 Workers Builds 不读取 `wrangler` custom build，也不会从 repo root 自动推断 monorepo 边界
   - 三个独立 `dev:*` 命令已存在
   - `apps/admin` 与 `apps/web` 的 Playwright 开发服务器已可协同工作
 - 离完成还差什么：
