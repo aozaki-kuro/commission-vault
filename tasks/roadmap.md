@@ -1,15 +1,16 @@
-# 统一迁移 Roadmap（2026-03-17）
+# 统一迁移 Roadmap（2026-03-18）
 
 `tasks/todo.md` 只维护状态与关口；本文件维护可执行的迁移路线、模块级拆解、默认决策与验收标准。
 
 ## 默认决策与假设
 
-- 在用户关心“什么时候才能真正远程读写”时，优先级最高的不是继续堆 code path，而是先把真实 D1/R2 bindings、secrets、preview/prod 资源和 runbook 接起来
-- 本轮优先收口 `apps/admin-worker` 的 worker-native 写路径：character CRUD 已先行切入，下一步继续推进 commission CRUD 与 `source-image POST`；不新增公共 API
+- 在用户关心“什么时候才能真正让公开站吃到远端事实源”时，下一阶段重点不再是继续补 admin 写路由，而是让 `apps/web` 的 build input 从本地 SQLite / `data/images/*` 切到 D1/R2 导出的 generated artifacts
+- `apps/web` 不直接在页面层、route handler 或 loader 里查询 D1 表 / 远端 R2 URL；统一先把 D1/R2 真值物化为本地 generated build inputs，再让 Astro build 只读这些 artifacts
+- 由于首页和 batch payload 图片链路依赖 `astro:assets` / `getImage()`，R2 source images 必须先落到 `apps/web` 的本地 generated 目录，不能只保留 object key 或远端 URL
 - `apps/admin-worker` 继续持有 admin API contract；迁移期间允许逐路由替换执行后端，但不允许漂移现有请求/响应形状
 - `apps/admin-worker/src/adminData.ts` 默认保持读侧模型，不继续膨胀成读写混合模块
 - worker 写路径默认新增独立 persistence 层；推荐命名为 `apps/admin-worker/src/adminPersistence.ts`
-- source image 的云端目标默认是 R2；本地文件系统写入只作为迁移期 fallback，不再扩展为长期方案
+- source image 的云端目标默认是 R2；本地文件系统写入不再作为公开站或主线 admin 的可接受路径，只保留给一次性 bootstrap / 清理脚本
 - `assets/refresh` 默认保留为兼容 no-op，直到 Publish 模型落地前都不承担真实发布职责
 - `apps/web` 未来默认读取稳定 snapshot bundle，而不是继续直接读取本地 SQLite / `data/images/*`
 - `packages/cloudflare`、`packages/ui`、`packages/config` 当前按脚手架看待，不计入“已完成迁移成果”
@@ -35,7 +36,7 @@
 
 - `apps/web`：成熟。它仍是公开站生产源代码，同时继续持有 dev-only admin 页面、legacy admin API、SQLite 读写、本地图片读写与公开站构建链
 - `apps/admin`：前端迁移已完成。五个主页面都在这里，视觉基线存在，但它还没有脱离 worker API 依赖
-- `apps/admin-worker`：部分完成。worker 入口、Basic Auth、本地 CORS、`adminData` 读侧、CRUD 壳已存在；character CRUD、alias、suggestion 已具备 worker-native D1 写路径，但 `wrangler` 尚未接入真实 D1/R2 bindings，commission CRUD 与 source-image 写入也还没有从 legacy app 脱离
+- `apps/admin-worker`：部分完成。worker 入口、Basic Auth、本地 CORS、`adminData` 读侧、`adminPersistence` 写侧、character/commission CRUD、alias/suggestion 写入、source-image GET/POST 已可站在 D1/R2 上，`wrangler` 也已接入真实 `DB` / `IMAGES` bindings；当前主缺口不再是 admin 路由能力，而是公开站构建仍未脱离本地 SQLite / `data/images/*`
 - `packages/domain`：成熟并已在主链路使用，承担 admin/web 共享 DTO 与纯逻辑
 - `packages/cloudflare`：脚手架。只有占位 env 类型，当前也未进入主链路，尚未承接真正的 auth / binding / helper
 - `packages/ui`：脚手架。没有实际共享 UI 被两个 app 复用
@@ -84,10 +85,11 @@
 - legacy admin 当前写入入口：
   - `apps/web/src/lib/admin/db.ts`
   - `apps/web/src/features/admin/imageUpload.ts`
-- worker 当前远端读取入口：
-  - 代码已支持在存在 bindings 时走 D1 读：admin bootstrap / aliases / suggestion / character commissions
-  - 代码已支持在存在 bindings 时走 R2 读：source image GET
-  - 当前 `apps/admin-worker/wrangler.jsonc` 仍未声明 `DB` / `IMAGES` bindings
+- worker 当前远端事实源入口：
+  - `apps/admin-worker/wrangler.jsonc` 已声明真实 `DB` / `IMAGES` bindings
+  - `apps/admin-worker/src/adminData.ts` 承接 D1/R2 读侧
+  - `apps/admin-worker/src/adminPersistence.ts` 与 `apps/admin-worker/src/adminSourceImages.ts` 承接 D1/R2 写侧
+  - `apps/admin-worker/scripts/buildD1SeedSql.mjs`、`syncImagesToR2.mjs`、`checkFactSourceParity.mjs` 已用于 bootstrap / parity check
 
 ### 1.5 当前 legacy bridge 边界
 
@@ -154,25 +156,24 @@
     - `/api/admin/suggestion` GET
     - `/api/admin/characters/:id/commissions` GET
     - `/api/admin/source-image/:fileName` GET
-  - 以上能力当前仍停留在 code path 层面，因为 `apps/admin-worker/wrangler.jsonc` 还没有接入真实 `DB` / `IMAGES` bindings
+  - `apps/admin-worker/wrangler.jsonc` 已接入真实 `DB` / `IMAGES` bindings，production D1/R2 也已完成首次 bootstrap
   - `apps/admin-worker/src/adminApi.test.ts` 已覆盖 CRUD 壳与远端读路径
 - 离完成还差什么：
-  - 读路径仍与 passthrough allowlist 并存，fallback 边界需要继续收紧
-  - remote/local 读路径的一致性测试需要继续扩大
+  - deployed worker 的远端 smoke check 仍需继续收口
+  - 读路径已经足够支撑下一阶段，当前更高优先级是把公开站 build 接到这套事实源结果上
 
 ### 2.3 Admin worker 写路径
 
 - 状态：`部分完成`
 - 当前真值：
   - worker 已持有 CRUD 请求命中、校验、归一化、错误响应壳
-  - 在存在 `DB` binding 时，character CRUD、alias batch、suggestion 保存已可走 worker-native persistence
-  - commission CRUD 默认持久化 backend 仍是 `createLegacyCrudBackend`
-  - `source-image POST` 仍未原生化
+  - 在存在 `DB` binding 时，character CRUD、commission CRUD、alias batch、suggestion 保存已可走 worker-native persistence
+  - `source-image POST` 已走 worker-native R2 写路径
   - `assets/refresh` 已收口为 worker 原生兼容 no-op，不再依赖 legacy passthrough
 - 离完成还差什么：
-  - commission CRUD 与 `source-image POST` 的真正 D1/R2 写持久层
-  - 写路径 contract tests / integration tests 继续扩到 commission/source-image
-  - 继续 route-by-route 去 bridge
+  - deployed worker 的真实远端 smoke check
+  - 进一步缩小 legacy bridge 只剩迁移/回滚用途
+  - 这部分已经不是当前关键阻塞，当前主阻塞是公开站 build 仍未消费远端事实源结果
 
 ### 2.3.1 远程 D1 / R2 可用性里程碑
 
@@ -202,14 +203,38 @@
 
 ### 2.4 Public web 事实源解耦
 
-- 状态：`部分完成`
+- 状态：`当前主攻`
 - 当前真值：
-  - `packages/domain` 已吸走一部分纯逻辑
-  - `apps/web` 仍直接读取 SQLite、本地图像，并在构建时生成首页/search/rss/batch 输出
+  - 文本事实源仍从 `apps/web/data/sqlite.ts` 进入，再被 `commissionRecords.ts`、`creatorAliases.ts`、`characterAliases.ts`、`keywordAliases.ts`、`homeFeaturedSearchKeywords.ts` 消费
+  - 图片事实源仍由 `apps/web/src/lib/images/sourceImageRegistry.ts` 通过 `import.meta.glob('/data/images/*.{jpg,jpeg,png}')` 直接编入构建
+  - `apps/web/src/lib/home/buildSitePayload.ts`、`apps/web/src/lib/pipeline/homeSearchEntries.ts`、`apps/web/src/lib/rss/feed.ts`、`apps/web/src/pages/search/*`、`apps/web/src/pages/rss.xml.ts` 都建立在这些本地入口之上
+  - 这意味着即使 D1/R2 已同步到远端，`bun run build:web` 现在仍不会直接反映远端事实源
+- 核心判断：
+  - 这一步不是“再给页面层加一个远端查询函数”，而是要把 `apps/web` 的 build input 改成 generated artifacts
+  - 只要 `astro:assets` 还负责首页和 batch 图片优化，R2 source images 就必须先被下载到本地 generated 目录，再进入现有图片渲染链
 - 离完成还差什么：
-  - 统一 snapshot contract
-  - 公开站对本地 SQLite / 本地图像的直接依赖替换
-  - 输出回归证明
+  - 定义 build-input contract
+  - 新增 D1/R2 -> generated artifacts 的导出脚本
+  - 替换 `apps/web/data/*` 与 `sourceImageRegistry` 的事实源
+  - 证明在不依赖本地 SQLite / `data/images/*` 的情况下 `bun run build:web` 仍可通过
+
+### 2.4.1 Web Build 当前依赖图
+
+- 文本链路：
+  - `apps/web/data/sqlite.ts`
+  - `apps/web/data/commissionRecords.ts` / `creatorAliases.ts` / `characterAliases.ts` / `keywordAliases.ts` / `homeFeaturedSearchKeywords.ts`
+  - `apps/web/data/commissionData.ts`
+  - `apps/web/src/lib/home/buildSitePayload.ts`
+  - `apps/web/src/features/home/pages/HomePage.astro`、`apps/web/src/lib/pipeline/homeSearchEntries.ts`、`apps/web/src/lib/rss/feed.ts`、`apps/web/src/pages/search/*`、`apps/web/src/pages/rss.xml.ts`
+- 图片链路：
+  - `apps/web/src/lib/images/sourceImageRegistry.ts`
+  - `apps/web/src/features/home/commission/CommissionEntries.astro`
+  - `apps/web/src/features/home/server/homeCharacterBatchPayload.ts`
+  - `apps/web/src/features/home/server/homeTimelineBatchPayload.ts`
+  - 以上链路最终都要经过 `getImage()` 生成构建期图片产物
+- 设计含义：
+  - 只要先把最底层数据入口替换掉，上层首页 / 搜索 / RSS / batch 生成逻辑就可以最大程度保持不动
+  - 这比直接重写 `buildSitePayload`、`rss`、`home-search-entries` 更稳，回归面也更小
 
 ### 2.5 云端事实源与 Publish
 
@@ -332,88 +357,151 @@
 
 ### 3.2 Public web 解耦
 
+#### 推荐主线：D1/R2 -> generated build inputs -> Astro build
+
+- 第 1 层：D1 中的 characters/commissions/aliases/featured keywords 是结构化事实源，R2 中的 source images 是原图事实源
+- 第 2 层：单独的导出步骤把远端事实源物化到 `apps/web/generated/fact-source/*` 与 `apps/web/generated/source-images/*`
+- 第 3 层：`apps/web/data/*` 和 `apps/web/src/lib/images/sourceImageRegistry.ts` 只读取 generated artifacts
+- 第 4 层：现有 `buildSitePayload`、home search、RSS、character/timeline batch 继续在 Astro build 内做站点级派生
+- 第 5 层：后续 Publish 再把 Astro build 产物或 publish bundle 推到 R2/current pointer
+
+#### build-input contract 默认方案
+
+- generated 目录建议：
+  - `apps/web/generated/fact-source/content.json`
+  - `apps/web/generated/fact-source/source-images-manifest.json`
+  - `apps/web/generated/source-images/<fileName>`
+- `content.json` 最小字段：
+  - `characters`: `CharacterRecord[]`
+  - `creatorAliases`: `CreatorAliasEntry[]`
+  - `characterAliases`: `CharacterAliasEntry[]`
+  - `keywordAliases`: `KeywordAliasEntry[]`
+  - `featuredSearchKeywords`: `string[]`
+  - `meta`: 导出时间、源环境、可选 publish/source revision
+- `source-images-manifest.json` 最小字段：
+  - `files`: `fileName`、mime type、etag/checksum、size、lastModified
+  - `missing`: 远端缺失或下载失败的文件列表
+- 重要边界：
+  - build-input contract 不是 `rss.xml`、`home-search-entries.json`、`home-character-batches/*` 这些最终站点输出
+  - 这些最终输出仍由 `apps/web` 在 Astro build 阶段根据 generated inputs 推导，以保留现有 `getImage()`、lazy batch、locale route 与 DOM contract
+
+#### 统一 snapshot / publish contract 默认方案
+
+- build-input contract：
+  - 只服务 `apps/web` 构建
+  - 目标是替换本地 SQLite / `data/images/*`
+- publish contract：
+  - 只服务“哪一版站点对外可见”
+  - 目标是保存 Astro build 后的站点产物与 current pointer
+- 两层不要混写：
+  - build-input 层解决“构建吃什么”
+  - publish 层解决“哪一版对外生效”
+
 #### `apps/web/data/sqlite.ts`
 
 - 当前：
   - `apps/web` 公开站只读 SQLite 入口
   - 同时兼容 Bun `bun:sqlite` 与 Node `better-sqlite3`
 - 下一步：
-  - 为公开站引入 snapshot loader interface
-  - 让 `sqlite.ts` 退化为“本地 snapshot 生成输入”而不是直接渲染依赖
+  - 让它退出公开站 build 主路径
+  - 最多只保留为一次性 bootstrap / parity 工具输入
+  - 不再作为首页、搜索、RSS、batch 的事实源入口
+
+#### `apps/web/data/commissionRecords.ts`、`creatorAliases.ts`、`characterAliases.ts`、`keywordAliases.ts`、`homeFeaturedSearchKeywords.ts`
+
+- 当前：
+  - 这些模块仍直接或间接查询 SQLite
+- 默认方案：
+  - 保持现有导出 API 基本不变，只替换内部事实源
+  - 新增 generated fact-source loader，让这些模块从 `apps/web/generated/fact-source/content.json` 读数据
+- 下一步：
+  - 先把公共 JSON loader 落下
+  - 再逐个替换这些 data module 的内部实现
+  - 上层 `buildSitePayload`、search、RSS、batch 先尽量不动
 
 #### `apps/web/src/lib/images/sourceImageRegistry.ts`
 
 - 当前：
   - 通过 `import.meta.glob('/data/images/*.{jpg,jpeg,png}')` 直接绑定本地图片
 - 默认方案：
-  - 将其定位为“本地构建 adapter”
-  - 未来云端公开站改为读取发布时生成的 image manifest / resolved image metadata
+  - 改成 generated build input adapter
+  - 图片文件从 `apps/web/generated/source-images/*` 读取，诊断信息从 `source-images-manifest.json` 读取
 - 下一步：
-  - 明确 image manifest 需要包含的字段：`fileName`、resolved stem、尺寸/格式信息、可用性
-  - 把公开站渲染链从“直接 glob”切到“先读 manifest，再解析”
+  - 保持现有 stem 归一化 / fallback 匹配逻辑
+  - 只替换 glob 根目录与缺图诊断入口
+  - 不在这一步修改首页 / batch 图片组件的输出契约
 
 #### `apps/web/src/lib/home/buildSitePayload.ts`
 
 - 当前：
-  - 直接从本地 records、creator aliases、timeline helpers 组装页面输入
+  - 从 data modules 组装页面输入
 - 下一步：
-  - 改为读取统一 snapshot bundle 中的 `site-payload.json`
-  - 保持页面层调用方式尽量不变，只替换 loader
+  - 尽量保持现状不变
+  - 只要下层 data modules 已切到 generated fact-source，它就会自然吃到远端结果
+  - 如果后续需要进一步提速，再考虑引入预计算的 `site-payload.json`
 
 #### `apps/web/src/lib/pipeline/homeSearchEntries.ts`
 
 - 当前：
-  - 仍从本地数据源推导 search entries
+  - 仍从 data modules 推导 search entries
 - 下一步：
-  - 改为读取 snapshot bundle 中的 `home-search-entries.json` 或同等结构化输入
+  - 暂不预计算最终 `home-search-entries.json`
+  - 先通过下层 generated fact-source 替换，让现有搜索派生逻辑复用原实现
 
 #### `apps/web/src/lib/rss/feed.ts`
 
 - 当前：
-  - 仍从本地数据源生成 RSS 内容
+  - 仍从 data modules 生成 RSS 内容
 - 下一步：
-  - 改为读取 snapshot bundle 中的 RSS 输入，或直接消费已发布的 `rss.xml`
+  - 暂不直接消费远端 `rss.xml`
+  - 先通过 generated fact-source 让 Astro build 继续生成当前 RSS 输出
 
 #### `apps/web/src/pages/search/home-search-entries.json.ts`
 
 - 当前：
   - 仍在构建/请求时从本地数据生成输出
 - 下一步：
-  - 切换为 snapshot-sourced 输出
+  - 保持 route 形状不变
+  - 让其通过 generated fact-source 间接吃到远端结果
 
 #### `apps/web/src/pages/search/home-character-batches/[locale]/[status]/[batch].json.ts`
 
 - 当前：
   - 仍在构建/请求时从本地数据生成输出
 - 下一步：
-  - 切换为 snapshot-sourced character batch payload
+  - 保持 route、payload 和 DOM contract 不变
+  - 让其通过 generated fact-source + generated source images 间接吃到远端结果
 
 #### `apps/web/src/pages/search/home-timeline-batches/[locale]/[batch].json.ts`
 
 - 当前：
   - 仍在构建/请求时从本地数据生成输出
 - 下一步：
-  - 切换为 snapshot-sourced timeline batch payload
+  - 保持 route、payload 和 DOM contract 不变
+  - 让其通过 generated fact-source + generated source images 间接吃到远端结果
 
 #### `apps/web/src/pages/rss.xml.ts`
 
 - 当前：
   - 仍在构建/请求时从本地数据生成输出
 - 下一步：
-  - 切换为 snapshot-sourced RSS 输出
+  - 保持 route 形状不变
+  - 让其通过 generated fact-source 间接吃到远端结果
 
-#### 统一 snapshot contract 默认方案
+#### `apps/admin-worker/scripts/exportWebFactSource.mjs`（新增推荐）
 
-- 发布产物默认组织为一组稳定 artifact，而不是让 `apps/web` 直接面向 D1/R2 原始表结构
-- 推荐最小 bundle：
-  - `snapshots/<publishId>/site-payload.json`
-  - `snapshots/<publishId>/home-search-entries.json`
-  - `snapshots/<publishId>/rss.xml`
-  - `snapshots/<publishId>/home-character-batches/<locale>/<status>/<batch>.json`
-  - `snapshots/<publishId>/home-timeline-batches/<locale>/<batch>.json`
-  - `snapshots/<publishId>/images-manifest.json`
-  - `snapshots/current.json`
-- `apps/web` 只认 snapshot bundle，不认底层 D1 表和 R2 原始对象
+- 目标：
+  - 从远端 D1/R2 导出 `apps/web` 构建所需的 generated inputs
+- 默认职责：
+  - 读取 D1 中的 characters / commissions / aliases / featured keywords
+  - 写出 `apps/web/generated/fact-source/content.json`
+  - 从 R2 下载 source images 到 `apps/web/generated/source-images/*`
+  - 写出 `apps/web/generated/fact-source/source-images-manifest.json`
+- 明确不做：
+  - 不生成最终的 `rss.xml`
+  - 不生成最终的 `home-search-entries.json`
+  - 不生成最终的 character/timeline batch JSON
+  - 这些仍由 Astro build 生成
 
 ### 3.3 Publish 模型
 
@@ -545,29 +633,30 @@
   - 路由级 fallback 仍可暂时切回 legacy backend
   - 每类路由独立提交，避免一次性替换全部写路径
 
-### Phase B：Public web 快照输入抽象
+### Phase B：Web Build 远端事实源切换（当前主线）
 
 - 目标：
-  - 让 `apps/web` 面向 snapshot bundle，而不是 SQLite / 本地图像
+  - 让 `bun run build:web` 在不依赖 `apps/web/data/commissions.db` 与 `apps/web/data/images/*` 的情况下通过
 - 输入前提：
-  - worker 已能稳定读取事实源
-  - snapshot contract 已定稿
+  - remote D1/R2 parity 已完成第一次验证
+  - admin worker 的远端读写已足够稳定
 - 具体改动面：
-  - 新增 snapshot loader
-  - 改造 `apps/web/src/lib/home/buildSitePayload.ts`
-  - 改造 `apps/web/src/lib/pipeline/homeSearchEntries.ts`
-  - 改造 `apps/web/src/lib/rss/feed.ts`
-  - 改造 `apps/web/src/pages/search/*.ts` 与 `apps/web/src/pages/rss.xml.ts`
-  - 将 `apps/web/src/lib/images/sourceImageRegistry.ts` 降级为本地 adapter 或被 manifest 替换
+  - 新增 `apps/admin-worker/scripts/exportWebFactSource.mjs`
+  - 新增 `apps/web/generated/fact-source/*` 与 `apps/web/generated/source-images/*` 约定
+  - 新增 generated fact-source loader
+  - 改造 `apps/web/data/commissionRecords.ts`、`creatorAliases.ts`、`characterAliases.ts`、`keywordAliases.ts`、`homeFeaturedSearchKeywords.ts`
+  - 改造 `apps/web/src/lib/images/sourceImageRegistry.ts`
+  - 把 `build:web` 接上“先导出 generated inputs，再 Astro build”的前置步骤
 - 验收信号：
   - 首页、搜索、RSS、timeline/character batches 输出行为与现状一致
+  - 直接断开本地 `apps/web/data/commissions.db` / `apps/web/data/images/*` 入口后，公开站构建仍可通过
   - `bun run check`
   - `bun run test`
   - `bun run build:web`
   - 变更到 home/search/nav/layout 时继续跑 `bun run test:visual`
 - 失败回滚点：
-  - 保留 local snapshot adapter，让 web 可切回本地构建输入
-  - snapshot loader 与旧 loader 并存一个过渡窗口
+  - 不回退到本地 SQLite / `data/images/*`
+  - 如果 cutover 失败，就继续修 generated fact-source 导出链路与 loader，而不是恢复双轨运行
 
 ### Phase C：D1 / R2 / Publish 闭环
 

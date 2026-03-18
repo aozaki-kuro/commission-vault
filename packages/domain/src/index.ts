@@ -56,6 +56,17 @@ export {
   toPrimaryDateSearchToken,
 } from './dateSearch'
 export {
+  GENERATED_FACT_SOURCE_SCHEMA_VERSION,
+  GENERATED_FACT_SOURCE_SOURCE,
+} from './factSource'
+export type {
+  GeneratedFactSourceContent,
+  GeneratedFactSourceMeta,
+  GeneratedSourceImageManifest,
+  GeneratedSourceImageManifestFile,
+  GeneratedSourceImageManifestMissing,
+} from './factSource'
+export {
   normalizeKeywordAliases,
   normalizeKeywordAliasKey,
   normalizeKeywordBaseTerm,

@@ -1,4 +1,4 @@
-# 统一迁移状态板（2026-03-17）
+# 统一迁移状态板（2026-03-18）
 
 ## 北极星目标
 
@@ -13,7 +13,7 @@
 
 - `apps/web`：当前公开站真实运行时，同时继续承载 dev-only legacy `/admin/*`、本地 SQLite、`data/images/*`、legacy admin 数据层与本地图片写入逻辑
 - `apps/admin`：standalone 管理端前端已完成五个主页面迁移，视觉基线已建立，但运行仍依赖 worker API
-- `apps/admin-worker`：已有 worker 入口、Basic Auth、local-dev CORS、`adminData` 读侧模块、binding-aware 的 D1/R2 读路径与 CRUD 路由契约壳，以及 alias/suggestion 与 character CRUD 的 D1 写持久层；`wrangler` 已声明 `DB` / `IMAGES` bindings、D1 migration 目录与本地 bootstrap 脚手架，但 remote preview / production 资源与 commission/source-image 写路径仍未完全收口
+- `apps/admin-worker`：已有 worker 入口、Basic Auth、local-dev CORS、`adminData` 读侧、`adminPersistence` 写侧，以及 character/commission CRUD、alias/suggestion 写入、source-image GET/POST 的 D1/R2 主路径；当前主缺口不再是 admin route 能力，而是 `apps/web` 构建仍未直接消费远端事实源结果
 - `packages/domain`：已承接共享类型与纯逻辑，是当前唯一进入主链路的共享包
 - `packages/cloudflare`：仅有占位 env 类型，当前未被主链路引用，也尚未承接实际 worker 共享能力
 - `packages/ui`：仅有占位导出，尚未吸收 admin/web 的共享 UI
@@ -23,10 +23,10 @@
 
 - `已完成` Standalone admin 前端：`overview` / `create` / `edit` / `aliases` / `suggestion` 已全部迁入 `apps/admin`
 - `部分完成` Admin worker 读路径：`/api/admin/health`、`/api/admin/bootstrap`、`/api/admin/aliases/bootstrap`、`/api/admin/suggestion` GET、`/api/admin/characters/:id/commissions` GET、`/api/admin/source-image/:fileName` 的 worker-native code path 已具备，且 `wrangler` 已声明 `DB` / `IMAGES` bindings；但 remote preview / production 资源仍未验真
-- `部分完成` Admin worker 写路径：CRUD 路由命中、入参归一化、错误响应壳已在 worker；`alias batch`、`suggestion` 保存与 character CRUD 已可在存在 `DB` binding 时走 worker 原生持久层；commission CRUD 与 `source-image POST` 仍未原生化，`assets/refresh` 已收口为 worker 原生兼容 no-op
+- `部分完成` Admin worker 写路径：CRUD、alias、suggestion、source-image 的 worker-native D1/R2 主路径已齐，`assets/refresh` 已收口为 worker 原生兼容 no-op；当前剩余的是 deployed worker smoke check 与 legacy bridge 进一步缩边
 - `部分完成` 远程 D1/R2 实际使用：production D1 migration 已应用，production D1 表计数已与本地 SQLite 对齐，production R2 source images 已按本地 127 文件真值全量同步；但 admin 端到端远程写链路与 deployed worker smoke check 仍未收口
-- `部分完成` Public web 事实源解耦：`packages/domain` 已承接一部分纯逻辑，但 `apps/web` 渲染/构建链仍直接读取本地 SQLite 与 `data/images/*`
-- `未开始` 云端事实源与 Publish：尚未建立 D1 migration、R2 object key 规则、publish-status、锁与恢复策略
+- `当前主攻` Public web 事实源解耦：`apps/web` 渲染/构建链仍直接读取本地 SQLite 与 `data/images/*`，下一步必须先把 build input 切到 D1/R2 导出的 generated artifacts
+- `部分完成` 云端事实源与 Publish：D1 schema baseline、R2 object key、remote bootstrap 脚手架已经存在，但 build-input contract、publish-status、锁与恢复策略尚未落地
 - `部分完成` 部署、认证、本地联调：域名路由、admin worker Basic Auth、独立 `dev:web` / `dev:admin` / `dev:worker` 已有，但尚无统一联调命令、完整 bindings/runbook，且根目录 `wrangler.jsonc` 不是当前 deploy 真值
 
 ## 阶段状态
@@ -64,10 +64,13 @@
 ### 阶段 3：公开站事实源解耦
 
 - [x] `packages/domain` 已承接一部分类型与纯逻辑
+- [x] `apps/web` 的 build input contract 已定稿首版：覆盖 `generated/fact-source/content.json`、`generated/fact-source/source-images-manifest.json`、`generated/source-images/*`
+- [x] `apps/admin-worker/scripts/exportWebFactSource.mjs` 已可把远端 D1/R2 结果导出到 `apps/web/generated/*`
 - [ ] `apps/web/data/sqlite.ts` 仍是公开站读取本地 SQLite 的入口
+- [ ] `apps/web/data/commissionRecords.ts`、`creatorAliases.ts`、`characterAliases.ts`、`keywordAliases.ts`、`homeFeaturedSearchKeywords.ts` 仍直接或间接依赖 SQLite
 - [ ] `apps/web/src/lib/images/sourceImageRegistry.ts` 仍直接导入本地 `data/images/*`
 - [ ] `apps/web/src/lib/home/buildSitePayload.ts`、`apps/web/src/pages/search/*.ts`、`apps/web/src/pages/rss.xml.ts` 仍直接建立在本地 records / aliases / images 之上
-- [ ] 统一 snapshot contract 仍未定义
+- [ ] 仍未证明 `bun run build:web` 在不依赖本地 `apps/web/data/commissions.db` / `apps/web/data/images/*` 的情况下可通过
 
 ### 阶段 4：D1 / R2 / Publish 模型
 
@@ -107,8 +110,9 @@
 
 ## 当前主要风险 / 阻塞
 
-- [ ] worker 现在已经不是空壳，但“读路径原生化”容易被误判成“迁移已完成”；真正困难仍在写路径持久层与 publish 闭环
-- [ ] 远程 D1/R2 的资源初始化已经完成，但 standalone admin 还没有彻底站在 deployed worker + 远端 D1/R2 上持续写入；commission/source-image 写链路与远端 smoke check 仍需继续推进
+- [ ] 远程 D1/R2 的资源初始化已经完成，但如果 `apps/web` 继续读本地 SQLite / `data/images/*`，公开站仍不会真正消费远端事实源
+- [ ] 不能把“web 直接应用 D1/R2 结果”理解成“在页面层临时加远端查询”；静态构建和 `astro:assets` 图片链决定了必须先有 generated build-input layer
+- [ ] `home-character-batches` / `home-timeline-batches` 的图片 payload 依赖 `getImage()`；因此最终 batch JSON 不能在 D1/R2 导出脚本里预生成，必须由 Astro build 基于 generated source images 再推导
 - [ ] `apps/web` 仍直连本地 SQLite 与本地图像；只要这一点不拆，云端事实源与 publish 都只能停留在脚手架阶段
 - [ ] standalone admin 虽已完成页面迁移，但只要 `apps/web/src/features/admin/*` 和 legacy `/admin/*` 继续存在，就仍有双实现漂移风险
 - [ ] standalone admin 当前已经出现“页面迁入完成但控件/设计未完全复刻”的信号；如果不把 shadcn/ui 与 legacy 交互细节列为硬性验收，视觉漂移会继续扩大
@@ -116,43 +120,34 @@
 
 ## 下一步关口
 
-1. 收口 remote runbook：把 secrets、preview / production 差异、以及 deployed worker 的远端 smoke check 固化下来
-2. 让 standalone admin 的联调与测试默认站在 worker + 远端 D1/R2 上，而不是继续绕回 legacy API
-3. 继续完成 worker 写路径原生化设计收口：推进 commission CRUD backend 与 `source-image POST` 的逐路由替换，做到 admin 后台完整远程读写
-4. 重新收口 standalone admin 的设计复刻验收：按 route 对齐 legacy `/admin*`，把视觉、间距、状态样式、以及 shadcn/Radix `Select` / dropdown 交互恢复成 1:1，而不是“看起来差不多”
-5. 再定义公开站 snapshot contract：至少覆盖 `site payload`、`home-search-entries`、`rss`、`home-character-batches`、`home-timeline-batches`
-6. 在 snapshot contract 稳定后，再推进 D1 / R2 / Publish：把 `Save` 和 `Publish` 拆成两步，而不是继续扩展 legacy refresh
-7. 只有在 worker 原生写链路、standalone admin 设计复刻、snapshot contract、publish 状态机全部稳定后，才删除 `apps/web` legacy admin 与双实现组件
-8. 详细执行顺序、模块级拆解与验收标准统一写入 `tasks/roadmap.md`
+1. 定稿 `apps/web/generated/fact-source/content.json`、`apps/web/generated/fact-source/source-images-manifest.json`、`apps/web/generated/source-images/*` 这套 build-input contract
+2. 新增 D1/R2 -> `apps/web/generated/*` 的远端导出脚本，并接到 `build:web` 前置步骤
+3. 保持 `apps/web/data/*` 对上层 API 不变，只替换其内部事实源到 generated content bundle
+4. 把 `apps/web/src/lib/images/sourceImageRegistry.ts` 从本地 `data/images/*` 切到 generated source images
+5. 直接拔掉本地 `apps/web/data/commissions.db` / `apps/web/data/images/*` 的 build 入口，并证明 `bun run build:web` 仍可通过
+6. 在 web build 远端事实源切换稳定后，再定义 publish bundle / current pointer / `Save` vs `Publish`
+7. 再收口 remote runbook、单命令联调，以及 deployed worker 的远端 smoke check
+8. 最后再删除 `apps/web` legacy admin 与双实现组件，并回头收口 standalone admin 的视觉/交互对齐
 
-## 当前执行切片（2026-03-17）
+## 当前执行切片（2026-03-18 web build 远端事实源切换）
 
-- [x] 为 `apps/admin-worker` 增加 `character CRUD` 的 worker-native D1 persistence backend
-- [x] 在存在 `DB` binding 时，让 worker 默认 CRUD backend 优先接管 `create` / `update` / `reorder` / `delete character`
-- [x] 为 `character CRUD` 原生路径补 contract tests，并确认 legacy fallback 未回归
-- [x] 同步更新迁移状态与 `apps/admin-worker` 变更记录
-- [x] 为 `apps/admin-worker` 声明 `DB` / `IMAGES` bindings，并落地 D1 schema baseline
-- [x] 新增 SQLite -> D1 seed SQL 生成器，以及 source images -> R2 的本地/远端同步脚本
-- [x] 跑通本地 D1/R2 bootstrap 并记录验证结果
-- [x] 确认 production 远端导入目标后，执行第一次远端 bootstrap
+- [x] 梳理 `apps/web` 当前对本地 SQLite / `data/images/*` 的依赖链，明确底层入口文件与上层消费链
+- [x] 定稿推荐主线为 `D1/R2 -> generated build inputs -> apps/web build`，而不是在页面层直接查 D1 / 直接读 R2 URL
+- [x] 把这条主线的详细流程、边界、约束与验收写入 `tasks/roadmap.md` 与 `tasks/todo.md`
+- [x] 定义 `content.json` 与 `source-images-manifest.json` 的精确字段契约，并沉淀到 `packages/domain/src/factSource.ts`
+- [x] 新增远端导出脚本，把 D1/R2 结果落到 `apps/web/generated/*`
+- [ ] 让 `apps/web/data/*` 与 `sourceImageRegistry.ts` 切到 generated inputs
+- [ ] 直接拔掉本地 `apps/web/data/commissions.db` / `apps/web/data/images/*` 的 build 依赖并跑通 `bun run build:web`
 
-## Review（2026-03-17）
+## Review（2026-03-18 web build 远端事实源切换）
 
-- [x] `tasks/todo.md` 已从历史堆叠清单收敛为状态板
-- [x] 已按当前代码真值重写 `apps/web` / `apps/admin` / `apps/admin-worker` / `packages/*` 的成熟度说明
-- [x] 已把 worker 已原生化的读路径与尚未原生化的写路径明确区分
-- [x] 已把当前遗留耦合点收口为一组可跟踪文件，而不是抽象口号
-- [x] 详细迁移路线、模块级拆解、默认决策与验收标准转移到 `tasks/roadmap.md`
-- [x] `apps/admin-worker` 已原生接管 `assets/refresh` 兼容 no-op，legacy passthrough allowlist 缩减一项
-- [x] `apps/admin-worker` 已新增独立写侧持久层模块，用于 alias/suggestion 的 worker-native D1 写入
-- [x] alias batch 与 suggestion POST 已从 worker legacy passthrough 主路径中收紧，相关 contract tests 已补入
-- [x] `apps/admin-worker` 已新增 `src/adminData.ts`，让 bootstrap / aliases / suggestion / character commissions / source-image GET 在存在 `DB` / `IMAGES` bindings 时走 worker-native 读侧
-- [x] 已把 D1/R2 的“条件 code path”与“wrangler 已配置真实 bindings”重新拆开描述，避免把未来接线写成当前真值
-- [x] `apps/admin-worker` 已新增 character CRUD 的 worker-native D1 persistence，并让默认 CRUD backend 在存在 `DB` binding 时优先接管角色增删改与排序
-- [x] 已把“什么时候才能真正远程读写 D1/R2”单独收口进计划，明确区分 bindings 接线、admin 后台远程读写、以及公开站脱离本地事实源这三层关口
-- [x] README / AGENTS / `apps/admin-worker/AGENTS.md` 已明确改写为 D1/R2-first 方向，legacy admin 仅作回滚/bridge
-- [x] production D1 `commission-index-admin-data` 已应用 migration，远端表计数与本地 SQLite 对齐（12 characters / 123 commissions / 16 creator aliases / 3 character aliases / 8 keyword aliases / 6 featured keywords）
-- [x] production R2 `commission-index-source-images` 已按本地 127 个 source image 文件全量同步；首文件、故障恢复点、末文件均已抽样读回验证
+- [x] 已明确写出公开站当前真正卡住的位置是 `apps/web` 的 build input，而不是 admin worker 再多补几个 D1/R2 route
+- [x] 已把 build-input contract 与 publish contract 拆成两层，避免再把“构建吃什么”和“哪一版对外生效”混成一个 snapshot 概念
+- [x] 已明确记录：最终 batch JSON 与 RSS/search route 仍应由 Astro build 推导，不能在远端导出脚本里提前伪造
+- [x] 已按用户约束收口为硬切换方案：不保留 local adapter、不保留本地数据过渡窗口，直接拔掉公开站的本地数据入口
+- [x] `bun run --cwd packages/domain typecheck` 通过。
+- [x] `bun run --cwd apps/admin-worker web:fact-source:export --output-root ./.wrangler/tmp/web-fact-source-export` 通过，产出 `12 characters / 16 creator aliases / 3 character aliases / 8 keyword aliases / 6 featured keywords / 123 source images / 0 missing`。
+- [x] `bun run lint` 通过。
 
 ## 本轮执行切片（2026-03-17 文档）
 

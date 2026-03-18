@@ -13,6 +13,7 @@ This directory contains the standalone admin worker.
 - `src/adminApi.test.ts`: contract tests that lock CRUD route normalization and failure responses so standalone admin and worker do not drift apart.
 - `migrations/0001_admin_fact_source.sql`: worker-owned D1 schema baseline for characters, commissions, aliases, and featured keyword state.
 - `scripts/buildD1SeedSql.mjs`: deterministic SQLite -> D1 seed export for the current admin fact source.
+- `scripts/exportWebFactSource.mjs`: remote D1/R2 -> `apps/web/generated/*` export for the public-site build inputs.
 - `scripts/syncImagesToR2.mjs`: remote image uploader that mirrors `apps/web/data/images/*` into the configured R2 bucket.
 - `wrangler.jsonc`: worker asset binding, D1/R2 binding declarations, and route metadata.
 
@@ -48,3 +49,4 @@ This directory contains the standalone admin worker.
 - 2026-03-17: Split worker-owned non-CRUD write routes into `src/adminWriteApi.ts` and moved `assets/refresh` to a native compatibility no-op instead of legacy passthrough.
 - 2026-03-17: Moved `create` / `edit` CRUD routes from raw whitelist proxying to native worker route handling with a swappable backend adapter.
 - 2026-03-17: Added worker-side CRUD contract tests to lock request normalization and error response shape.
+- 2026-03-18: Added `scripts/exportWebFactSource.mjs` so the public Astro build can materialize generated fact-source inputs from remote D1/R2 instead of continuing to rely on local SQLite and `data/images/*`.
