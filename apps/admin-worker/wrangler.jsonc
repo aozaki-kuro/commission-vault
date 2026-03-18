@@ -1,8 +1,15 @@
 {
+  // Build command invoked by `wrangler deploy --config apps/admin-worker/wrangler.jsonc`:
+  // `bun run build:admin:cf`
+  // Repo-root deploy command:
+  // `bun run deploy:admin:cf`
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "commission-index-admin",
   "main": "src/index.ts",
   "compatibility_date": "2026-03-17",
+  "build": {
+    "command": "bun run build:admin:cf || bun run --cwd ../.. build:admin:cf"
+  },
   "assets": {
     "directory": "../admin/dist",
     "binding": "ASSETS",

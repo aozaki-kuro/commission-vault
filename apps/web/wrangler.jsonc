@@ -1,7 +1,14 @@
 {
+  // Build command invoked by `wrangler deploy --config apps/web/wrangler.jsonc`:
+  // `bun run build:web:cf`
+  // Repo-root deploy command:
+  // `bun run deploy:web:cf`
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "commission-index-web",
   "compatibility_date": "2026-03-17",
+  "build": {
+    "command": "bun run build:web:cf || bun run --cwd ../.. build:web:cf"
+  },
   "assets": {
     "directory": "./dist",
     "html_handling": "auto-trailing-slash",

@@ -18,7 +18,7 @@
     "check": "bun run --cwd apps/web check",
     "clean": "rm -rf node_modules .wrangler apps/web/.astro apps/web/dist coverage playwright-report test-results && bun i",
     "deploy": "bun run deploy:web",
-    "deploy:admin": "bun run build:admin && bun run --cwd apps/admin-worker deploy",
+    "deploy:admin": "bun run --cwd apps/admin-worker deploy",
     "deploy:admin:cf": "bunx wrangler deploy --config apps/admin-worker/wrangler.jsonc",
     "deploy:web": "bun run --cwd apps/web deploy",
     "deploy:web:cf": "bunx wrangler deploy --config apps/web/wrangler.jsonc",

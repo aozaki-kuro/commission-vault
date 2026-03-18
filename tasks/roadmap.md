@@ -79,6 +79,7 @@
 - 当前 deploy 真值：
   - 根脚本实际走 `apps/web/wrangler.jsonc` / `apps/admin-worker/wrangler.jsonc`
   - 根目录 `wrangler.jsonc` 目前不是 deploy/source-of-truth，只是遗留配置
+  - 两个 app-local `wrangler.jsonc` 已写入 custom build command，手动 `wrangler deploy` 时会先执行对应 build
   - 手动独立上线入口已明确：
     - 公开站：`bun run deploy:web`
     - Admin：`bun run deploy:admin`

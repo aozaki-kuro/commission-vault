@@ -27,7 +27,7 @@
 - `部分完成` 远程 D1/R2 实际使用：production D1 migrations `0001` / `0002` 已应用，production R2 source images 已同步，`source_images` 已记录 `commission_file_name/object_key/mime_type/byte_size/sha256`，导出脚本已能按扩展名与 hash 增量复用；但 admin 端到端远程写链路与 deployed worker smoke check 仍未收口
 - `已完成` Public web 事实源解耦：`apps/web` 渲染/构建链已改为消费 `apps/admin-worker/scripts/exportWebFactSource.ts` 生成的 `generated/*`，公开站 build 不再读取本地 SQLite 与 `data/images/*`
 - `当前主攻` 云端事实源与 Publish：build-input contract 已落地，下一步主线转为 publish-status、锁与恢复策略，以及 deployed worker / admin 远端 smoke check
-- `部分完成` 部署、认证、本地联调：域名路由、独立 `dev:web` / `dev:admin` / `dev:worker` 已有，且仓库根已补齐 `deploy:web` / `deploy:admin` 与 Cloudflare Builds 友好命令；worker 内置密码已删除，生产认证边界改由 Cloudflare Zero Trust 承担；但尚无统一联调命令、完整 bindings/runbook，也还没在 Dashboard 上验真 push build/deploy
+- `部分完成` 部署、认证、本地联调：域名路由、独立 `dev:web` / `dev:admin` / `dev:worker` 已有，仓库根已补齐 `deploy:web` / `deploy:admin` 与 Cloudflare Builds 友好命令，且 web/admin 两侧 `wrangler.jsonc` 已写入 custom build command；worker 内置密码已删除，生产认证边界改由 Cloudflare Zero Trust 承担；但尚无统一联调命令、完整 bindings/runbook，也还没在 Dashboard 上验真 push build/deploy
 
 ## 阶段状态
 
@@ -89,6 +89,7 @@
 - [x] 根脚本已有 `dev:web` / `dev:admin` / `dev:worker`
 - [x] 根脚本已补齐独立 deploy 入口：`bun run deploy:web` / `bun run deploy:admin`
 - [x] 根脚本已补齐 Cloudflare Workers Builds 友好入口：`bun run build:web:cf` / `deploy:web:cf` / `build:admin:cf` / `deploy:admin:cf`
+- [x] `apps/web/wrangler.jsonc` 与 `apps/admin-worker/wrangler.jsonc` 已写入 custom build command，手动 `wrangler deploy` 时不再需要脚本层重复前置 build
 - [ ] D1 / R2 secrets、preview / production 差异与 remote 验证 runbook 仍未文档化；`apps/admin-worker/wrangler.jsonc` 已声明 bindings，但远程资源切换策略仍待定稿
 - [ ] 尚无一条命令同时拉起 `apps/web` + `apps/admin` + `apps/admin-worker`
 - [ ] `apps/admin` 当前 Playwright 仍通过 `ADMIN_API_BASE_URL=http://127.0.0.1:4173` 访问 legacy dev server，而不是 worker dev
@@ -249,3 +250,16 @@
 
 - [x] `bun run lint` 通过。
 - [x] `bun run build:admin` 通过。
+
+## 本轮执行切片（2026-03-18 wrangler custom build 收口）
+
+- [x] 把 web/admin 的 build command 直接写进各自 `wrangler.jsonc`
+- [x] 把 repo-root deploy command 以 JSONC 注释写进两个 `wrangler.jsonc`
+- [x] 删除脚本层重复前置 build，避免 `wrangler deploy` 双重构建
+- [x] 用 `wrangler deploy --dry-run` 验证两条 wrangler 调用链
+
+## Review（2026-03-18 wrangler custom build 收口）
+
+- [x] `bun run lint` 通过。
+- [x] `bunx wrangler deploy --config apps/web/wrangler.jsonc --dry-run` 通过。
+- [x] `bunx wrangler deploy --config apps/admin-worker/wrangler.jsonc --dry-run` 通过。

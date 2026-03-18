@@ -14,7 +14,7 @@ This directory contains the standalone admin worker.
 - `migrations/0001_admin_fact_source.sql`: worker-owned D1 schema baseline for characters, commissions, aliases, and featured keyword state.
 - `migrations/0002_source_image_metadata.sql`: D1 source-image metadata table for extension/hash/size-based export reuse.
 - `scripts/exportWebFactSource.ts`: remote D1/R2 -> `apps/web/generated/*` export for the public-site build inputs.
-- `wrangler.jsonc`: worker asset binding, D1/R2 binding declarations, and route metadata.
+- `wrangler.jsonc`: worker asset binding, D1/R2 binding declarations, route metadata, and the custom build command that prebuilds `apps/admin` for manual `wrangler deploy`.
 
 ## Responsibilities
 
