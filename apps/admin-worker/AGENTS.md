@@ -41,7 +41,7 @@ This directory contains the standalone admin worker.
 
 - 2026-03-17: Switched the default admin dev entrypoint to `bun run dev:admin`, removed worker-side runtime fallback to the legacy admin API, and made known admin routes fail fast when `DB` / `IMAGES` bindings are missing.
 - 2026-03-17: Added `src/adminSourceImages.ts`, moved commission create/update/delete plus `POST /api/admin/commissions/:id/source-image` onto worker-native D1/R2 execution when bindings exist, and extended CRUD contract tests to cover rollback and source-image replacement semantics.
-- 2026-03-17: Added root `scripts/devAdminRemote.mjs` together with `bun run dev:admin` / `bun run dev:admin:remote` so standalone admin development defaults to `apps/admin` + `apps/admin-worker` with remote bindings instead of pulling in `apps/web`.
+- 2026-03-17: Added root `scripts/devAdminRemote.ts` together with `bun run dev:admin` / `bun run dev:admin:remote`, so standalone admin development defaults to `apps/admin` + `apps/admin-worker` with remote bindings instead of pulling in `apps/web`.
 - 2026-03-17: Declared worker `DB` / `IMAGES` bindings, added `migrations/0001_admin_fact_source.sql`, and added remote bootstrap scripts for mirroring the current SQLite/image truth into the D1/R2 fact source.
 - 2026-03-17: Added worker-native D1 persistence for character create/update/reorder/delete, and made the default CRUD backend prefer native character writes when `DB` bindings exist.
 - 2026-03-17: Added `src/adminData.ts` so worker read routes can serve bootstrap, aliases, suggestion, character-commission, and source-image GET requests when D1/R2 bindings exist, before falling back to legacy.

@@ -15,6 +15,7 @@ This repository contains an Astro 6 static site with React 19 islands, written i
 - **Path aliases:** Prefer `#layouts/*`, `#features/*`, `#components/*`, `#images/*`, `#data/*`, `#lib/*`, `#styles/*`, `#config/*`, and `#admin/*` (`#admin/actions` points to the HTTP client action wrappers).
 - **Data source:** Public-site build input lives under `apps/web/generated/*` and is exported from the remote D1/R2 fact source by `apps/admin-worker/scripts/exportWebFactSource.ts`.
   - Admin-managed search configuration tables live in remote D1 (`character_aliases`, `creator_aliases`, `keyword_aliases`, `home_featured_search_keywords`), and source-image metadata lives in remote D1 `source_images`.
+- **Cloudflare deploy commands:** manual repo-level deploy entrypoints are `bun run deploy:web` and `bun run deploy:admin`; Cloudflare Workers Builds should use `bun run build:web:cf` / `deploy:web:cf` and `bun run build:admin:cf` / `deploy:admin:cf` because Workers Builds does not read `wrangler` custom build settings.
 - **Monorepo migration scaffold (in progress):**
   - New app scaffolds now exist under `apps/admin`, `apps/admin-worker`, and `apps/web`.
   - Shared package scaffolds now exist under `packages/domain`, `packages/ui`, `packages/cloudflare`, and `packages/config`.
@@ -183,7 +184,7 @@ Additional guidance:
 ## Change Log
 
 - Added `apps/admin-worker/src/adminSourceImages.ts`, moved worker-native commission CRUD plus `POST /api/admin/commissions/:id/source-image` onto D1/R2-backed execution when bindings exist, and extended admin worker contract tests to cover native create/update/delete/replace behavior.
-- Added root `scripts/devAdminRemote.mjs`, root `dev:admin:remote`, and worker `dev:remote` so standalone admin development can run against remote D1/R2 without depending on `apps/web`.
+- Added root `scripts/devAdminRemote.ts`, root `dev:admin:remote`, repo-level Cloudflare Builds/deploy helper scripts, and worker `dev:remote` so standalone admin development and Cloudflare deployment can run from the workspace root without depending on `apps/web`.
 - Declared `DB` / `IMAGES` bindings plus a D1 migrations directory in `apps/admin-worker/wrangler.jsonc`, and added remote bootstrap scripts to mirror the current SQLite/image truth into the D1/R2 fact source.
 - Added `apps/admin-worker/src/adminData.ts` so worker read routes can serve bootstrap, aliases, suggestion, character commissions, and source-image GETs from D1/R2 bindings before falling back to the legacy bridge.
 - Added worker-native D1 persistence for character create/update/reorder/delete and made `apps/admin-worker` prefer native character CRUD when `DB` bindings exist.

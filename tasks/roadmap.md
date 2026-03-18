@@ -60,6 +60,12 @@
   - `bun run build`
   - `bun run build:web`
   - `bun run build:admin`
+  - `bun run build:web:cf`
+  - `bun run build:admin:cf`
+  - `bun run deploy:web`
+  - `bun run deploy:admin`
+  - `bun run deploy:web:cf`
+  - `bun run deploy:admin:cf`
   - `bun run lint`
   - `bun run check`
   - `bun run test`
@@ -73,8 +79,17 @@
 - 当前 deploy 真值：
   - 根脚本实际走 `apps/web/wrangler.jsonc` / `apps/admin-worker/wrangler.jsonc`
   - 根目录 `wrangler.jsonc` 目前不是 deploy/source-of-truth，只是遗留配置
+  - 手动独立上线入口已明确：
+    - 公开站：`bun run deploy:web`
+    - Admin：`bun run deploy:admin`
+  - Cloudflare Workers Builds 友好入口已明确：
+    - 公开站 build：`bun run build:web:cf`
+    - 公开站 deploy：`bun run deploy:web:cf`
+    - Admin build：`bun run build:admin:cf`
+    - Admin deploy：`bun run deploy:admin:cf`
+  - 注意：Workers Builds 不读取 `wrangler` custom build；build/deploy 命令必须在 Cloudflare Dashboard 单独填写
 - 当前本地联调边界：
-  - `apps/web` dev 默认承载 legacy `/admin/*` 与 `/api/admin/*`
+  - `apps/web` dev 只服务公开站，不再注入 legacy `/admin/*`
   - `apps/admin` 通过 `ADMIN_API_BASE_URL` 调用 admin API
   - `apps/admin-worker` 可单独 `wrangler dev`
 - 当前自动化缺口：
@@ -85,19 +100,19 @@
 ### 1.4 当前数据事实源与图片事实源
 
 - 公开站当前事实源：
-  - 数据：`apps/web/data/commissions.db`
-  - 图片：`apps/web/data/images/*`
-- 公开站本地读取入口：
-  - `apps/web/data/sqlite.ts`
+  - 数据：`apps/web/generated/fact-source/content.json`
+  - 图片：`apps/web/generated/source-images/*`
+- 公开站读取入口：
+  - `apps/web/data/generatedFactSource.ts`
   - `apps/web/src/lib/images/sourceImageRegistry.ts`
 - legacy admin 当前写入入口：
-  - `apps/web/src/lib/admin/db.ts`
-  - `apps/web/src/features/admin/imageUpload.ts`
+  - `apps/web/src/lib/admin/db.ts`（显式失败的参考实现）
+  - `apps/web/src/features/admin/imageUpload.ts`（显式失败的参考实现）
 - worker 当前远端事实源入口：
   - `apps/admin-worker/wrangler.jsonc` 已声明真实 `DB` / `IMAGES` bindings
   - `apps/admin-worker/src/adminData.ts` 承接 D1/R2 读侧
   - `apps/admin-worker/src/adminPersistence.ts` 与 `apps/admin-worker/src/adminSourceImages.ts` 承接 D1/R2 写侧
-  - `apps/admin-worker/scripts/buildD1SeedSql.mjs`、`syncImagesToR2.mjs`、`checkFactSourceParity.mjs` 已用于 bootstrap / parity check
+  - `apps/admin-worker/scripts/exportWebFactSource.ts` 负责把远端 D1/R2 真值物化到 `apps/web/generated/*`
 
 ### 1.5 当前 legacy bridge 边界
 
@@ -211,20 +226,17 @@
 
 ### 2.4 Public web 事实源解耦
 
-- 状态：`当前主攻`
+- 状态：`已完成（build-input hard cutover）`
 - 当前真值：
-  - 文本事实源仍从 `apps/web/data/sqlite.ts` 进入，再被 `commissionRecords.ts`、`creatorAliases.ts`、`characterAliases.ts`、`keywordAliases.ts`、`homeFeaturedSearchKeywords.ts` 消费
-  - 图片事实源仍由 `apps/web/src/lib/images/sourceImageRegistry.ts` 通过 `import.meta.glob('/data/images/*.{jpg,jpeg,png}')` 直接编入构建
-  - `apps/web/src/lib/home/buildSitePayload.ts`、`apps/web/src/lib/pipeline/homeSearchEntries.ts`、`apps/web/src/lib/rss/feed.ts`、`apps/web/src/pages/search/*`、`apps/web/src/pages/rss.xml.ts` 都建立在这些本地入口之上
-  - 这意味着即使 D1/R2 已同步到远端，`bun run build:web` 现在仍不会直接反映远端事实源
+  - 文本事实源已从 `apps/web/data/generatedFactSource.ts` 进入，再被 `commissionRecords.ts`、`creatorAliases.ts`、`characterAliases.ts`、`keywordAliases.ts`、`homeFeaturedSearchKeywords.ts` 消费
+  - 图片事实源已由 `apps/web/src/lib/images/sourceImageRegistry.ts` 读取 generated manifest，并映射到 `/generated/source-images/*`
+  - `apps/web/src/lib/home/buildSitePayload.ts`、`apps/web/src/lib/pipeline/homeSearchEntries.ts`、`apps/web/src/lib/rss/feed.ts`、`apps/web/src/pages/search/*`、`apps/web/src/pages/rss.xml.ts` 已全部建立在 generated 输入之上
+  - `bun run build:web` 现已直接反映远端 D1/R2 导出的事实源结果
 - 核心判断：
   - 这一步不是“再给页面层加一个远端查询函数”，而是要把 `apps/web` 的 build input 改成 generated artifacts
   - 只要 `astro:assets` 还负责首页和 batch 图片优化，R2 source images 就必须先被下载到本地 generated 目录，再进入现有图片渲染链
 - 离完成还差什么：
-  - 定义 build-input contract
-  - 新增 D1/R2 -> generated artifacts 的导出脚本
-  - 替换 `apps/web/data/*` 与 `sourceImageRegistry` 的事实源
-  - 证明在不依赖本地 SQLite / `data/images/*` 的情况下 `bun run build:web` 仍可通过
+  - 这一层只剩 publish contract 尚未补齐；build-input cutover 本身已收口
 
 ### 2.4.1 Web Build 当前依赖图
 
@@ -262,9 +274,19 @@
 - 状态：`部分完成`
 - 当前真值：
   - 两个 app-local `wrangler.jsonc` 都已有域名路由骨架，admin Basic Auth 也已存在
+  - 主站与 admin 都已具备独立 `wrangler` 上线入口：
+    - `bun run deploy:web`
+    - `bun run deploy:admin`
+  - 仓库根已补齐 Cloudflare Workers Builds 友好命令：
+    - `bun run build:web:cf`
+    - `bun run deploy:web:cf`
+    - `bun run build:admin:cf`
+    - `bun run deploy:admin:cf`
+  - Cloudflare Dashboard 必须单独配置 build/deploy command，因为 Workers Builds 不读取 `wrangler` custom build
   - 三个独立 `dev:*` 命令已存在
   - `apps/admin` 与 `apps/web` 的 Playwright 开发服务器已可协同工作
 - 离完成还差什么：
+  - Cloudflare Dashboard 上的 Workers Builds 项目仍需实际配置并验真一次 push build/deploy
   - D1/R2 bindings 与 secrets 收口；这是 admin 后台开始真实远程读写的前置条件
   - preview / production 差异文档
   - 一条命令拉起完整开发栈

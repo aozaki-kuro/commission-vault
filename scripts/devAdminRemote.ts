@@ -4,10 +4,10 @@ import process from 'node:process'
 const workerPort = process.env.WORKER_PORT?.trim() || '8787'
 const adminApiBaseUrl = process.env.ADMIN_API_BASE_URL?.trim() || `http://127.0.0.1:${workerPort}`
 
-const children = new Set()
+const children = new Set<ReturnType<typeof spawn>>()
 let stopping = false
 
-function startProcess(name, args, extraEnv = {}) {
+function startProcess(name: string, args: string[], extraEnv: Record<string, string> = {}) {
   const child = spawn('bun', args, {
     cwd: process.cwd(),
     stdio: 'inherit',

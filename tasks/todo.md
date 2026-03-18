@@ -27,7 +27,7 @@
 - `部分完成` 远程 D1/R2 实际使用：production D1 migrations `0001` / `0002` 已应用，production R2 source images 已同步，`source_images` 已记录 `commission_file_name/object_key/mime_type/byte_size/sha256`，导出脚本已能按扩展名与 hash 增量复用；但 admin 端到端远程写链路与 deployed worker smoke check 仍未收口
 - `已完成` Public web 事实源解耦：`apps/web` 渲染/构建链已改为消费 `apps/admin-worker/scripts/exportWebFactSource.ts` 生成的 `generated/*`，公开站 build 不再读取本地 SQLite 与 `data/images/*`
 - `当前主攻` 云端事实源与 Publish：build-input contract 已落地，下一步主线转为 publish-status、锁与恢复策略，以及 deployed worker / admin 远端 smoke check
-- `部分完成` 部署、认证、本地联调：域名路由、admin worker Basic Auth、独立 `dev:web` / `dev:admin` / `dev:worker` 已有，但尚无统一联调命令、完整 bindings/runbook，且根目录 `wrangler.jsonc` 不是当前 deploy 真值
+- `部分完成` 部署、认证、本地联调：域名路由、admin worker Basic Auth、独立 `dev:web` / `dev:admin` / `dev:worker` 已有，且仓库根已补齐 `deploy:web` / `deploy:admin` 与 Cloudflare Builds 友好命令；但尚无统一联调命令、完整 bindings/runbook，也还没在 Dashboard 上验真 push build/deploy
 
 ## 阶段状态
 
@@ -87,6 +87,8 @@
 - [x] `apps/web/wrangler.jsonc` 与 `apps/admin-worker/wrangler.jsonc` 已有域名路由骨架
 - [x] `apps/admin-worker/src/index.ts` 已有 Basic Auth 与本地同源/CORS 处理
 - [x] 根脚本已有 `dev:web` / `dev:admin` / `dev:worker`
+- [x] 根脚本已补齐独立 deploy 入口：`bun run deploy:web` / `bun run deploy:admin`
+- [x] 根脚本已补齐 Cloudflare Workers Builds 友好入口：`bun run build:web:cf` / `deploy:web:cf` / `build:admin:cf` / `deploy:admin:cf`
 - [ ] D1 / R2 secrets、preview / production 差异与 remote 验证 runbook 仍未文档化；`apps/admin-worker/wrangler.jsonc` 已声明 bindings，但远程资源切换策略仍待定稿
 - [ ] 尚无一条命令同时拉起 `apps/web` + `apps/admin` + `apps/admin-worker`
 - [ ] `apps/admin` 当前 Playwright 仍通过 `ADMIN_API_BASE_URL=http://127.0.0.1:4173` 访问 legacy dev server，而不是 worker dev
@@ -215,6 +217,20 @@
 - [x] 跑通本轮针对性验证并把结果补到 Review。
 
 ## Review（2026-03-18 本地联调地址对齐）
+
+- [x] `bun run lint` 通过。
+- [x] `bun run build:admin` 通过。
+- [x] `bun run build` 通过。
+
+## 本轮执行切片（2026-03-18 Cloudflare Builds 脚本收口）
+
+- [x] 把根级长期维护脚本 `scripts/devAdminRemote.mjs` 改成 `scripts/devAdminRemote.ts`
+- [x] 给仓库根补齐 `build:web:cf` / `deploy:web:cf` / `build:admin:cf` / `deploy:admin:cf`
+- [x] 给仓库根补齐手动独立上线入口 `deploy:web` / `deploy:admin`
+- [x] 把 Cloudflare Workers Builds 不读取 `wrangler` custom build、需在 Dashboard 单独配置命令 的真值写入 roadmap/todo/AGENTS
+- [x] 跑通本轮针对性验证并把结果补到 Review
+
+## Review（2026-03-18 Cloudflare Builds 脚本收口）
 
 - [x] `bun run lint` 通过。
 - [x] `bun run build:admin` 通过。
