@@ -263,3 +263,16 @@
 - [x] `bun run lint` 通过。
 - [x] `bunx wrangler deploy --config apps/web/wrangler.jsonc --dry-run` 通过。
 - [x] `bunx wrangler deploy --config apps/admin-worker/wrangler.jsonc --dry-run` 通过。
+
+## 本轮执行切片（2026-03-18 Cloudflare web build 修复）
+
+- [x] 定位 `apps/admin-worker/scripts/exportWebFactSource.ts` 在 Cloudflare Builds 里经 `bunx wrangler` 执行 `d1 execute --command` 时会把整段 SQL 误拆成参数
+- [x] 把导出脚本改为优先直接调用本地 `node_modules/.bin/wrangler`，缺失时再回退到 `wrangler`
+- [x] 用本地导出、repo-root build、`apps/web` cwd fallback build、以及 `wrangler deploy --dry-run` 复核 web 构建链
+
+## Review（2026-03-18 Cloudflare web build 修复）
+
+- [x] `bun run --cwd apps/admin-worker web:fact-source:export` 通过，结果为 `materializedImages=123 | downloadedImages=0 | reusedImages=123 | metadataUpserts=0 | missingImages=0`。
+- [x] `bun run build:web:cf` 通过。
+- [x] 在 `apps/web` 目录下执行 `bun run build:web:cf || bun run --cwd ../.. build:web:cf` 通过。
+- [x] `bunx wrangler deploy --config apps/web/wrangler.jsonc --dry-run` 通过。

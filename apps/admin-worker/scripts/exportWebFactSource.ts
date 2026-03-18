@@ -103,6 +103,8 @@ interface ExportSourceImagesResult {
 
 const cwd = process.cwd()
 const wranglerConfigPath = path.resolve(cwd, './wrangler.jsonc')
+const localWranglerBinPath = path.resolve(cwd, '../../node_modules/.bin/wrangler')
+const localWranglerCmdBinPath = path.resolve(cwd, '../../node_modules/.bin/wrangler.cmd')
 const defaultOutputRoot = path.resolve(cwd, '../web/generated')
 const defaultDatabaseBinding = process.env.ADMIN_WORKER_DB_BINDING?.trim() || 'DB'
 const defaultBucketName = process.env.ADMIN_WORKER_IMAGES_BUCKET?.trim() || 'commission-index-source-images'
@@ -160,7 +162,11 @@ function parseArgs(argv: string[]): ParsedArgs {
 }
 
 function runWrangler(args: string[]): SpawnSyncReturns<string> {
-  return spawnSync('bunx', ['wrangler', ...args], {
+  const wranglerCommand = existsSync(localWranglerBinPath)
+    ? localWranglerBinPath
+    : (existsSync(localWranglerCmdBinPath) ? localWranglerCmdBinPath : 'wrangler')
+
+  return spawnSync(wranglerCommand, args, {
     cwd,
     encoding: 'utf8',
   })

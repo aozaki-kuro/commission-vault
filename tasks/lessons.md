@@ -19,3 +19,4 @@
 - 2026-03-18: 在 Bun 作为默认脚本运行时的仓库里，新增长期维护脚本时优先用 `.ts` 而不是 `.mjs`；同时把对应脚本纳入 app 自己的 `tsconfig` 覆盖范围，避免“能跑但不受类型检查”的灰区。
 - 2026-03-18: 当用户进一步要求“把本地数据源彻底删掉”时，不能只把公开站 build 切到 generated inputs 就停手；还要同步删除仓库里的本地 SQLite/源图文件、下线依赖这些文件的 bootstrap/check 脚本和测试，并关掉仍会命中本地数据的 dev 入口。
 - 2026-03-18: 当用户明确表示生产认证要交给 Cloudflare Zero Trust 这类平台边界时，不要继续在 worker 里保留并行的 Basic Auth/密码门；应该直接删掉应用内认证提示和对应配置，把生产访问控制真值收口到平台层。
+- 2026-03-18: 在 Bun 脚本里包装 Wrangler 时，不要默认再套一层 `bunx wrangler`。Cloudflare Builds 环境下这会干扰 `wrangler d1 execute --command <SQL>` 的参数解析，导致整段 SQL 被拆成未知参数；应优先直接调用仓库内 `node_modules/.bin/wrangler`，再回退到 PATH 里的 `wrangler`。
