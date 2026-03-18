@@ -31,8 +31,5 @@
       "pattern": "admin.crystallize.cc",
       "custom_domain": true
     }
-  ],
-  "vars": {
-    "ADMIN_REALM": "admin.crystallize.cc"
-  }
+  ]
 }

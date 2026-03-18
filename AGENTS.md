@@ -16,6 +16,7 @@ This repository contains an Astro 6 static site with React 19 islands, written i
 - **Data source:** Public-site build input lives under `apps/web/generated/*` and is exported from the remote D1/R2 fact source by `apps/admin-worker/scripts/exportWebFactSource.ts`.
   - Admin-managed search configuration tables live in remote D1 (`character_aliases`, `creator_aliases`, `keyword_aliases`, `home_featured_search_keywords`), and source-image metadata lives in remote D1 `source_images`.
 - **Cloudflare deploy commands:** manual repo-level deploy entrypoints are `bun run deploy:web` and `bun run deploy:admin`; Cloudflare Workers Builds should use `bun run build:web:cf` / `deploy:web:cf` and `bun run build:admin:cf` / `deploy:admin:cf` because Workers Builds does not read `wrangler` custom build settings.
+- **Admin auth boundary:** `apps/admin-worker` no longer implements worker-side Basic Auth; production access to `admin.crystallize.cc` is expected to be enforced by Cloudflare Zero Trust in front of the worker.
 - **Monorepo migration scaffold (in progress):**
   - New app scaffolds now exist under `apps/admin`, `apps/admin-worker`, and `apps/web`.
   - Shared package scaffolds now exist under `packages/domain`, `packages/ui`, `packages/cloudflare`, and `packages/config`.
@@ -26,6 +27,7 @@ This repository contains an Astro 6 static site with React 19 islands, written i
 - Standalone admin is being stabilized on `apps/admin-worker` with D1/R2 bindings; all future admin capabilities (CRUD, asset writes, alias/suggestion tooling) are planned, designed, and validated on the worker + D1/R2 surface instead of augmenting the legacy `/api/admin/*` debugging layer inside `apps/web`.
 - `bun run dev:admin` is the default standalone admin workflow and must start `apps/admin` plus local `wrangler dev` with remote D1/R2 bindings against the remote fact source.
 - The admin worker must fail fast when `DB` or `IMAGES` bindings are missing from known admin routes; do not restore local SQLite/image fallback into the standalone admin path.
+- Production admin access control is expected to live in Cloudflare Zero Trust; do not reintroduce worker-side password prompts or Basic Auth variables as a parallel gate.
 - The legacy `/admin` routes together with `/api/admin/*` inside `apps/web` exist only as migration rollback/reference paths. They are not part of the default standalone admin dev loop.
 - Worker-backed admin now owns character CRUD, commission CRUD, alias/suggestion writes, source-image GET, and source-image replacement whenever `DB` / `IMAGES` bindings are present.
 - Standalone admin day-to-day development should use `bun run dev:admin`, which starts `apps/admin` plus `apps/admin-worker` in local worker mode with remote bindings and avoids pulling `apps/web` into the loop by default. `bun run dev:admin:remote` remains only as a compatibility alias.
@@ -185,6 +187,7 @@ Additional guidance:
 
 - Added `apps/admin-worker/src/adminSourceImages.ts`, moved worker-native commission CRUD plus `POST /api/admin/commissions/:id/source-image` onto D1/R2-backed execution when bindings exist, and extended admin worker contract tests to cover native create/update/delete/replace behavior.
 - Added root `scripts/devAdminRemote.ts`, root `dev:admin:remote`, repo-level Cloudflare Builds/deploy helper scripts, and worker `dev:remote` so standalone admin development and Cloudflare deployment can run from the workspace root without depending on `apps/web`.
+- Removed worker-side Basic Auth from `apps/admin-worker` and moved production admin authentication responsibility to Cloudflare Zero Trust in front of `admin.crystallize.cc`.
 - Declared `DB` / `IMAGES` bindings plus a D1 migrations directory in `apps/admin-worker/wrangler.jsonc`, and added remote bootstrap scripts to mirror the current SQLite/image truth into the D1/R2 fact source.
 - Added `apps/admin-worker/src/adminData.ts` so worker read routes can serve bootstrap, aliases, suggestion, character commissions, and source-image GETs from D1/R2 bindings before falling back to the legacy bridge.
 - Added worker-native D1 persistence for character create/update/reorder/delete and made `apps/admin-worker` prefer native character CRUD when `DB` bindings exist.

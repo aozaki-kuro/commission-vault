@@ -4,7 +4,7 @@ This directory contains the standalone admin worker.
 
 ## Tree
 
-- `src/index.ts`: worker entrypoint for auth, local-dev CORS handling, asset serving, and delegation into the admin API router.
+- `src/index.ts`: worker entrypoint for local-dev CORS handling, asset serving, and delegation into the admin API router.
 - `src/adminApi.ts`: admin API router that owns CRUD route matching, payload normalization, error envelopes, and binding-enforced D1/R2 execution for admin routes.
 - `src/adminData.ts`: worker-owned read-side loader for bootstrap, aliases, suggestion, character-commission, and source-image GET routes on the D1/R2 admin fact source.
 - `src/adminSourceImages.ts`: worker-owned R2 source-image validation and write helpers shared by commission create and source-image replace flows.
@@ -18,7 +18,7 @@ This directory contains the standalone admin worker.
 
 ## Responsibilities
 
-- Protect `admin.crystallize.cc` with edge auth.
+- Serve `admin.crystallize.cc` directly and treat Cloudflare Zero Trust as the production auth boundary.
 - Serve admin API (`/api/admin/*`).
 - Serve admin frontend assets from `apps/admin/dist`.
 - Use the worker + D1/R2 surface as the only active admin runtime for standalone development.
@@ -32,7 +32,7 @@ This directory contains the standalone admin worker.
 ## Guardrails
 
 - Keep admin API contract stable during migration.
-- Keep auth at worker edge, not in client-side JavaScript.
+- Do not reintroduce worker-side password prompts; production access control belongs in Cloudflare Zero Trust, not in the worker bundle.
 - Avoid mixing public site routes into this worker.
 - Keep cross-origin allowances limited to local development origins; production should stay same-origin behind the worker.
 - Do not reintroduce runtime fallback from worker routes back into `apps/web`.
@@ -51,3 +51,4 @@ This directory contains the standalone admin worker.
 - 2026-03-17: Added worker-side CRUD contract tests to lock request normalization and error response shape.
 - 2026-03-18: Added `scripts/exportWebFactSource.ts` so the public Astro build can materialize generated fact-source inputs from remote D1/R2 instead of continuing to rely on local SQLite and `data/images/*`.
 - 2026-03-18: Added `migrations/0002_source_image_metadata.sql`, made worker writes persist `source_images` metadata, and taught export to reuse generated images by D1 extension/hash metadata instead of bulk re-downloading.
+- 2026-03-18: Removed worker-side Basic Auth and `ADMIN_REALM`; production admin auth is now expected to be enforced by Cloudflare Zero Trust in front of `admin.crystallize.cc`.

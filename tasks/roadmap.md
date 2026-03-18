@@ -30,7 +30,7 @@
 - `apps/`：可部署应用
   - `apps/web`：公开站 Astro 运行时与当前 legacy admin 宿主
   - `apps/admin`：standalone admin 前端
-  - `apps/admin-worker`：standalone admin worker，负责 auth、API、静态托管
+  - `apps/admin-worker`：standalone admin worker，负责 API、静态托管，并把生产认证边界交给 Cloudflare Zero Trust
 - `packages/`：共享模块
   - `packages/domain`：共享类型与纯逻辑
   - `packages/cloudflare`：worker env / binding 占位
@@ -44,7 +44,7 @@
 
 - `apps/web`：成熟。它仍是公开站生产源代码，同时继续持有 dev-only admin 页面、legacy admin API、SQLite 读写、本地图片读写与公开站构建链
 - `apps/admin`：前端迁移已完成。五个主页面都在这里，视觉基线存在，但它还没有脱离 worker API 依赖
-- `apps/admin-worker`：部分完成。worker 入口、Basic Auth、本地 CORS、`adminData` 读侧、`adminPersistence` 写侧、character/commission CRUD、alias/suggestion 写入、source-image GET/POST 已可站在 D1/R2 上，`wrangler` 也已接入真实 `DB` / `IMAGES` bindings；当前主缺口不再是 admin 路由能力，而是公开站构建仍未脱离本地 SQLite / `data/images/*`
+- `apps/admin-worker`：部分完成。worker 入口、本地 CORS、`adminData` 读侧、`adminPersistence` 写侧、character/commission CRUD、alias/suggestion 写入、source-image GET/POST 已可站在 D1/R2 上，`wrangler` 也已接入真实 `DB` / `IMAGES` bindings；worker 不再内置 Basic Auth，production 认证边界改由 Cloudflare Zero Trust 承担；当前主缺口不再是 admin 路由能力，而是公开站构建仍未脱离本地 SQLite / `data/images/*`
 - `packages/domain`：成熟并已在主链路使用，承担 admin/web 共享 DTO 与纯逻辑
 - `packages/cloudflare`：脚手架。只有占位 env 类型，当前也未进入主链路，尚未承接真正的 auth / binding / helper
 - `packages/ui`：脚手架。没有实际共享 UI 被两个 app 复用
@@ -75,7 +75,7 @@
   - `playwright.config.ts`
 - 当前部署边界：
   - `crystallize.cc` -> `apps/web`
-  - `admin.crystallize.cc` -> `apps/admin-worker` + `apps/admin/dist`
+  - `admin.crystallize.cc` -> `apps/admin-worker` + `apps/admin/dist`（前置 Cloudflare Zero Trust）
 - 当前 deploy 真值：
   - 根脚本实际走 `apps/web/wrangler.jsonc` / `apps/admin-worker/wrangler.jsonc`
   - 根目录 `wrangler.jsonc` 目前不是 deploy/source-of-truth，只是遗留配置
@@ -170,7 +170,7 @@
 
 - 状态：`部分完成`
 - 当前真值：
-  - `apps/admin-worker/src/index.ts` 已提供 Basic Auth、同源/CORS 处理、静态资源托管
+  - `apps/admin-worker/src/index.ts` 已提供同源/CORS 处理、静态资源托管；worker-side Basic Auth 已删除
   - `apps/admin-worker/src/adminData.ts` 已承接读侧聚合与 R2 source-image 读取
   - `apps/admin-worker/src/adminApi.ts` 已在有 `DB` / `IMAGES` bindings 时原生处理：
     - `/api/admin/health`
@@ -273,7 +273,8 @@
 
 - 状态：`部分完成`
 - 当前真值：
-  - 两个 app-local `wrangler.jsonc` 都已有域名路由骨架，admin Basic Auth 也已存在
+  - 两个 app-local `wrangler.jsonc` 都已有域名路由骨架
+  - admin worker 已去掉内置 Basic Auth；production 访问控制预期由 Cloudflare Zero Trust 承担
   - 主站与 admin 都已具备独立 `wrangler` 上线入口：
     - `bun run deploy:web`
     - `bun run deploy:admin`
@@ -287,6 +288,7 @@
   - `apps/admin` 与 `apps/web` 的 Playwright 开发服务器已可协同工作
 - 离完成还差什么：
   - Cloudflare Dashboard 上的 Workers Builds 项目仍需实际配置并验真一次 push build/deploy
+  - Cloudflare Zero Trust 的 production gate 仍需在 Dashboard 手工配置并验真
   - D1/R2 bindings 与 secrets 收口；这是 admin 后台开始真实远程读写的前置条件
   - preview / production 差异文档
   - 一条命令拉起完整开发栈

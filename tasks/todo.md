@@ -13,7 +13,7 @@
 
 - `apps/web`：当前公开站真实运行时，公开构建链只读 `generated/*`；仓库内本地 SQLite/源图已删除，legacy `/admin/*` 代码仅剩未挂载的参考实现
 - `apps/admin`：standalone 管理端前端已完成五个主页面迁移，视觉基线已建立，但运行仍依赖 worker API
-- `apps/admin-worker`：已有 worker 入口、Basic Auth、local-dev CORS、`adminData` 读侧、`adminPersistence` 写侧，以及 character/commission CRUD、alias/suggestion 写入、source-image GET/POST 的 D1/R2 主路径；`source_images` 元数据表、seed/export 增量校验也已接入
+- `apps/admin-worker`：已有 worker 入口、local-dev CORS、`adminData` 读侧、`adminPersistence` 写侧，以及 character/commission CRUD、alias/suggestion 写入、source-image GET/POST 的 D1/R2 主路径；`source_images` 元数据表、seed/export 增量校验也已接入，生产认证边界改由 Cloudflare Zero Trust 承担
 - `packages/domain`：已承接共享类型与纯逻辑，是当前唯一进入主链路的共享包
 - `packages/cloudflare`：仅有占位 env 类型，当前未被主链路引用，也尚未承接实际 worker 共享能力
 - `packages/ui`：仅有占位导出，尚未吸收 admin/web 的共享 UI
@@ -27,7 +27,7 @@
 - `部分完成` 远程 D1/R2 实际使用：production D1 migrations `0001` / `0002` 已应用，production R2 source images 已同步，`source_images` 已记录 `commission_file_name/object_key/mime_type/byte_size/sha256`，导出脚本已能按扩展名与 hash 增量复用；但 admin 端到端远程写链路与 deployed worker smoke check 仍未收口
 - `已完成` Public web 事实源解耦：`apps/web` 渲染/构建链已改为消费 `apps/admin-worker/scripts/exportWebFactSource.ts` 生成的 `generated/*`，公开站 build 不再读取本地 SQLite 与 `data/images/*`
 - `当前主攻` 云端事实源与 Publish：build-input contract 已落地，下一步主线转为 publish-status、锁与恢复策略，以及 deployed worker / admin 远端 smoke check
-- `部分完成` 部署、认证、本地联调：域名路由、admin worker Basic Auth、独立 `dev:web` / `dev:admin` / `dev:worker` 已有，且仓库根已补齐 `deploy:web` / `deploy:admin` 与 Cloudflare Builds 友好命令；但尚无统一联调命令、完整 bindings/runbook，也还没在 Dashboard 上验真 push build/deploy
+- `部分完成` 部署、认证、本地联调：域名路由、独立 `dev:web` / `dev:admin` / `dev:worker` 已有，且仓库根已补齐 `deploy:web` / `deploy:admin` 与 Cloudflare Builds 友好命令；worker 内置密码已删除，生产认证边界改由 Cloudflare Zero Trust 承担；但尚无统一联调命令、完整 bindings/runbook，也还没在 Dashboard 上验真 push build/deploy
 
 ## 阶段状态
 
@@ -51,7 +51,7 @@
 
 ### 阶段 2：admin worker 能力补齐
 
-- [x] worker 入口、路由分发、Basic Auth、local-dev CORS 已落地
+- [x] worker 入口、路由分发、local-dev CORS 已落地
 - [x] worker 已原生持有 `health` 与一组 binding-aware D1/R2 读路径
 - [x] worker 已原生持有 CRUD 路由契约：命中、入参归一化、错误响应壳
 - [x] `assets/refresh` 已从 legacy passthrough 收口为 worker 原生兼容 no-op
@@ -85,13 +85,14 @@
 ### 阶段 5：部署、认证、联调
 
 - [x] `apps/web/wrangler.jsonc` 与 `apps/admin-worker/wrangler.jsonc` 已有域名路由骨架
-- [x] `apps/admin-worker/src/index.ts` 已有 Basic Auth 与本地同源/CORS 处理
+- [x] `apps/admin-worker/src/index.ts` 已收口为无内置密码的静态托管/API 入口，并保留本地同源/CORS 处理
 - [x] 根脚本已有 `dev:web` / `dev:admin` / `dev:worker`
 - [x] 根脚本已补齐独立 deploy 入口：`bun run deploy:web` / `bun run deploy:admin`
 - [x] 根脚本已补齐 Cloudflare Workers Builds 友好入口：`bun run build:web:cf` / `deploy:web:cf` / `build:admin:cf` / `deploy:admin:cf`
 - [ ] D1 / R2 secrets、preview / production 差异与 remote 验证 runbook 仍未文档化；`apps/admin-worker/wrangler.jsonc` 已声明 bindings，但远程资源切换策略仍待定稿
 - [ ] 尚无一条命令同时拉起 `apps/web` + `apps/admin` + `apps/admin-worker`
 - [ ] `apps/admin` 当前 Playwright 仍通过 `ADMIN_API_BASE_URL=http://127.0.0.1:4173` 访问 legacy dev server，而不是 worker dev
+- [ ] Cloudflare Zero Trust 的 production gate 仍需在 Dashboard 手工配置并做一次真实访问验真
 
 ### 阶段 6：遗留实现清理与收尾
 
@@ -235,3 +236,16 @@
 - [x] `bun run lint` 通过。
 - [x] `bun run build:admin` 通过。
 - [x] `bun run build` 通过。
+
+## 本轮执行切片（2026-03-18 admin 认证边界改为 Zero Trust）
+
+- [x] 删除 `apps/admin-worker/src/index.ts` 内置 Basic Auth 校验
+- [x] 删除 `apps/admin-worker/wrangler.jsonc` 里的 `ADMIN_REALM`
+- [x] 把 admin 生产认证边界改写为 Cloudflare Zero Trust，并同步到 AGENTS / roadmap / todo
+- [x] 在 `tasks/lessons.md` 记录这次“不要把本可由平台承担的认证继续塞进 worker”的用户纠偏
+- [x] 跑通本轮针对性验证并把结果补到 Review
+
+## Review（2026-03-18 admin 认证边界改为 Zero Trust）
+
+- [x] `bun run lint` 通过。
+- [x] `bun run build:admin` 通过。
