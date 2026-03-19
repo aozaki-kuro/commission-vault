@@ -29,20 +29,5 @@ export default defineConfig({
   integrations: [react(), assetsPipelineIntegration(), devAdminIntegration()],
   vite: {
     plugins: [tailwindcss(), tsconfigPaths()],
-    build: {
-      rollupOptions: {
-        output: {
-          manualChunks: (id) => {
-            if (!id.includes('node_modules'))
-              return
-            if (id.includes('fuse.js'))
-              return 'vendor-search'
-            if (id.includes('@radix-ui') || id.includes('cmdk'))
-              return 'vendor-ui'
-            return 'vendor'
-          },
-        },
-      },
-    },
   },
 })
