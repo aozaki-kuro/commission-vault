@@ -22,7 +22,9 @@ describe('popularKeywordsRow', () => {
     const cancelSpy = vi.fn()
 
     HTMLElement.prototype.animate = animateSpy
-    HTMLElement.prototype.getAnimations = vi.fn(() => [{ cancel: cancelSpy }] as Animation[])
+    HTMLElement.prototype.getAnimations = vi.fn(
+      () => [{ cancel: cancelSpy }] as unknown as Animation[],
+    )
 
     render(
       <PopularKeywordsRow
