@@ -552,10 +552,10 @@ function CommissionSearch({
             >
               {copyState === 'success'
                 ? (
-                    <IconCheck className="h-4.5 w-4.5" stroke={2.2} aria-hidden="true" />
+                    <IconCheck className="size-4.5" stroke={2.2} aria-hidden="true" />
                   )
                 : (
-                    <IconShare3 className="h-4.5 w-4.5" stroke={2} aria-hidden="true" />
+                    <IconShare3 className="size-4.5" stroke={2} aria-hidden="true" />
                   )}
             </Button>
 
