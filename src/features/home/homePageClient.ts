@@ -1,3 +1,4 @@
+import { mountHomeUpdateLinks } from '#features/home/blocks/updateLinks'
 import { mountActiveCharactersLoader } from '#features/home/commission/activeCharactersLoader'
 import { mountCommissionViewModeDomSync } from '#features/home/commission/commissionViewModeDomSync'
 import { mountMobileViewModeTabs } from '#features/home/commission/mobileViewModeTabs'
@@ -28,6 +29,7 @@ interface HomePageClientDeps {
   mountStaleCharactersLoader: Mount
   mountTimelineViewLoader: Mount
   mountHomeScrollRestore: Mount
+  mountHomeUpdateLinks: Mount
   mountSidebarNavEnhancer: Mount
   mountMobileHamburgerMenu: Mount
   mountMobileLanguageMenu: Mount
@@ -46,6 +48,7 @@ const defaultDeps: HomePageClientDeps = {
   mountStaleCharactersLoader: () => mountStaleCharactersLoader(),
   mountTimelineViewLoader: () => mountTimelineViewLoader(),
   mountHomeScrollRestore: () => mountHomeScrollRestore(),
+  mountHomeUpdateLinks: () => mountHomeUpdateLinks(),
   mountSidebarNavEnhancer: () => mountSidebarNavEnhancer(),
   mountMobileHamburgerMenu: () => mountMobileHamburgerMenu(),
   mountMobileLanguageMenu: () => mountMobileLanguageMenu(),
@@ -84,6 +87,7 @@ export function mountHomePageClient({ deps: depsOverrides }: MountHomePageClient
     deps.mountStaleCharactersLoader,
     deps.mountTimelineViewLoader,
     deps.mountHomeScrollRestore,
+    deps.mountHomeUpdateLinks,
   ]
   const deferredMounts: Mount[] = [
     deps.mountSidebarNavEnhancer,

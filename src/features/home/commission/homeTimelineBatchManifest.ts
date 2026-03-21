@@ -1,12 +1,22 @@
 import type { HomeTimelineBatchManifest } from '#features/home/server/homeTimelineBatches'
 
 const MANIFEST_SELECTOR = 'script[data-home-timeline-batch-manifest="true"]'
+const TIMELINE_PANEL_SELECTOR = '[data-commission-view-panel="timeline"]'
+const BACKSLASH_PATTERN = /\\/g
+const DOUBLE_QUOTE_PATTERN = /"/g
 
 let manifestCache = new WeakMap<Document, HomeTimelineBatchManifest | null>()
 
-function hasConnectedElementById(doc: Document, id: string) {
-  const element = doc.getElementById(id)
-  return Boolean(element?.isConnected)
+function escapeAttributeSelectorValue(value: string) {
+  return value.replace(BACKSLASH_PATTERN, '\\\\').replace(DOUBLE_QUOTE_PATTERN, '\\"')
+}
+
+const getExactIdSelector = (id: string) => `[id="${escapeAttributeSelectorValue(id)}"]`
+
+export function hasConnectedTimelinePanelTargetId(doc: Document, targetId: string) {
+  return doc.querySelector<HTMLElement>(
+    `${TIMELINE_PANEL_SELECTOR} ${getExactIdSelector(targetId)}`,
+  )?.isConnected === true
 }
 
 export function normalizeHomeTimelineTargetId(rawValue: string | null | undefined) {
@@ -70,7 +80,7 @@ export function hasDeferredHomeTimelineTarget({
   const targetId = normalizeHomeTimelineTargetId(rawTargetId)
   if (!targetId)
     return false
-  if (hasConnectedElementById(doc, targetId))
+  if (hasConnectedTimelinePanelTargetId(doc, targetId))
     return false
 
   const manifest = readHomeTimelineBatchManifest(doc)
@@ -87,7 +97,7 @@ export function resolveHomeTimelineTargetBatch({
   const targetId = normalizeHomeTimelineTargetId(rawTargetId)
   if (!targetId)
     return null
-  if (hasConnectedElementById(doc, targetId))
+  if (hasConnectedTimelinePanelTargetId(doc, targetId))
     return null
 
   const manifest = readHomeTimelineBatchManifest(doc)

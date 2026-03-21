@@ -170,6 +170,7 @@ Additional guidance:
 
 ## Change Log
 
+- Added `src/features/home/blocks/updateLinks.ts` as a critical home client mount so Update-panel links now reuse the sidebar deferred-target load flow before scrolling (`src/features/home/blocks/Update.astro`, `src/features/home/homePageClient.ts`).
 - Split home client boot into critical immediate mounts (`view sync` + deferred-content loaders + scroll restore) and idle-mounted non-critical enhancers (`sidebar/hamburger/language/tabs/unpublished-interest`) inside `src/features/home/homePageClient.ts`.
 - Updated `src/features/home/commission/timelineViewLoader.ts` to pipeline timeline batch fetches with bounded concurrency before ordered DOM mounting, reducing RTT chaining when loading multiple timeline batches.
 - Moved deferred timeline sections from inline templates to external locale-aware batch JSON routes, and switched timeline loader mounting to manifest-driven fetch/render with legacy template fallback.

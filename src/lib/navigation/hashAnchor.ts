@@ -28,7 +28,7 @@ export function getHashTarget(hash: string): HTMLElement | null {
   }
 
   const activePanel = document.querySelector<HTMLElement>(ACTIVE_VIEW_PANEL_SELECTOR)
-  return activePanel?.querySelector<HTMLElement>(getExactIdSelector(id)) ?? directMatch
+  return activePanel?.querySelector<HTMLElement>(getExactIdSelector(id)) ?? null
 }
 
 export function getHashFromHref(rawHref: string | null): string {

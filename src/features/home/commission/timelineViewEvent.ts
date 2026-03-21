@@ -1,4 +1,5 @@
 import {
+  hasConnectedTimelinePanelTargetId,
   hasDeferredHomeTimelineTarget,
   normalizeHomeTimelineTargetId,
   resolveHomeTimelineTargetBatch,
@@ -20,11 +21,6 @@ export interface RequestTimelineViewLoadOptions {
 
 function getLegacyTimelineBatchTotalCount(doc: Document) {
   return doc.querySelector<HTMLTemplateElement>(LEGACY_TIMELINE_TEMPLATE_SELECTOR) ? 1 : 0
-}
-
-function hasConnectedElementById(doc: Document, id: string) {
-  const element = doc.getElementById(id)
-  return Boolean(element?.isConnected)
 }
 
 function getBatchTemplateIndex(template: HTMLTemplateElement) {
@@ -88,7 +84,7 @@ export function hasDeferredTimelineTarget(doc: Document, rawTargetId: string | n
   }
 
   const targetId = normalizeHomeTimelineTargetId(rawTargetId)
-  if (!targetId || hasConnectedElementById(doc, targetId))
+  if (!targetId || hasConnectedTimelinePanelTargetId(doc, targetId))
     return false
   if (readHomeTimelineBatchManifest(doc))
     return false
@@ -109,7 +105,7 @@ export function resolveDeferredTimelineBatch(doc: Document, rawTargetId: string 
     return batchIndex
 
   const targetId = normalizeHomeTimelineTargetId(rawTargetId)
-  if (!targetId || hasConnectedElementById(doc, targetId))
+  if (!targetId || hasConnectedTimelinePanelTargetId(doc, targetId))
     return null
   if (readHomeTimelineBatchManifest(doc))
     return null

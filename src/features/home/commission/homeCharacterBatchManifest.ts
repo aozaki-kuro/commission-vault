@@ -4,8 +4,23 @@ import type {
 } from '#features/home/server/homeCharacterBatches'
 
 const MANIFEST_SELECTOR = 'script[data-home-character-batch-manifest="true"]'
+const CHARACTER_PANEL_SELECTOR = '[data-commission-view-panel="character"]'
+const BACKSLASH_PATTERN = /\\/g
+const DOUBLE_QUOTE_PATTERN = /"/g
 
 let manifestCache = new WeakMap<Document, HomeCharacterBatchManifest | null>()
+
+function escapeAttributeSelectorValue(value: string) {
+  return value.replace(BACKSLASH_PATTERN, '\\\\').replace(DOUBLE_QUOTE_PATTERN, '\\"')
+}
+
+const getExactIdSelector = (id: string) => `[id="${escapeAttributeSelectorValue(id)}"]`
+
+export function hasConnectedCharacterPanelTargetId(doc: Document, targetId: string) {
+  return doc.querySelector<HTMLElement>(
+    `${CHARACTER_PANEL_SELECTOR} ${getExactIdSelector(targetId)}`,
+  )?.isConnected === true
+}
 
 export function normalizeHomeCharacterTargetId(rawValue: string | null | undefined) {
   if (!rawValue)
@@ -70,7 +85,7 @@ export function hasDeferredHomeCharacterTarget({
   const targetId = normalizeHomeCharacterTargetId(rawTargetId)
   if (!targetId)
     return false
-  if (doc.getElementById(targetId))
+  if (hasConnectedCharacterPanelTargetId(doc, targetId))
     return false
 
   const manifest = readHomeCharacterBatchManifest(doc)
@@ -88,6 +103,8 @@ export function resolveHomeCharacterTargetBatch({
 }) {
   const targetId = normalizeHomeCharacterTargetId(rawTargetId)
   if (!targetId)
+    return null
+  if (hasConnectedCharacterPanelTargetId(doc, targetId))
     return null
 
   const manifest = readHomeCharacterBatchManifest(doc)

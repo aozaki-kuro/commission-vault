@@ -1,4 +1,5 @@
 import {
+  hasConnectedCharacterPanelTargetId,
   hasDeferredHomeCharacterTarget,
   normalizeHomeCharacterTargetId,
   readHomeCharacterBatchManifest,
@@ -231,7 +232,7 @@ export function hasStaleCharacterTarget(doc: Document, rawSectionId: string | nu
   const sectionId = normalizeHomeCharacterTargetId(rawSectionId)
   if (!sectionId)
     return false
-  if (doc.getElementById(sectionId))
+  if (hasConnectedCharacterPanelTargetId(doc, sectionId))
     return true
   if (readHomeCharacterBatchManifest(doc))
     return false
@@ -251,7 +252,7 @@ export function hasDeferredStaleCharacterTarget(doc: Document, rawSectionId: str
   const sectionId = normalizeHomeCharacterTargetId(rawSectionId)
   if (!sectionId)
     return false
-  if (doc.getElementById(sectionId))
+  if (hasConnectedCharacterPanelTargetId(doc, sectionId))
     return false
   if (readHomeCharacterBatchManifest(doc))
     return false
@@ -273,7 +274,7 @@ export function resolveDeferredStaleCharacterBatch(doc: Document, rawSectionId: 
     return resolvedBatch
 
   const sectionId = normalizeHomeCharacterTargetId(rawSectionId)
-  if (!sectionId || doc.getElementById(sectionId))
+  if (!sectionId || hasConnectedCharacterPanelTargetId(doc, sectionId))
     return null
   if (readHomeCharacterBatchManifest(doc))
     return null
