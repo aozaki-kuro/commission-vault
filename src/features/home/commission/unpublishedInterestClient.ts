@@ -63,6 +63,15 @@ function setButtonState(button: HTMLButtonElement, recorded: boolean) {
   button.title = button.dataset.commissionInterestDefaultTitle ?? ''
 }
 
+function resolveInterestButton(target: EventTarget | null) {
+  if (target instanceof HTMLButtonElement && target.matches(BUTTON_SELECTOR))
+    return target
+  if (target instanceof Element) {
+    return target.closest<HTMLButtonElement>(BUTTON_SELECTOR)
+  }
+  return null
+}
+
 export function mountUnpublishedInterestButtons({
   win = window,
   doc = document,
@@ -70,11 +79,23 @@ export function mountUnpublishedInterestButtons({
 }: MountUnpublishedInterestButtonsOptions = {}) {
   const buttons = [...doc.querySelectorAll<HTMLButtonElement>(BUTTON_SELECTOR)]
   const storage = win.localStorage
+  const hydratedButtons = new WeakSet<HTMLButtonElement>()
+
+  const hydrateButton = (button: HTMLButtonElement) => {
+    const commissionKey = button.dataset.commissionInterestKey
+    if (!commissionKey || hydratedButtons.has(button))
+      return
+
+    setButtonState(button, readRecordedState(commissionKey, storage))
+    hydratedButtons.add(button)
+  }
 
   const handleClick = (event: Event) => {
-    const button = event.currentTarget
-    if (!(button instanceof HTMLButtonElement))
+    const button = resolveInterestButton(event.target)
+    if (!button)
       return
+
+    hydrateButton(button)
 
     const commissionKey = button.dataset.commissionInterestKey
     if (!commissionKey || button.disabled)
@@ -86,17 +107,11 @@ export function mountUnpublishedInterestButtons({
   }
 
   for (const button of buttons) {
-    const commissionKey = button.dataset.commissionInterestKey
-    if (!commissionKey)
-      continue
-
-    setButtonState(button, readRecordedState(commissionKey, storage))
-    button.addEventListener('click', handleClick)
+    hydrateButton(button)
   }
+  doc.addEventListener('click', handleClick)
 
   return () => {
-    for (const button of buttons) {
-      button.removeEventListener('click', handleClick)
-    }
+    doc.removeEventListener('click', handleClick)
   }
 }

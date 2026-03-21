@@ -70,4 +70,26 @@ describe('unpublishedInterestClient', () => {
 
     cleanup()
   })
+
+  it('handles buttons appended after mount', () => {
+    const trackEvent = vi.fn()
+    const cleanup = mountUnpublishedInterestButtons({ trackEvent })
+    const wrapper = document.createElement('div')
+    wrapper.innerHTML = buildButtonMarkup('mash-kyrielight-20240311')
+    const button = wrapper.querySelector<HTMLButtonElement>('[data-commission-interest-key]')
+    if (!button)
+      throw new Error('expected interest button')
+    document.body.append(button)
+
+    button.click()
+
+    expect(trackEvent).toHaveBeenCalledTimes(1)
+    expect(trackEvent).toHaveBeenCalledWith({ sub_event: 'mash-kyrielight-20240311' })
+    expect(button).toBeDisabled()
+    expect(button.getAttribute('aria-pressed')).toBe('true')
+    expect(button.querySelector('[data-commission-interest-label]')?.textContent).toBe('Recorded')
+    expect(localStorage.getItem('commission-index:unpublished-interest:mash-kyrielight-20240311')).toBe('1')
+
+    cleanup()
+  })
 })
