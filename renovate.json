@@ -31,6 +31,7 @@
       "matchPackageNames": [
         "tailwindcss",
         "@tailwindcss/postcss",
+        "@tailwindcss/vite",
         "postcss",
         "tailwind-merge",
         "class-variance-authority",
@@ -41,7 +42,17 @@
     },
     {
       "description": "Lint and hooks tooling",
-      "matchPackageNames": ["eslint", "@antfu/eslint-config", "lint-staged", "@j178/prek"],
+      "matchPackageNames": [
+        "eslint",
+        "@antfu/eslint-config",
+        "@eslint-react/eslint-plugin",
+        "eslint-plugin-astro",
+        "eslint-plugin-format",
+        "eslint-plugin-react-hooks",
+        "eslint-plugin-react-refresh",
+        "lint-staged",
+        "@j178/prek"
+      ],
       "groupName": "lint and hooks"
     },
     {
