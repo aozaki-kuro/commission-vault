@@ -13,6 +13,7 @@
     "check": "bun run fact-source:export && astro check .",
     "preview": "bun run fact-source:export && astro build --clean && astro preview",
     "deploy": "wrangler deploy --config wrangler.jsonc",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "test": "bun run --cwd ../.. test",
     "test:changed": "bun run --cwd ../.. test:changed",
     "test:watch": "bun run --cwd ../.. test:watch",

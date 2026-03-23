@@ -93,10 +93,12 @@ Monorepo migration is in progress:
 ## CI
 
 - `.github/workflows/ci.yml` is the standard verification workflow for pushes and pull requests.
-- The `Validate` job always runs `lint`, `test`, `typecheck`, and `build:admin` from the repo root.
+- `CI` runs on pull requests plus pushes to `master`, which avoids double-running the same validation on same-repo feature branches.
+- The `Validate` job always runs `lint`, `test`, `typecheck`, and `build:admin` from the repo root, and it now restores `apps/web/generated` so cached Astro validation can run even without Cloudflare secrets.
 - The `Web Remote Validate` job runs only when Cloudflare credentials are available in GitHub Actions, because public web `check/build` still require exporting the remote fact source first.
 - `apps/web/package.json` now exposes `check:astro` and `build:astro` for cases where generated inputs are already present and you want to avoid re-running the export wrapper.
-- `.github/workflows/deploy.yml` and `.github/workflows/rebuild.yml` keep only the source-image cache plus the final `wrangler deploy` call, because that deploy already triggers the web/admin custom build commands.
+- `apps/web/package.json` also exposes `typecheck`, so the root Turbo `typecheck` actually covers the web workspace now instead of silently skipping it.
+- `.github/workflows/deploy.yml` and `.github/workflows/rebuild.yml` now restore/save the full `apps/web/generated` directory so later CI runs can reuse both fact-source JSON and source images, not just image files.
 - CI/deploy/rebuild workflows now write per-step durations and cache-hit status into `GITHUB_STEP_SUMMARY`, so cache decisions can be made from Actions data instead of guesswork.
 
 Asset generation is shared by Astro:

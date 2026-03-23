@@ -392,3 +392,19 @@
 - [x] `git diff --check` 通过。
 - [x] 已人工复核三个 workflow：每个 summary step 都使用 `if: always()`，前置步骤失败时仍会尽量输出观测信息。
 - [ ] 新增 `GITHUB_STEP_SUMMARY` 观测尚未在 Actions 环境实看；需要等下一轮 CI / deploy / rebuild 运行后读取 summary 数据。
+
+## 本轮执行切片（2026-03-23 Turbo/CI 缺陷修复）
+
+- [x] 给 `apps/web` 新增 workspace-local `typecheck`，避免 root Turbo `typecheck` 静默跳过 web
+- [x] 把 `ci.yml` 的 `push` 触发收口到 `master`，减少同仓 PR 分支的重复验证
+- [x] 把 Cloudflare 密钥检测提到独立 job，避免无 secrets 场景白跑 `bun install`
+- [x] 让 `validate` job 恢复 `apps/web/generated` 并在可用时运行 cached `astro check`
+- [x] 把 deploy/rebuild 缓存从 `source-images` 扩到整个 `apps/web/generated`，让后续 CI 能复用完整 web 构建输入
+- [x] 更新 README / AGENTS / todo，记录新的 CI/缓存真值
+
+## Review（2026-03-23 Turbo/CI 缺陷修复）
+
+- [x] `git diff --check` 通过。
+- [x] `bun run --cwd apps/web typecheck` 通过。
+- [x] `bun run typecheck` 通过，确认 root Turbo 现在会实际执行 web workspace 的 `typecheck`。
+- [ ] 新的 `actions/cache/restore` / `actions/cache/save` 路径与 cached `astro check` 尚未在 GitHub Actions 环境验真；需要等下一轮 CI / deploy / rebuild 执行结果。
