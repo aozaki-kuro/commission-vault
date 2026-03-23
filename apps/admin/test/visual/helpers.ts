@@ -1,7 +1,6 @@
 import type { Locator, Page, TestInfo } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 
-export const ADMIN_LEGACY_PROJECT_NAME = 'admin-legacy'
 export const ADMIN_PROJECT_NAME = 'admin'
 
 export async function prepareStablePage(page: Page) {

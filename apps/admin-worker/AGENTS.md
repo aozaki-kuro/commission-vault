@@ -8,7 +8,6 @@ This directory contains the standalone admin worker.
 - `src/adminApi.ts`: admin API router that owns CRUD route matching, payload normalization, error envelopes, and binding-enforced D1/R2 execution for admin routes.
 - `src/adminData.ts`: worker-owned read-side loader for bootstrap, aliases, suggestion, character-commission, and source-image GET routes on the D1/R2 admin fact source.
 - `src/adminSourceImages.ts`: worker-owned R2 source-image validation and write helpers shared by commission create and source-image replace flows.
-- `src/adminWriteApi.ts`: worker-owned non-CRUD write-route shell for compatibility responses and binding-enforced D1 writes.
 - `src/adminPersistence.ts`: worker-native D1 persistence helpers for character CRUD, commission CRUD, aliases, suggestion, commission file-name lookup, and `source_images` metadata.
 - `src/adminApi.test.ts`: contract tests that lock CRUD route normalization and failure responses so standalone admin and worker do not drift apart.
 - `migrations/0001_admin_fact_source.sql`: worker-owned D1 schema baseline for characters, commissions, aliases, and featured keyword state.
@@ -48,7 +47,7 @@ This directory contains the standalone admin worker.
 - 2026-03-17: Added worker-native D1 persistence for character create/update/reorder/delete, and made the default CRUD backend prefer native character writes when `DB` bindings exist.
 - 2026-03-17: Added `src/adminData.ts` so worker read routes can serve bootstrap, aliases, suggestion, character-commission, and source-image GET requests when D1/R2 bindings exist, before falling back to legacy.
 - 2026-03-17: Added worker-native D1 persistence for `aliases`/`suggestion` writes in `src/adminPersistence.ts`, and tightened write routing to native-with-DB plus legacy fallback when `DB` binding is absent.
-- 2026-03-17: Split worker-owned non-CRUD write routes into `src/adminWriteApi.ts` and moved `assets/refresh` to a native compatibility no-op instead of legacy passthrough.
+- 2026-03-23: Merged batch write routes (aliases, suggestion) from removed `src/adminWriteApi.ts` into `src/adminApi.ts`; removed dead `assets/refresh` endpoint.
 - 2026-03-17: Moved `create` / `edit` CRUD routes from raw whitelist proxying to native worker route handling with a swappable backend adapter.
 - 2026-03-17: Added worker-side CRUD contract tests to lock request normalization and error response shape.
 - 2026-03-18: Added `scripts/exportWebFactSource.ts` so the public Astro build can materialize generated fact-source inputs from remote D1/R2 instead of continuing to rely on local SQLite and `data/images/*`.

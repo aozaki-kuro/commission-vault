@@ -313,12 +313,3 @@ export async function fetchCharacterCommissionsAction(
 
   return payload.commissions
 }
-
-export async function refreshAssetsAction(): Promise<FormState> {
-  try {
-    return sendAdminRequest('/api/admin/assets/refresh', 'POST')
-  }
-  catch (error) {
-    return toErrorState(error, 'Failed to refresh assets.')
-  }
-}

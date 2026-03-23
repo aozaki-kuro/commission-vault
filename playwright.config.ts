@@ -46,6 +46,7 @@ export default defineConfig({
       reuseExistingServer,
     },
     {
+      // Points at the web dev server as a stub — admin visual tests only capture UI rendering
       command: 'ADMIN_API_BASE_URL=http://127.0.0.1:4173 bun run --cwd apps/admin dev',
       url: 'http://127.0.0.1:4174',
       timeout: 120_000,
