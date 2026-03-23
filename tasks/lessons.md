@@ -25,3 +25,5 @@
 - 2026-03-23: monorepo 里当同仓同时存在 Astro(Vite 7) 和独立 Vite 8 应用时，`@tailwindcss/vite` 这类插件很容易在类型层解析到另一份 Vite 定义；如果运行时构建已正常，就不要急着重排整棵依赖图，先在 Astro config 侧把插件结果收口到 Astro 自己的 `vite.plugins` 类型面上，再验证 `astro check` 和真实 build。
 - 2026-03-23: 像 duplicate hint 这种带判断色彩的提示，默认必须偏向高精度而不是高召回；只要规则还停留在“有点像”，就不能直接贴上 duplicate 标签，否则用户只会把整块提示当噪音。
 - 2026-03-23: 对外表现成 SPA 的后台，不能只把页面内容搬进 React；只要 section 切换还在走原生 `<a href>` 整页导航，闪动和状态丢失就迟早会露出来。至少要补 client-side history 导航，并用回归测试显式防住 `beforeunload`。
+- 2026-03-23: 只要某个 Turbo 任务除了源码还依赖远端数据（比如 `apps/web` build 先导出 D1/R2 事实源再跑 Astro），就不能只按源码/锁文件命中缓存；必须额外引入显式的远端数据版本戳（如 `WEB_BUILD_CACHE_TOKEN`），否则 `admin-data-changed` 这类重建会静默回放旧产物。
+- 2026-03-23: 像 `dev:admin` 这种多进程联调入口，不能只把 worker 和 frontend 一起拉起就算完；只要 frontend 首屏依赖 worker 远端数据，就应该等待一个真实的 binding-backed API 成功响应后再放行，否则用户只会看到“本地起了，但像没连上远端”的假故障。

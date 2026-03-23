@@ -25,11 +25,11 @@ Workspace notes:
 - `apps/web`, `apps/admin`, `apps/admin-worker`, and `packages/domain` all resolve dependencies through the root workspace install.
 - Root-only tooling such as ESLint, Prettier, Playwright, Vitest, and the root `better-tailwindcss` rule also comes from that same root install.
 - `turbo.json` is intentionally minimal and currently only orchestrates cacheable workspace tasks such as `build`, `check`, and `typecheck`.
-- Local Turborepo cache lives in `.turbo/`; GitHub Actions now restores that directory between runs alongside the generated source-image cache.
+- Local Turborepo cache lives in `.turbo/`; GitHub Actions `ci` / `deploy` / `rebuild` now restore that directory between runs alongside the generated web-input cache.
 - If you add a dependency that is used by a root config file (for example `eslint.config.ts`), declare it in the root `package.json` even if app workspaces also use it.
 
 - `bun run dev` — run the public `apps/web` Astro app in development mode.
-- `bun run dev:admin` — start the standalone admin frontend plus `apps/admin-worker` in local `wrangler dev` mode with remote D1/R2 bindings enabled by config.
+- `bun run dev:admin` — start `apps/admin-worker` in local `wrangler dev` mode with remote D1/R2 bindings, wait until worker-backed bootstrap data is readable, then start the standalone admin frontend.
 - `bun run dev:admin:remote` — compatibility alias for `bun run dev:admin`.
 - `apps/web` no longer mounts the legacy `/admin` pages in local dev; use `bun run dev:admin` for admin work.
 - Admin route shells are Astro pages; interactive admin state is mounted via React islands.
@@ -54,6 +54,7 @@ Monorepo migration is in progress:
 
 - Standalone admin capability work now lands on `apps/admin-worker` with `DB` / `IMAGES` bindings; future CRUD, asset writes, and admin tooling should target the worker + D1/R2 surface instead of expanding the legacy `/api/admin/*` layer inside `apps/web`.
 - `bun run dev:admin` is now the default standalone admin workflow. It starts `apps/admin` plus `apps/admin-worker` in local `wrangler dev` mode against the configured remote D1/R2 resources, without pulling in `apps/web`.
+- The root admin dev orchestrator now waits for a binding-backed worker API response before opening the frontend, so first-load admin pages do not race the worker startup/build sequence.
 - The admin worker no longer falls back to the legacy local SQLite/image path when `DB` or `IMAGES` bindings are missing. Known admin routes fail fast until the remote D1/R2-backed runtime is available.
 - The legacy `/admin` pages together with `/api/admin/*` in `apps/web` are now reference-only code paths and are not mounted by default.
 - `apps/admin-worker/wrangler.jsonc` now declares the real production `DB` / `IMAGES` bindings plus the D1 migrations directory, and the current remote D1/R2 fact source is the only supported admin/runtime truth.
@@ -79,10 +80,11 @@ Monorepo migration is in progress:
 - Recommended watch paths:
   - Web: `apps/web/**`, `packages/**`, `apps/admin-worker/scripts/exportWebFactSource.ts`
   - Admin: `apps/admin-worker/**`, `apps/admin/**`, `packages/**`
-- GitHub Actions now restores `.turbo/` and warms the Turbo graph with `bun run build:web` / `bun run build:admin` before the deploy steps. This keeps CI compatible with Bun workspaces while avoiding a heavier Nx-style setup.
+- GitHub Actions `deploy` / `rebuild` now restore/save `.turbo/`, and the workspace-local Wrangler custom build commands delegate back to repo-root `bun run build:web` / `bun run build:admin` so those jobs can actually hit the Turbo cache instead of bypassing it.
 - Workers Builds does not infer monorepo intent from the repo root. Push-triggered builds are recognized from the Worker's Dashboard settings plus the `wrangler.jsonc` that lives under that worker's root directory.
 - `apps/web` build does not talk to D1/R2 directly at runtime. It shells into `apps/admin-worker/scripts/exportWebFactSource.ts`, but that export is now explicitly driven by `apps/web/wrangler.jsonc` during web builds so the web Worker project owns the bindings needed for push-triggered exports.
 - GitHub Actions deploy/rebuild workflows intentionally do not pre-run `web:fact-source:export` or `build:web` anymore. `wrangler deploy` already executes each workspace-local custom build command, so pre-running those steps only duplicated export/build work.
+- Web Turbo caching must include a remote-data invalidation token. GitHub Actions now passes `WEB_BUILD_CACHE_TOKEN` into web deploy/rebuild builds so `admin-data-changed` runs cannot accidentally replay a stale Astro build from unchanged source code.
 
 ## Tests
 

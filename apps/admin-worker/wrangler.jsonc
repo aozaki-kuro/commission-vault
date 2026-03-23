@@ -10,7 +10,7 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-03-17",
   "build": {
-    "command": "bun run build:assets"
+    "command": "bun run --cwd ../.. build:admin"
   },
   "assets": {
     "directory": "../admin/dist",

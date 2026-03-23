@@ -39,6 +39,15 @@ export interface Env {
   GITHUB_DISPATCH_TOKEN?: string
 }
 
+function buildRebuildDispatchBody() {
+  return {
+    event_type: 'admin-data-changed',
+    client_payload: {
+      fact_source_version: new Date().toISOString(),
+    },
+  }
+}
+
 async function triggerWebRebuild(env: Env): Promise<void> {
   if (!env.GITHUB_DISPATCH_TOKEN) {
     return
@@ -53,7 +62,7 @@ async function triggerWebRebuild(env: Env): Promise<void> {
         'Content-Type': 'application/json',
         'User-Agent': 'commission-index-admin-worker',
       },
-      body: JSON.stringify({ event_type: 'admin-data-changed' }),
+      body: JSON.stringify(buildRebuildDispatchBody()),
     })
   }
   catch {
@@ -741,7 +750,7 @@ export async function handleAdminApiRequest(
             'Content-Type': 'application/json',
             'User-Agent': 'commission-index-admin-worker',
           },
-          body: JSON.stringify({ event_type: 'admin-data-changed' }),
+          body: JSON.stringify(buildRebuildDispatchBody()),
         },
       )
 

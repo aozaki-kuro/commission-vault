@@ -1,5 +1,21 @@
 # 统一迁移状态板（2026-03-18）
 
+## 本轮执行切片（2026-03-23 GitHub Actions Astro/Turbo 构建缓存）
+
+- [x] 梳理 deploy/rebuild workflow 当前为什么没有真正复用 `.turbo` 与 Astro 构建产物
+- [x] 给 GitHub Actions 的 deploy/rebuild 补上 `.turbo` restore/save，并把 cache hit 写进 summary
+- [x] 让 `wrangler` custom build 改走 repo-root Turbo，确保 Actions 里的 web/admin 构建真的能命中 Turbo
+- [x] 给 web build 增加远端事实源版本戳，避免 `admin-data-changed` 重建误吃到旧 Turbo 缓存
+- [x] 更新仓库文档，明确 GitHub Actions 与远端事实源缓存的边界
+- [x] 跑针对性验证，确认配置无语法错误且不会引入脏缓存
+
+## 本轮执行切片（2026-03-23 admin dev 启动竞态修复）
+
+- [x] 复现 `bun run dev:admin` 首次启动时 worker/front-end 抢跑导致的远端数据加载异常
+- [x] 让根级 admin dev 编排在 worker 远端数据接口 ready 后再启动前端
+- [x] 补回根级 `dev:admin:remote` 兼容 alias，并同步 README / `scripts/AGENTS.md`
+- [x] 跑通本轮针对性验证，并记录结论
+
 ## 本轮执行切片（2026-03-23 duplicate hints 降噪）
 
 - [x] 梳理 `apps/admin` commission duplicate hint 的评分规则与触发条件，确认误报根因

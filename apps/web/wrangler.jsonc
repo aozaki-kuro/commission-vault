@@ -9,7 +9,7 @@
   "name": "commission-index-web",
   "compatibility_date": "2026-03-17",
   "build": {
-    "command": "bun run build"
+    "command": "bun run --cwd ../.. build:web"
   },
   "d1_databases": [
     {

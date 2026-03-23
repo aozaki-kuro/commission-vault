@@ -7,6 +7,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  TURBO_TELEMETRY_DISABLED: '1'
 
 jobs:
   rebuild:
@@ -30,6 +31,16 @@ jobs:
           ended_at=$(date +%s)
           echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
 
+      - name: Restore turbo cache
+        id: turbo_cache
+        uses: actions/cache/restore@v5
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-master-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
+          restore-keys: |
+            turbo-${{ runner.os }}-master-
+            turbo-${{ runner.os }}-
+
       - name: Restore generated web inputs
         id: generated_cache
         uses: actions/cache/restore@v5
@@ -50,6 +61,14 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WEB_BUILD_CACHE_TOKEN: rebuild-${{ github.event.client_payload.fact_source_version || github.run_id }}
+
+      - name: Save turbo cache
+        if: success()
+        uses: actions/cache/save@v5
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-master-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
 
       - name: Save generated web inputs
         if: success()
@@ -64,6 +83,7 @@ jobs:
           {
             echo "## Rebuild Job"
             echo
+            echo "- turbo cache exact hit: ${{ steps.turbo_cache.outputs.cache-hit || 'false' }}"
             echo "- generated cache exact hit: ${{ steps.generated_cache.outputs.cache-hit || 'false' }}"
             echo
             echo "| Step | Seconds |"
