@@ -8,77 +8,77 @@ import {
 } from './useCommissionSearchModel'
 
 describe('getDomSnapshotKeyForMode', () => {
-  it('changes character snapshot key when activeLoaded or staleLoaded changes', () => {
+  it('changes character snapshot key when activeLoaded or archivedLoaded changes', () => {
     const before = getDomSnapshotKeyForMode({
       activeBatchCount: 0,
       activeLoaded: false,
       mode: 'character',
-      staleBatchCount: 0,
-      staleLoaded: false,
-      staleVisible: false,
+      archivedBatchCount: 0,
+      archivedLoaded: false,
+      archivedVisible: false,
       timelineLoaded: false,
     })
     const unrelatedTimelineChange = getDomSnapshotKeyForMode({
       activeBatchCount: 0,
       activeLoaded: false,
       mode: 'character',
-      staleBatchCount: 0,
-      staleLoaded: false,
-      staleVisible: false,
+      archivedBatchCount: 0,
+      archivedLoaded: false,
+      archivedVisible: false,
       timelineLoaded: true,
     })
     const activeBatchChange = getDomSnapshotKeyForMode({
       activeBatchCount: 1,
       activeLoaded: false,
       mode: 'character',
-      staleBatchCount: 0,
-      staleLoaded: false,
-      staleVisible: false,
+      archivedBatchCount: 0,
+      archivedLoaded: false,
+      archivedVisible: false,
       timelineLoaded: true,
     })
     const activeChange = getDomSnapshotKeyForMode({
       activeBatchCount: 1,
       activeLoaded: true,
       mode: 'character',
-      staleBatchCount: 0,
-      staleLoaded: false,
-      staleVisible: false,
+      archivedBatchCount: 0,
+      archivedLoaded: false,
+      archivedVisible: false,
       timelineLoaded: true,
     })
-    const staleVisibleChange = getDomSnapshotKeyForMode({
+    const archivedVisibleChange = getDomSnapshotKeyForMode({
       activeBatchCount: 1,
       activeLoaded: true,
       mode: 'character',
-      staleBatchCount: 0,
-      staleLoaded: false,
-      staleVisible: true,
+      archivedBatchCount: 0,
+      archivedLoaded: false,
+      archivedVisible: true,
       timelineLoaded: true,
     })
-    const staleBatchChange = getDomSnapshotKeyForMode({
+    const archivedBatchChange = getDomSnapshotKeyForMode({
       activeBatchCount: 1,
       activeLoaded: true,
       mode: 'character',
-      staleBatchCount: 1,
-      staleLoaded: false,
-      staleVisible: true,
+      archivedBatchCount: 1,
+      archivedLoaded: false,
+      archivedVisible: true,
       timelineLoaded: true,
     })
-    const staleChange = getDomSnapshotKeyForMode({
+    const archivedChange = getDomSnapshotKeyForMode({
       activeBatchCount: 1,
       activeLoaded: true,
       mode: 'character',
-      staleBatchCount: 2,
-      staleLoaded: true,
-      staleVisible: true,
+      archivedBatchCount: 2,
+      archivedLoaded: true,
+      archivedVisible: true,
       timelineLoaded: true,
     })
 
     expect(before).toBe(unrelatedTimelineChange)
     expect(activeBatchChange).not.toBe(before)
     expect(activeChange).not.toBe(activeBatchChange)
-    expect(staleVisibleChange).not.toBe(activeChange)
-    expect(staleBatchChange).not.toBe(staleVisibleChange)
-    expect(staleChange).not.toBe(staleBatchChange)
+    expect(archivedVisibleChange).not.toBe(activeChange)
+    expect(archivedBatchChange).not.toBe(archivedVisibleChange)
+    expect(archivedChange).not.toBe(archivedBatchChange)
   })
 
   it('changes timeline snapshot key only when timelineLoaded changes', () => {
@@ -86,31 +86,31 @@ describe('getDomSnapshotKeyForMode', () => {
       activeBatchCount: 0,
       activeLoaded: false,
       mode: 'timeline',
-      staleBatchCount: 0,
-      staleLoaded: false,
-      staleVisible: false,
+      archivedBatchCount: 0,
+      archivedLoaded: false,
+      archivedVisible: false,
       timelineLoaded: false,
     })
-    const unrelatedStaleChange = getDomSnapshotKeyForMode({
+    const unrelatedArchivedChange = getDomSnapshotKeyForMode({
       activeBatchCount: 2,
       activeLoaded: true,
       mode: 'timeline',
-      staleBatchCount: 3,
-      staleLoaded: true,
-      staleVisible: true,
+      archivedBatchCount: 3,
+      archivedLoaded: true,
+      archivedVisible: true,
       timelineLoaded: false,
     })
     const timelineChange = getDomSnapshotKeyForMode({
       activeBatchCount: 2,
       activeLoaded: true,
       mode: 'timeline',
-      staleBatchCount: 3,
-      staleLoaded: true,
-      staleVisible: true,
+      archivedBatchCount: 3,
+      archivedLoaded: true,
+      archivedVisible: true,
       timelineLoaded: true,
     })
 
-    expect(before).toBe(unrelatedStaleChange)
+    expect(before).toBe(unrelatedArchivedChange)
     expect(timelineChange).not.toBe(before)
   })
 })
@@ -118,11 +118,11 @@ describe('getDomSnapshotKeyForMode', () => {
 describe('resolveEffectiveDomSnapshotKey', () => {
   it('uses a stable key when dom context is skipped', () => {
     const first = resolveEffectiveDomSnapshotKey({
-      domSnapshotKey: 'character:stale-hidden',
+      domSnapshotKey: 'character:archived-hidden',
       skipDomContext: true,
     })
     const second = resolveEffectiveDomSnapshotKey({
-      domSnapshotKey: 'character:stale-loaded',
+      domSnapshotKey: 'character:archived-loaded',
       skipDomContext: true,
     })
 

@@ -7,7 +7,7 @@ import { INITIAL_FORM_STATE } from '../../lib/formState'
 import { FormStatusIndicator } from '../FormStatusIndicator'
 import { SubmitButton } from '../SubmitButton'
 
-type StatusValue = 'active' | 'stale'
+type StatusValue = 'active' | 'archived'
 
 const statusOptions: Array<{ value: StatusValue, label: string }> = [
   {
@@ -15,8 +15,8 @@ const statusOptions: Array<{ value: StatusValue, label: string }> = [
     value: 'active',
   },
   {
-    label: 'Stale',
-    value: 'stale',
+    label: 'Archived',
+    value: 'archived',
   },
 ]
 

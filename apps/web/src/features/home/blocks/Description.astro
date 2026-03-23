@@ -21,7 +21,7 @@ const introductionTitleId = getCharacterTitleId(introductionTitle)
 const introductionSectionHash = getCharacterSectionHash(introductionTitle)
 ---
 
-<div id="--------Description--------">
+<div id="--------Description--------" style="animation: reveal-up 500ms cubic-bezier(0.22, 1, 0.36, 1) both">
   <h1 class="
     pb-0
     md:pb-2
@@ -36,6 +36,7 @@ const introductionSectionHash = getCharacterSectionHash(introductionTitle)
           ml-2 font-bold text-gray-400 no-underline opacity-0 transition-opacity
           duration-200
           group-hover:opacity-100
+          focus-visible:opacity-100 focus-visible:outline-none
           dark:text-gray-600
         "
       >
@@ -65,10 +66,12 @@ const introductionSectionHash = getCharacterSectionHash(introductionTitle)
     <a href="mailto:contact@crystallize.cc">{messages.description.emailLinkLabel}</a>
     {messages.description.contactTextAfterEmail}
   </p>
-  <Update
-    locale={resolvedLocale}
-    commissionData={commissionData}
-    activeCharacters={activeCharacters}
-    summary={updateSummary}
-  />
+  <div style="animation: reveal-up 500ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both">
+    <Update
+      locale={resolvedLocale}
+      commissionData={commissionData}
+      activeCharacters={activeCharacters}
+      summary={updateSummary}
+    />
+  </div>
 </div>

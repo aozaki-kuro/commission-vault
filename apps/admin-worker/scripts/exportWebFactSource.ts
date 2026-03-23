@@ -123,7 +123,7 @@ const defaultDatabaseBinding
 const defaultBucketName
   = process.env.FACT_SOURCE_IMAGES_BUCKET?.trim()
     || process.env.ADMIN_WORKER_IMAGES_BUCKET?.trim()
-    || 'commission-index-source-images'
+    || 'commission-index-images'
 const imageOutputDirectoryName = 'source-images'
 const factSourceDirectoryName = 'fact-source'
 const normalizeSpacesPattern = /\s+/g

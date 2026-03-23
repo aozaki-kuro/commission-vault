@@ -1,6 +1,23 @@
 <script>
   import { mountHomePageClient } from '#features/home/homePageClient'
 
-  const cleanup = mountHomePageClient()
-  window.addEventListener('pagehide', cleanup, { once: true })
+  let cleanup: (() => void) | null = null
+
+  function boot() {
+    cleanup?.()
+    cleanup = null
+    // Only mount on home pages — the shell element only exists there
+    if (document.querySelector('[data-home-scroll-restore-shell]')) {
+      cleanup = mountHomePageClient()
+    }
+  }
+
+  function teardown() {
+    cleanup?.()
+    cleanup = null
+  }
+
+  // Initial load + re-mount after client-side navigation (ClientRouter)
+  document.addEventListener('astro:page-load', boot)
+  document.addEventListener('astro:before-swap', teardown)
 </script>

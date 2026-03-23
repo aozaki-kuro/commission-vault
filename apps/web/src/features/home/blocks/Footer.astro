@@ -11,18 +11,20 @@ const currentYear = new Date().getFullYear()
 ---
 
 <div id="--------Footer--------">
-  <div class="pt-4" />
-  <hr />
-  <div class="pb-8" />
+  <hr class="
+    my-8
+    md:mt-12
+  "
+  />
 
-  <div class="pb-10 text-center text-xs">
+  <div class="pb-8 text-center text-xs">
     {messages.footer.rightsLines.map(line => <p class="pt-2">{line}</p>)}
     <p class="pt-2">{messages.footer.obscuredNames}</p>
     <p class="pt-2">{messages.footer.noIndexing}</p>
   </div>
 
   <small class="
-    block pt-24 pb-10 font-mono text-xs text-gray-800
+    block pt-16 pb-10 font-mono text-xs text-gray-800
     md:pb-0
     dark:text-gray-300
   "

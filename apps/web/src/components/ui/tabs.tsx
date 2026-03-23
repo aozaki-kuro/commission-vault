@@ -15,8 +15,8 @@ function TabsTrigger({ ref, className, ...props }: React.ComponentPropsWithoutRe
       ref={ref}
       className={cn(
         `
-          inline-flex items-center justify-center rounded-md text-sm font-medium
-          whitespace-nowrap transition-all
+          inline-flex items-center justify-center rounded-md text-sm
+          font-semibold whitespace-nowrap transition-all
           focus-visible:outline-none
           disabled:pointer-events-none disabled:opacity-50
         `,

@@ -8,7 +8,7 @@ export interface CharacterDisplay {
 
 export interface CharacterStatusPayload {
   active: CharacterDisplay[]
-  stale: CharacterDisplay[]
+  archived: CharacterDisplay[]
 }
 
 export interface CreatorAliasPayload {

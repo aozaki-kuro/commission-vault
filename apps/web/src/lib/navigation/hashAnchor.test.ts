@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearHashIfTargetIsStale, scrollToHashTargetFromHrefWithoutHash } from './hashAnchor'
+import { clearHashIfTargetIsArchived, scrollToHashTargetFromHrefWithoutHash } from './hashAnchor'
 
 describe('hashAnchor utils', () => {
   beforeEach(() => {
@@ -24,6 +24,11 @@ describe('hashAnchor utils', () => {
   it('returns false when hash target cannot be resolved', () => {
     expect(scrollToHashTargetFromHrefWithoutHash('#missing')).toBe(false)
     expect(scrollToHashTargetFromHrefWithoutHash(null)).toBe(false)
+  })
+
+  it('returns false instead of throwing for malformed hash encoding', () => {
+    expect(() => scrollToHashTargetFromHrefWithoutHash('#%E0%A4%A')).not.toThrow()
+    expect(scrollToHashTargetFromHrefWithoutHash('#%E0%A4%A')).toBe(false)
   })
 
   it('prefers visible target when duplicate ids exist across view panels', () => {
@@ -55,7 +60,7 @@ describe('hashAnchor utils', () => {
 
   it('clears hash when target is missing or offscreen', () => {
     window.history.replaceState(null, '', '/?view=timeline#missing')
-    clearHashIfTargetIsStale()
+    clearHashIfTargetIsArchived()
     expect(window.location.pathname + window.location.search + window.location.hash).toBe(
       '/?view=timeline',
     )
@@ -77,7 +82,7 @@ describe('hashAnchor utils', () => {
     document.body.appendChild(target)
 
     window.history.replaceState(null, '', '/?view=timeline#timeline-year-2026')
-    clearHashIfTargetIsStale()
+    clearHashIfTargetIsArchived()
 
     expect(window.location.pathname + window.location.search + window.location.hash).toBe(
       '/?view=timeline',
@@ -102,7 +107,7 @@ describe('hashAnchor utils', () => {
     document.body.appendChild(target)
     window.history.replaceState(null, '', '/?view=timeline#timeline-year-2026')
 
-    clearHashIfTargetIsStale()
+    clearHashIfTargetIsArchived()
 
     expect(window.location.pathname + window.location.search + window.location.hash).toBe(
       '/?view=timeline#timeline-year-2026',
@@ -127,7 +132,7 @@ describe('hashAnchor utils', () => {
     document.body.appendChild(target)
     window.history.replaceState(null, '', '/?view=timeline#timeline-year-2026')
 
-    clearHashIfTargetIsStale()
+    clearHashIfTargetIsArchived()
 
     expect(window.location.pathname + window.location.search + window.location.hash).toBe(
       '/?view=timeline',

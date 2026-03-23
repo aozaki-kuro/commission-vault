@@ -112,7 +112,7 @@ export function SortableCharacterCard({
       ref={setNodeRef}
       id={sectionId}
       data-character-section="true"
-      data-character-status={isActive ? 'active' : 'stale'}
+      data-character-status={isActive ? 'active' : 'archived'}
       data-total-commissions={totalCommissions}
       style={{
         opacity: isDragging ? 0.55 : 1,

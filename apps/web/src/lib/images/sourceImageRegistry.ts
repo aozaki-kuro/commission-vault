@@ -1,6 +1,3 @@
-import process from 'node:process'
-import { getGeneratedSourceImageManifest } from '#data/generatedFactSource'
-
 interface SourceImageModule {
   default: ImageMetadata
 }
@@ -16,14 +13,11 @@ export interface SourceImageLookup {
   dateMap: Map<string, string[]>
 }
 
-const isDevelopment = process.env.NODE_ENV === 'development'
-const generatedImageModulePrefix = '/generated/'
-const SOURCE_IMAGE_MODULES = import.meta.glob<SourceImageModule>('/generated/source-images/**/*.{jpg,jpeg,png}', {
+const SOURCE_IMAGE_MODULES = import.meta.glob<SourceImageModule>('/data/images/*.{jpg,jpeg,png}', {
   eager: true,
 })
 const STEM_CONNECTOR_PATTERN = /[_-]+/g
 const STEM_NOISE_PATTERN = /[\s'"`’“”()（）[\]{}]/g
-let cachedSourceImageLookup: SourceImageLookup | null = null
 
 function extensionPriority(filePath: string) {
   const normalized = filePath.toLowerCase()
@@ -34,6 +28,14 @@ function extensionPriority(filePath: string) {
   if (normalized.endsWith('.jpeg'))
     return 2
   return 99
+}
+
+function extractStemFromPath(filePath: string): string {
+  const fileName = filePath.split('/').pop() ?? filePath
+  const dotIndex = fileName.lastIndexOf('.')
+  if (dotIndex === -1)
+    return fileName
+  return fileName.slice(0, dotIndex)
 }
 
 export function normalizeSourceImageStem(value: string) {
@@ -47,31 +49,19 @@ export function normalizeSourceImageStem(value: string) {
 const getDatePrefix = (value: string) => value.slice(0, 8)
 const getCreatorName = (value: string) => (value.length > 9 ? value.slice(9) : '')
 
-function resolveGeneratedImageModulePath(relativePath: string) {
-  return `${generatedImageModulePrefix}${relativePath}`
-}
-
 function buildSourceImageRecords(): SourceImageRecord[] {
-  const records = getGeneratedSourceImageManifest().files.map((file) => {
-    const modulePath = resolveGeneratedImageModulePath(file.relativePath)
-    const module = SOURCE_IMAGE_MODULES[modulePath]
-    if (!module) {
-      throw new Error(
-        `Generated source image missing from build input: ${modulePath}. Run \`bun run web:fact-source:export\` and try again.`,
-      )
-    }
-
-    return {
-      filePath: modulePath,
-      stem: file.commissionFileName,
+  const records = Object.entries(SOURCE_IMAGE_MODULES)
+    .map(([filePath, module]) => ({
+      filePath,
+      stem: extractStemFromPath(filePath),
       metadata: module.default,
-    }
-  }).sort((a, b) => {
-    const priorityDelta = extensionPriority(a.filePath) - extensionPriority(b.filePath)
-    if (priorityDelta !== 0)
-      return priorityDelta
-    return a.stem.localeCompare(b.stem)
-  })
+    }))
+    .sort((a, b) => {
+      const priorityDelta = extensionPriority(a.filePath) - extensionPriority(b.filePath)
+      if (priorityDelta !== 0)
+        return priorityDelta
+      return a.stem.localeCompare(b.stem)
+    })
 
   const deduped = new Map<string, SourceImageRecord>()
   for (const record of records) {
@@ -84,18 +74,6 @@ function buildSourceImageRecords(): SourceImageRecord[] {
   }
 
   return [...deduped.values()]
-}
-
-function getSourceImageLookup() {
-  if (isDevelopment) {
-    return buildSourceImageLookup(buildSourceImageRecords())
-  }
-
-  if (!cachedSourceImageLookup) {
-    cachedSourceImageLookup = buildSourceImageLookup(buildSourceImageRecords())
-  }
-
-  return cachedSourceImageLookup
 }
 
 export function buildSourceImageLookup(records: SourceImageRecord[]): SourceImageLookup {
@@ -151,35 +129,28 @@ function resolveStemByFallback(fileName: string, lookup: SourceImageLookup): str
   return creatorCandidates.length === 1 ? creatorCandidates[0] : null
 }
 
-export function resolveSourceImageStem(fileName: string, lookup?: SourceImageLookup): string | null {
-  const resolvedLookup = lookup ?? getSourceImageLookup()
-
-  if (resolvedLookup.byStem.has(fileName)) {
+export function resolveSourceImageStem(fileName: string, lookup: SourceImageLookup): string | null {
+  if (lookup.byStem.has(fileName)) {
     return fileName
   }
 
-  return resolveStemByFallback(fileName, resolvedLookup)
+  return resolveStemByFallback(fileName, lookup)
 }
 
-export function listSourceImageStems(lookup?: SourceImageLookup) {
-  const resolvedLookup = lookup ?? getSourceImageLookup()
-  return [...resolvedLookup.byStem.keys()].toSorted((a, b) => a.localeCompare(b))
-}
+const sourceImageLookup = buildSourceImageLookup(buildSourceImageRecords())
 
-export function resolveSourceImageByCommissionFileName(fileName: string, lookup?: SourceImageLookup): ImageMetadata | null {
-  const resolvedLookup = lookup ?? getSourceImageLookup()
-  const resolvedStem = resolveSourceImageStem(fileName, resolvedLookup)
+export function resolveSourceImageByCommissionFileName(fileName: string, lookup: SourceImageLookup = sourceImageLookup): ImageMetadata | null {
+  const resolvedStem = resolveSourceImageStem(fileName, lookup)
   if (!resolvedStem)
     return null
-  return resolvedLookup.byStem.get(resolvedStem) ?? null
+  return lookup.byStem.get(resolvedStem) ?? null
 }
 
-export function listMissingSourceImages(commissionFileNames: string[], lookup?: SourceImageLookup) {
-  const resolvedLookup = lookup ?? getSourceImageLookup()
+export function listMissingSourceImages(commissionFileNames: string[], lookup: SourceImageLookup = sourceImageLookup) {
   const missing = new Set<string>()
 
   for (const fileName of commissionFileNames) {
-    if (!resolveSourceImageStem(fileName, resolvedLookup)) {
+    if (!resolveSourceImageStem(fileName, lookup)) {
       missing.add(fileName)
     }
   }

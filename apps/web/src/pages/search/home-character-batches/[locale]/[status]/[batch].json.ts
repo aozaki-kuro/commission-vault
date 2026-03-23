@@ -8,9 +8,9 @@ import {
 
 } from '#features/home/server/homeCharacterBatches'
 import { buildHomeCharacterBatchPayload } from '#features/home/server/homeCharacterBatchPayload'
-import { normalizeCharacterAliasKey } from '#lib/characterAliases/shared'
+import { normalizeCharacterAliasKey } from '#lib/characterAliases'
 import { buildSitePayload } from '#lib/home/buildSitePayload'
-import { normalizeKeywordAliasKey } from '#lib/keywordAliases/shared'
+import { normalizeKeywordAliasKey } from '#lib/keywordAliases'
 import { buildCommissionDataMap, buildCreatorAliasesMap } from '#lib/sitePayload'
 
 function getBatchPlan() {
@@ -47,7 +47,7 @@ function getBatchPlan() {
     keywordAliasesMap,
     plan: buildHomeCharacterBatchPlan({
       activeChars: payload.characterStatus.active,
-      staleChars: payload.characterStatus.stale,
+      archivedChars: payload.characterStatus.archived,
       commissionMap,
     }),
   }
@@ -60,7 +60,7 @@ export function getStaticPaths() {
   }> = []
 
   for (const locale of HOME_LOCALES) {
-    for (const status of ['active', 'stale'] as const) {
+    for (const status of ['active', 'archived'] as const) {
       for (let batchIndex = 0; batchIndex < plan[status].totalBatches; batchIndex += 1) {
         paths.push({
           params: {
@@ -78,7 +78,7 @@ export function getStaticPaths() {
 
 export const GET: APIRoute = async ({ params }) => {
   const locale = normalizeHomeLocale(params.locale)
-  const status = params.status === 'stale' ? 'stale' : 'active'
+  const status = params.status === 'archived' ? 'archived' : 'active'
   const batchIndex = Number(params.batch)
   if (!Number.isInteger(batchIndex) || batchIndex < 0) {
     return new Response(null, { status: 404 })

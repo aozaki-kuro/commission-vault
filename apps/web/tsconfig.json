@@ -7,8 +7,6 @@
       "#features/*": ["src/features/*"],
       "#components/*": ["src/components/*"],
       "#images/*": ["public/images/*"],
-      "#admin/actions": ["src/features/admin/actions.client.ts"],
-      "#admin/*": ["src/features/admin/*"],
       "#data/*": ["data/*"],
       "#lib/*": ["src/lib/*"],
       "#styles/*": ["src/styles/*"],

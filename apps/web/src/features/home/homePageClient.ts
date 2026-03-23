@@ -1,8 +1,10 @@
-import { mountActiveCharactersLoader } from '#features/home/commission/activeCharactersLoader'
+import { mountHomeUpdateLinks } from '#features/home/blocks/updateLinks'
 import { mountCommissionViewModeDomSync } from '#features/home/commission/commissionViewModeDomSync'
+import { mountActiveCharactersLoader } from '#features/home/commission/loader/activeCharactersLoader'
+import { mountArchivedCharactersLoader } from '#features/home/commission/loader/archivedCharactersLoader'
+import { mountTimelineViewLoader } from '#features/home/commission/loader/timelineViewLoader'
 import { mountMobileViewModeTabs } from '#features/home/commission/mobileViewModeTabs'
-import { mountStaleCharactersLoader } from '#features/home/commission/staleCharactersLoader'
-import { mountTimelineViewLoader } from '#features/home/commission/timelineViewLoader'
+import { mountScrollReveal } from '#features/home/commission/scrollReveal'
 import { mountUnpublishedInterestButtons } from '#features/home/commission/unpublishedInterestClient'
 import { mountHomeScrollRestore } from '#features/home/homeScrollRestore'
 import { mountMobileHamburgerMenu } from '#features/home/nav/hamburger/mobileHamburgerMenu'
@@ -25,13 +27,15 @@ const HOME_DEFERRED_MOUNT_FALLBACK_DELAY_MS = 180
 interface HomePageClientDeps {
   mountCommissionViewModeDomSync: Mount
   mountActiveCharactersLoader: Mount
-  mountStaleCharactersLoader: Mount
+  mountArchivedCharactersLoader: Mount
   mountTimelineViewLoader: Mount
   mountHomeScrollRestore: Mount
+  mountHomeUpdateLinks: Mount
   mountSidebarNavEnhancer: Mount
   mountMobileHamburgerMenu: Mount
   mountMobileLanguageMenu: Mount
   mountMobileViewModeTabs: Mount
+  mountScrollReveal: Mount
   mountUnpublishedInterestButtons: Mount
   scheduleDeferredMount: (task: () => void) => Cleanup
 }
@@ -43,13 +47,15 @@ interface MountHomePageClientOptions {
 const defaultDeps: HomePageClientDeps = {
   mountCommissionViewModeDomSync: () => mountCommissionViewModeDomSync(),
   mountActiveCharactersLoader: () => mountActiveCharactersLoader(),
-  mountStaleCharactersLoader: () => mountStaleCharactersLoader(),
+  mountArchivedCharactersLoader: () => mountArchivedCharactersLoader(),
   mountTimelineViewLoader: () => mountTimelineViewLoader(),
   mountHomeScrollRestore: () => mountHomeScrollRestore(),
+  mountHomeUpdateLinks: () => mountHomeUpdateLinks(),
   mountSidebarNavEnhancer: () => mountSidebarNavEnhancer(),
   mountMobileHamburgerMenu: () => mountMobileHamburgerMenu(),
   mountMobileLanguageMenu: () => mountMobileLanguageMenu(),
   mountMobileViewModeTabs: () => mountMobileViewModeTabs(),
+  mountScrollReveal: () => mountScrollReveal(),
   mountUnpublishedInterestButtons: () =>
     mountUnpublishedInterestButtons({
       trackEvent: (properties) => {
@@ -81,9 +87,10 @@ export function mountHomePageClient({ deps: depsOverrides }: MountHomePageClient
   const criticalMounts: Mount[] = [
     deps.mountCommissionViewModeDomSync,
     deps.mountActiveCharactersLoader,
-    deps.mountStaleCharactersLoader,
+    deps.mountArchivedCharactersLoader,
     deps.mountTimelineViewLoader,
     deps.mountHomeScrollRestore,
+    deps.mountHomeUpdateLinks,
   ]
   const deferredMounts: Mount[] = [
     deps.mountSidebarNavEnhancer,
@@ -91,6 +98,7 @@ export function mountHomePageClient({ deps: depsOverrides }: MountHomePageClient
     deps.mountMobileLanguageMenu,
     deps.mountMobileViewModeTabs,
     deps.mountUnpublishedInterestButtons,
+    deps.mountScrollReveal,
   ]
   const cleanups: Cleanup[] = []
   let cancelDeferredMount: Cleanup | null = null

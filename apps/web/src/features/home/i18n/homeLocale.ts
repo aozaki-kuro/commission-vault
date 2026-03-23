@@ -79,23 +79,23 @@ export interface HomeLocaleMessages {
     openNavigationMenu: string
     loadingCharacters: string
     loadingYears: string
-    loadStaleCharacters: string
-    staleCharactersCollapsedTitle: string
-    staleCharactersCollapsedHint: string
+    loadArchivedCharacters: string
+    archivedCharactersCollapsedTitle: string
+    archivedCharactersCollapsedHint: string
     activeCharacters: string
-    staleCharacters: string
+    archivedCharacters: string
     noActiveCharacters: string
-    noStaleCharacters: string
+    noArchivedCharacters: string
     sourceCharacter: string
     sourceCreator: string
     sourceKeyword: string
     sourceDate: string
     sourcePrefix: string
-    formatCollapsedStaleSummary: (characterCount: number, commissionCount: number) => string
+    formatCollapsedArchivedSummary: (characterCount: number, commissionCount: number) => string
     formatMatchCount: (count: number) => string
     formatSearchResultsStatus: (matchedCount: number, entriesCount: number) => string
     formatSearchClearedStatus: (entriesCount: number) => string
-    formatHiddenStaleResultsNotice: (count: number) => string
+    formatHiddenArchivedResultsNotice: (count: number) => string
     searchHelpTitle: string
     searchHelpIntro: string
     searchHelpSyntaxHeader: string
@@ -131,7 +131,7 @@ const HOME_LOCALE_MESSAGES: Record<HomeLocale, HomeLocaleMessages> = {
         '. Requests regarding the release or distribution of the illustrations will not receive a response.',
     },
     update: {
-      noActiveUpdatesFound: 'No active updates found',
+      noActiveUpdatesFound: 'No recent commissions',
       lastUpdate: 'Last update:',
       formatTotalCommissions: count => `Currently ${count} commissions`,
     },
@@ -139,7 +139,7 @@ const HOME_LOCALE_MESSAGES: Record<HomeLocale, HomeLocaleMessages> = {
       rightsLines: [
         'The copyright of all art works commissioned on Skeb belongs to the artist and the proper copyright holders.',
       ],
-      obscuredNames: 'Some character names are obscured due to rule requirements.',
+      obscuredNames: 'Some character names are obscured due to platform rules.',
       noIndexing: 'This site has restricted search engines from indexing.',
     },
     listing: {
@@ -154,8 +154,8 @@ const HOME_LOCALE_MESSAGES: Record<HomeLocale, HomeLocaleMessages> = {
     warning: {
       title: '[ Warning ]',
       srDescription: 'Age confirmation required before viewing the full content.',
-      contentLine1: 'You have to be over 18 to view the contents.',
-      contentLine2: 'Please leave now if you are under 18.',
+      contentLine1: 'You must be 18 or older to view this site.',
+      contentLine2: 'If you are under 18, please leave now.',
       confirmAge: 'I am over 18',
       leaveNow: 'Leave Now',
     },
@@ -177,27 +177,27 @@ const HOME_LOCALE_MESSAGES: Record<HomeLocale, HomeLocaleMessages> = {
       openNavigationMenu: 'Open navigation menu',
       loadingCharacters: 'Loading characters...',
       loadingYears: 'Loading years...',
-      loadStaleCharacters: 'Load',
-      staleCharactersCollapsedTitle: 'Archived characters stay folded by default',
-      staleCharactersCollapsedHint: 'Expand only when you want to browse the older entries.',
-      activeCharacters: 'Active Characters',
-      staleCharacters: 'Stale Characters',
+      loadArchivedCharacters: 'Show archived',
+      archivedCharactersCollapsedTitle: 'Archived characters stay folded by default',
+      archivedCharactersCollapsedHint: 'Expand only when you want to browse the older entries.',
+      activeCharacters: 'Active',
+      archivedCharacters: 'Archived',
       noActiveCharacters: 'No active characters.',
-      noStaleCharacters: 'No stale characters.',
+      noArchivedCharacters: 'No archived characters.',
       sourceCharacter: 'character',
       sourceCreator: 'creator',
       sourceKeyword: 'keyword',
       sourceDate: 'date',
       sourcePrefix: 'in',
-      formatCollapsedStaleSummary: (characterCount, commissionCount) =>
-        `${characterCount} Stale Character${characterCount === 1 ? '' : 's'} / ${commissionCount} commission${commissionCount === 1 ? '' : 's'}`,
+      formatCollapsedArchivedSummary: (characterCount, commissionCount) =>
+        `${characterCount} Archived Character${characterCount === 1 ? '' : 's'} / ${commissionCount} commission${commissionCount === 1 ? '' : 's'}`,
       formatMatchCount: count => `${count} ${count === 1 ? 'match' : 'matches'}`,
       formatSearchResultsStatus: (matchedCount, entriesCount) =>
         `Search results: ${matchedCount} of ${entriesCount} commissions shown.`,
       formatSearchClearedStatus: entriesCount =>
         `Search cleared. Showing all ${entriesCount} commissions.`,
-      formatHiddenStaleResultsNotice: count =>
-        `${count} stale match${count === 1 ? '' : 'es'} hidden.`,
+      formatHiddenArchivedResultsNotice: count =>
+        `${count} archived match${count === 1 ? '' : 'es'} hidden.`,
       searchHelpTitle: 'Search Help',
       searchHelpIntro: 'Type one or more keywords to filter commissions.',
       searchHelpSyntaxHeader: 'Syntax',
@@ -238,24 +238,23 @@ const HOME_LOCALE_MESSAGES: Record<HomeLocale, HomeLocaleMessages> = {
       previewTextAfterRss: ' 訂閱。',
       rssLinkLabel: 'RSS',
       supportIllustratorsText:
-        '本人並非插畫師，而是經常委託創作的一方。如果你喜歡這些作品，歡迎關注並支持各位插畫師。',
+        '我並非插畫師，而是經常委託創作的人。如果你喜歡這些作品，歡迎關注並支持各位插畫師。',
       contactTextBeforeOdaibako: '若插畫師或讀者希望聯絡，歡迎透過 ',
       odaibakoLinkLabel: 'odaibako',
       contactTextBetweenLinks: ' 或 ',
       emailLinkLabel: '電子郵件',
-      contactTextAfterEmail: '與我聯繫。關於插畫公開或再分發的相關請求將不予回應。',
+      contactTextAfterEmail: '與我聯繫。關於插畫公開或再分發的相關請求恕不回應。',
     },
     update: {
-      noActiveUpdatesFound: '目前沒有活躍更新',
+      noActiveUpdatesFound: '近期沒有新的委託',
       lastUpdate: '最近更新：',
       formatTotalCommissions: count => `目前共 ${count} 筆委託`,
     },
     footer: {
       rightsLines: [
-        '依據服務條款，透過 Skeb 委託的作品之全部權利均歸創作者與原作權利方所有。',
-        '在 Skeb 上委託的所有作品，其著作權歸屬於繪師與合法權利人。',
+        '依據服務條款，透過 Skeb 委託的作品之所有權利歸屬於創作者與原作權利方。',
       ],
-      obscuredNames: '部分角色名稱因規範要求而做遮蔽。',
+      obscuredNames: '部分角色名稱因平台規定而遮蔽。',
       noIndexing: '本站已限制搜尋引擎索引。',
     },
     listing: {
@@ -293,25 +292,25 @@ const HOME_LOCALE_MESSAGES: Record<HomeLocale, HomeLocaleMessages> = {
       openNavigationMenu: '開啟導覽選單',
       loadingCharacters: '載入角色中...',
       loadingYears: '載入年份中...',
-      loadStaleCharacters: '載入',
-      staleCharactersCollapsedTitle: '停更角色預設會先收起',
-      staleCharactersCollapsedHint: '想查看較舊的委託時，再展開即可。',
+      loadArchivedCharacters: '顯示停更角色',
+      archivedCharactersCollapsedTitle: '停更角色預設會先收起',
+      archivedCharactersCollapsedHint: '想查看較舊的委託時，再展開即可。',
       activeCharacters: '活躍角色',
-      staleCharacters: '停更角色',
+      archivedCharacters: '停更角色',
       noActiveCharacters: '目前沒有活躍角色。',
-      noStaleCharacters: '目前沒有停更角色。',
+      noArchivedCharacters: '目前沒有停更角色。',
       sourceCharacter: '角色',
       sourceCreator: '繪師',
       sourceKeyword: '關鍵字',
       sourceDate: '日期',
       sourcePrefix: '於',
-      formatCollapsedStaleSummary: (characterCount, commissionCount) =>
+      formatCollapsedArchivedSummary: (characterCount, commissionCount) =>
         `${characterCount} 位停更角色 / ${commissionCount} 筆委託`,
       formatMatchCount: count => `${count} 筆`,
       formatSearchResultsStatus: (matchedCount, entriesCount) =>
         `搜尋結果：顯示 ${matchedCount} / ${entriesCount} 筆委託。`,
       formatSearchClearedStatus: entriesCount => `已清除搜尋，顯示全部 ${entriesCount} 筆委託。`,
-      formatHiddenStaleResultsNotice: count => `另有 ${count} 筆停更結果未展開。`,
+      formatHiddenArchivedResultsNotice: count => `另有 ${count} 筆停更結果未展開。`,
       searchHelpTitle: '搜尋說明',
       searchHelpIntro: '輸入一個或多個關鍵字來篩選委託。',
       searchHelpSyntaxHeader: '語法',
@@ -360,15 +359,15 @@ const HOME_LOCALE_MESSAGES: Record<HomeLocale, HomeLocaleMessages> = {
         'からお気軽にご連絡ください。なお、イラストの公開や配布に関するご要望には対応いたしかねます。',
     },
     update: {
-      noActiveUpdatesFound: '現在、更新はありません',
+      noActiveUpdatesFound: '最近のコミッションはありません',
       lastUpdate: '最終更新：',
       formatTotalCommissions: count => `現在 ${count} 件のコミッション`,
     },
     footer: {
       rightsLines: [
-        '規約による、Skeb でやり取りされた作品のすべての権利はクリエイターと版権元に帰属する。',
+        '利用規約により、Skeb で依頼された作品のすべての権利はクリエイターおよび版権元に帰属します。',
       ],
-      obscuredNames: '一部のキャラクター名は規約上の理由で伏せています。',
+      obscuredNames: '一部のキャラクター名はプラットフォームの規約により伏せています。',
       noIndexing: 'このサイトは検索エンジンによるインデックスを制限しています。',
     },
     listing: {
@@ -384,9 +383,9 @@ const HOME_LOCALE_MESSAGES: Record<HomeLocale, HomeLocaleMessages> = {
       title: '[ 警告 ]',
       srDescription: '閲覧前に年齢確認が必要です。',
       contentLine1: '閲覧には 18 歳以上である必要があります。',
-      contentLine2: '18 歳未満の方は今すぐ離脱してください。',
+      contentLine2: '18 歳未満の方は今すぐ退出してください。',
       confirmAge: '18歳以上です',
-      leaveNow: '離脱する',
+      leaveNow: '退出する',
     },
     controls: {
       search: '検索',
@@ -406,26 +405,26 @@ const HOME_LOCALE_MESSAGES: Record<HomeLocale, HomeLocaleMessages> = {
       openNavigationMenu: 'ナビゲーションメニューを開く',
       loadingCharacters: 'キャラクターを読み込み中...',
       loadingYears: '年別一覧を読み込み中...',
-      loadStaleCharacters: '読み込む',
-      staleCharactersCollapsedTitle: '停止中キャラクターは初期表示では折りたたまれます',
-      staleCharactersCollapsedHint: '過去のコミッションを見たいときだけ展開できます。',
-      activeCharacters: '進行中キャラクター',
-      staleCharacters: '停止中キャラクター',
-      noActiveCharacters: '進行中のキャラクターはありません。',
-      noStaleCharacters: '停止中のキャラクターはありません。',
+      loadArchivedCharacters: '停止中を表示',
+      archivedCharactersCollapsedTitle: '停止中のキャラクターは初期状態で折りたたみ表示です',
+      archivedCharactersCollapsedHint: '過去のコミッションを見たいときだけ展開できます。',
+      activeCharacters: '活動中キャラクター',
+      archivedCharacters: '停止中キャラクター',
+      noActiveCharacters: '活動中のキャラクターはありません。',
+      noArchivedCharacters: '停止中のキャラクターはありません。',
       sourceCharacter: 'キャラクター',
       sourceCreator: '作者',
       sourceKeyword: 'キーワード',
       sourceDate: '日付',
       sourcePrefix: '対象',
-      formatCollapsedStaleSummary: (characterCount, commissionCount) =>
-        `${characterCount}人の停止中キャラクター / ${commissionCount}件のコミッション`,
+      formatCollapsedArchivedSummary: (characterCount, commissionCount) =>
+        `停止中キャラクター ${characterCount} 人 / コミッション ${commissionCount} 件`,
       formatMatchCount: count => `${count}件`,
       formatSearchResultsStatus: (matchedCount, entriesCount) =>
         `検索結果：${entriesCount}件中 ${matchedCount}件を表示。`,
       formatSearchClearedStatus: entriesCount =>
         `検索をクリアしました。全 ${entriesCount}件を表示。`,
-      formatHiddenStaleResultsNotice: count => `停止中の一致 ${count} 件が未展開です。`,
+      formatHiddenArchivedResultsNotice: count => `停止中の検索結果 ${count} 件が非表示です。`,
       searchHelpTitle: '検索ヘルプ',
       searchHelpIntro: '1つ以上のキーワードでコミッションを絞り込みます。',
       searchHelpSyntaxHeader: '構文',

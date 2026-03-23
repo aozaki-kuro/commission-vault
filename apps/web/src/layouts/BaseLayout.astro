@@ -2,6 +2,7 @@
 import { SiteMeta } from '#config/siteMeta'
 import AnalyticsScript from '#layouts/AnalyticsScript.astro'
 import { Font } from 'astro:assets'
+import { ClientRouter } from 'astro:transitions'
 
 import '#styles/globals.css'
 
@@ -32,6 +33,7 @@ const canonicalUrl = new URL(canonicalPath, SiteMeta.canonicalUrl).toString()
       preload={[
         { weight: 400, style: 'normal' },
         { weight: 600, style: 'normal' },
+        { weight: 700, style: 'normal' },
       ]}
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -39,9 +41,44 @@ const canonicalUrl = new URL(canonicalPath, SiteMeta.canonicalUrl).toString()
     <meta name="application-name" content={SiteMeta.site} />
     <meta name="description" content={description} />
     <meta name="color-scheme" content="light dark" />
+    <!-- Keep the static brand color for crawlers like Discord. -->
     <meta name="theme-color" content={SiteMeta.themeColor} />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171717" />
+    <script is:inline>
+      (() => {
+        const themeColorMeta = document.querySelector('meta[name="theme-color"]')
+        if (!(themeColorMeta instanceof HTMLMetaElement)) {
+          return
+        }
+
+        const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+        const lightThemeColor = '#ffffff'
+        const darkThemeColor = '#171717'
+
+        if (darkModeMediaQuery.media === 'not all') {
+          return
+        }
+
+        const syncThemeColor = (prefersDark = darkModeMediaQuery.matches) => {
+          themeColorMeta.content = prefersDark ? darkThemeColor : lightThemeColor
+        }
+
+        syncThemeColor()
+
+        if (typeof darkModeMediaQuery.addEventListener === 'function') {
+          darkModeMediaQuery.addEventListener('change', (event) => {
+            syncThemeColor(event.matches)
+          })
+          return
+        }
+
+        const legacyAddListener = Reflect.get(darkModeMediaQuery, 'addListener')
+        if (typeof legacyAddListener === 'function') {
+          legacyAddListener.call(darkModeMediaQuery, () => {
+            syncThemeColor()
+          })
+        }
+      })()
+    </script>
     <link rel="canonical" href={canonicalUrl} />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={SiteMeta.site} />
@@ -83,6 +120,7 @@ const canonicalUrl = new URL(canonicalPath, SiteMeta.canonicalUrl).toString()
       )
 : null
     }
+    <ClientRouter />
     <slot name="head" />
     <title>{pageTitle}</title>
   </head>
@@ -93,14 +131,14 @@ const canonicalUrl = new URL(canonicalPath, SiteMeta.canonicalUrl).toString()
       dark:bg-neutral-900
     "
     >
-      <div class="
+      <main class="
         mx-4 min-h-dvh max-w-2xl pt-7 pb-16 text-sm/relaxed
         sm:pt-20 sm:pb-32 sm:text-base
         md:mx-auto md:min-h-screen
       "
       >
         <slot />
-      </div>
+      </main>
       <AnalyticsScript />
     </div>
   </body>

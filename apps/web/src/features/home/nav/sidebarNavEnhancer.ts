@@ -1,34 +1,34 @@
-import type { RequestActiveCharactersLoadOptions } from '#features/home/commission/activeCharactersEvent'
 import type { CommissionViewMode } from '#features/home/commission/CommissionViewModeSearch'
-import type { RequestStaleCharactersLoadOptions, StaleCharactersState, StaleCharactersVisibility } from '#features/home/commission/staleCharactersEvent'
-import type { RequestTimelineViewLoadOptions } from '#features/home/commission/timelineViewEvent'
+import type { RequestActiveCharactersLoadOptions } from '#features/home/commission/loader/activeCharactersEvent'
+import type { ArchivedCharactersState, ArchivedCharactersVisibility, RequestArchivedCharactersLoadOptions } from '#features/home/commission/loader/archivedCharactersEvent'
+import type { RequestTimelineViewLoadOptions } from '#features/home/commission/loader/timelineViewEvent'
+import {
+  prefetchDeferredActiveCharacterTarget,
+  prefetchDeferredArchivedCharacterTarget,
+} from '#features/home/commission/batch/deferredCharacterBatchPrefetch'
+import { normalizeHomeCharacterTargetId } from '#features/home/commission/batch/homeCharacterBatchManifest'
 import {
   ACTIVE_CHARACTERS_LOADED_EVENT,
   hasDeferredActiveCharacterTarget,
   requestActiveCharactersLoad,
 
-} from '#features/home/commission/activeCharactersEvent'
+} from '#features/home/commission/loader/activeCharactersEvent'
 import {
-  prefetchDeferredActiveCharacterTarget,
-  prefetchDeferredStaleCharacterTarget,
-} from '#features/home/commission/deferredCharacterBatchPrefetch'
-import { normalizeHomeCharacterTargetId } from '#features/home/commission/homeCharacterBatchManifest'
-import {
-  hasDeferredStaleCharacterTarget,
-  hasStaleCharacterTarget,
-  isStaleCharactersVisible,
-  requestStaleCharactersLoad,
+  ARCHIVED_CHARACTERS_LOADED_EVENT,
+  ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT,
+  hasArchivedCharacterTarget,
+  hasDeferredArchivedCharacterTarget,
 
-  requestStaleCharactersVisibility,
-  STALE_CHARACTERS_LOADED_EVENT,
-  STALE_CHARACTERS_STATE_CHANGE_EVENT,
+  isArchivedCharactersVisible,
+  requestArchivedCharactersLoad,
+  requestArchivedCharactersVisibility,
 
-} from '#features/home/commission/staleCharactersEvent'
+} from '#features/home/commission/loader/archivedCharactersEvent'
 import {
   hasDeferredTimelineTarget,
   requestTimelineViewLoad,
-} from '#features/home/commission/timelineViewEvent'
-import { TIMELINE_VIEW_LOADED_EVENT } from '#features/home/commission/timelineViewLoader'
+} from '#features/home/commission/loader/timelineViewEvent'
+import { TIMELINE_VIEW_LOADED_EVENT } from '#features/home/commission/loader/timelineViewLoader'
 import {
   readCommissionViewMode,
   replaceCommissionViewModeInAddress,
@@ -43,7 +43,9 @@ import {
   resolveElementsByIds,
 } from '#lib/characters/scrollSpy'
 import {
-  clearHashIfTargetIsStale,
+  clearHashIfTargetIsArchived,
+  getHashFromHref,
+  getHashTarget,
   scrollToHashTargetFromHrefWithoutHash,
 } from '#lib/navigation/hashAnchor'
 import { jumpToCommissionSearch } from '#lib/navigation/jumpToCommissionSearch'
@@ -52,7 +54,7 @@ import { syncHiddenSectionLinkAvailability } from '#lib/navigation/syncHiddenSec
 import {
   loadDeferredHomeNavTarget,
   prefetchHomeNavTarget,
-  revealStaleHomeNavTarget,
+  revealArchivedHomeNavTarget,
 } from './homeNavTargetClient'
 
 const SIDEBAR_ROOT_ID = 'Character List'
@@ -61,8 +63,8 @@ const SEARCH_LINK_SELECTOR = '[data-sidebar-search-link="true"]'
 const CHARACTER_LINK_SELECTOR = '[data-sidebar-character-link="true"]'
 const NAV_PANEL_SELECTOR = '[data-sidebar-nav-panel]'
 const VIEW_MODE_TOGGLE_SELECTOR = '[data-sidebar-view-mode-toggle="true"]'
-const STALE_DETAILS_SELECTOR = '[data-sidebar-stale-details="true"]'
-const STALE_LOAD_TRIGGER_SELECTOR = '[data-load-stale-characters="true"]'
+const ARCHIVED_DETAILS_SELECTOR = '[data-sidebar-archived-details="true"]'
+const ARCHIVED_LOAD_TRIGGER_SELECTOR = '[data-load-archived-characters="true"]'
 const BACK_TO_TOP_BUTTON_SELECTOR = '[data-sidebar-back-to-top-button="true"]'
 
 const ACTIVE_DOT_CLASSES = ['scale-100', 'opacity-100'] as const
@@ -74,14 +76,14 @@ const BACK_TO_TOP_VISIBILITY_SCROLL_THRESHOLD = 360
 interface SidebarNavEnhancerDeps {
   trackEvent: typeof trackRybbitEvent
   jumpToSearch: typeof jumpToCommissionSearch
-  clearHash: typeof clearHashIfTargetIsStale
+  clearHash: typeof clearHashIfTargetIsArchived
   scrollToHashWithoutWrite: typeof scrollToHashTargetFromHrefWithoutHash
   prefetchActiveTarget: (doc: Document, targetId: string | null | undefined) => void
-  prefetchStaleTarget: (doc: Document, targetId: string | null | undefined) => void
+  prefetchArchivedTarget: (doc: Document, targetId: string | null | undefined) => void
   requestActiveLoad: (win: Window, options?: RequestActiveCharactersLoadOptions) => void
-  requestStaleLoad: (win: Window, options?: RequestStaleCharactersLoadOptions) => void
+  requestArchivedLoad: (win: Window, options?: RequestArchivedCharactersLoadOptions) => void
   requestTimelineLoad: (win: Window, options?: RequestTimelineViewLoadOptions) => void
-  requestStaleVisibility: (win: Window, visibility: StaleCharactersVisibility) => void
+  requestArchivedVisibility: (win: Window, visibility: ArchivedCharactersVisibility) => void
 }
 
 interface MountSidebarNavEnhancerOptions {
@@ -100,14 +102,14 @@ interface SidebarActivePanelSnapshot {
 const defaultDeps: SidebarNavEnhancerDeps = {
   trackEvent: trackRybbitEvent,
   jumpToSearch: jumpToCommissionSearch,
-  clearHash: clearHashIfTargetIsStale,
+  clearHash: clearHashIfTargetIsArchived,
   scrollToHashWithoutWrite: scrollToHashTargetFromHrefWithoutHash,
   prefetchActiveTarget: prefetchDeferredActiveCharacterTarget,
-  prefetchStaleTarget: prefetchDeferredStaleCharacterTarget,
+  prefetchArchivedTarget: prefetchDeferredArchivedCharacterTarget,
   requestActiveLoad: requestActiveCharactersLoad,
-  requestStaleLoad: requestStaleCharactersLoad,
+  requestArchivedLoad: requestArchivedCharactersLoad,
   requestTimelineLoad: requestTimelineViewLoad,
-  requestStaleVisibility: requestStaleCharactersVisibility,
+  requestArchivedVisibility: requestArchivedCharactersVisibility,
 }
 
 const getCurrentMode = (win: Window): CommissionViewMode => readCommissionViewMode(win)
@@ -189,7 +191,7 @@ export function mountSidebarNavEnhancer({
   const viewModeToggles = [...controlsRoot.querySelectorAll<HTMLButtonElement>(VIEW_MODE_TOGGLE_SELECTOR)]
   const navPanels = [...navRoot.querySelectorAll<HTMLElement>(NAV_PANEL_SELECTOR)]
   const allSidebarDots = [...navRoot.querySelectorAll<HTMLElement>(SIDEBAR_DOT_SELECTOR)]
-  const staleDetails = navRoot.querySelector<HTMLDetailsElement>(STALE_DETAILS_SELECTOR)
+  const archivedDetails = navRoot.querySelector<HTMLDetailsElement>(ARCHIVED_DETAILS_SELECTOR)
   const backToTopButton = navRoot.querySelector<HTMLButtonElement>(BACK_TO_TOP_BUTTON_SELECTOR)
 
   let clearHashRafId: number | null = null
@@ -344,8 +346,8 @@ export function mountSidebarNavEnhancer({
         return (
           (link.dataset.sidebarCharacterStatus === 'active'
             && hasDeferredActiveCharacterTarget(doc, sectionId))
-          || (link.dataset.sidebarCharacterStatus === 'stale'
-            && hasStaleCharacterTarget(doc, sectionId))
+          || (link.dataset.sidebarCharacterStatus === 'archived'
+            && hasArchivedCharacterTarget(doc, sectionId))
         )
       },
     })
@@ -366,7 +368,7 @@ export function mountSidebarNavEnhancer({
     )
   }
 
-  const scheduleClearHashIfTargetIsStale = () => {
+  const scheduleClearHashIfTargetIsArchived = () => {
     scheduleAnimationFrame({
       rafId: clearHashRafId,
       run: deps.clearHash,
@@ -444,63 +446,63 @@ export function mountSidebarNavEnhancer({
     syncViewModeControls()
     scheduleSyncCharacterLinkAvailability()
     scheduleSyncActiveDots()
-    scheduleClearHashIfTargetIsStale()
+    scheduleClearHashIfTargetIsArchived()
   }
 
-  const openStaleDetails = () => {
-    if (!staleDetails)
+  const openArchivedDetails = () => {
+    if (!archivedDetails)
       return
-    if (staleDetails.open)
+    if (archivedDetails.open)
       return
-    staleDetails.open = true
+    archivedDetails.open = true
   }
 
-  const closeStaleDetails = () => {
-    if (!staleDetails)
+  const closeArchivedDetails = () => {
+    if (!archivedDetails)
       return
-    if (!staleDetails.open)
+    if (!archivedDetails.open)
       return
-    staleDetails.open = false
+    archivedDetails.open = false
   }
 
-  const setStaleDetailsVisibility = (visibility: StaleCharactersVisibility) => {
+  const setArchivedDetailsVisibility = (visibility: ArchivedCharactersVisibility) => {
     if (visibility === 'visible') {
-      openStaleDetails()
+      openArchivedDetails()
       return
     }
 
-    closeStaleDetails()
+    closeArchivedDetails()
   }
 
-  const resolveVisibilityFromStateEvent = (event: Event): StaleCharactersVisibility => {
+  const resolveVisibilityFromStateEvent = (event: Event): ArchivedCharactersVisibility => {
     if (event instanceof CustomEvent && event.detail && typeof event.detail === 'object') {
-      const visibility = (event.detail as Partial<StaleCharactersState>).visibility
+      const visibility = (event.detail as Partial<ArchivedCharactersState>).visibility
       if (visibility === 'visible' || visibility === 'hidden')
         return visibility
     }
 
-    return isStaleCharactersVisible(doc) ? 'visible' : 'hidden'
+    return isArchivedCharactersVisible(doc) ? 'visible' : 'hidden'
   }
 
-  const onStaleDetailsToggle = (event: Event) => {
-    const staleDetails = event.currentTarget
-    if (!(staleDetails instanceof HTMLDetailsElement))
+  const onArchivedDetailsToggle = (event: Event) => {
+    const archivedDetails = event.currentTarget
+    if (!(archivedDetails instanceof HTMLDetailsElement))
       return
 
-    const nextVisibility: StaleCharactersVisibility = staleDetails.open ? 'visible' : 'hidden'
-    const currentVisibility: StaleCharactersVisibility = isStaleCharactersVisible(doc)
+    const nextVisibility: ArchivedCharactersVisibility = archivedDetails.open ? 'visible' : 'hidden'
+    const currentVisibility: ArchivedCharactersVisibility = isArchivedCharactersVisible(doc)
       ? 'visible'
       : 'hidden'
     if (nextVisibility === currentVisibility) {
       return
     }
 
-    deps.requestStaleVisibility(win, nextVisibility)
+    deps.requestArchivedVisibility(win, nextVisibility)
   }
 
-  const onStaleStateChanged = (event: Event) => {
+  const onArchivedStateChanged = (event: Event) => {
     clearActivePanelSnapshot()
-    setStaleDetailsVisibility(resolveVisibilityFromStateEvent(event))
+    setArchivedDetailsVisibility(resolveVisibilityFromStateEvent(event))
     scheduleSyncCharacterLinkAvailability()
     scheduleSyncActiveDots()
   }
@@ -514,13 +516,13 @@ export function mountSidebarNavEnhancer({
         link.closest<HTMLElement>(`${NAV_PANEL_SELECTOR}[data-sidebar-nav-panel="timeline"]`),
       ),
       prefetchActiveTarget: deps.prefetchActiveTarget,
-      prefetchStaleTarget: deps.prefetchStaleTarget,
+      prefetchArchivedTarget: deps.prefetchArchivedTarget,
       requestTimelineLoad: deps.requestTimelineLoad,
       status:
         link.dataset.sidebarCharacterStatus === 'active'
           ? 'active'
-          : link.dataset.sidebarCharacterStatus === 'stale'
-            ? 'stale'
+          : link.dataset.sidebarCharacterStatus === 'archived'
+            ? 'archived'
             : null,
       win,
     })
@@ -562,6 +564,7 @@ export function mountSidebarNavEnhancer({
     requestLoad: () => void
   }) => {
     loadDeferredHomeNavTarget({
+      isReady: () => Boolean(getHashTarget(getHashFromHref(href))),
       loadedEvent,
       onLoaded: () => {
         deps.scrollToHashWithoutWrite(href)
@@ -619,14 +622,14 @@ export function mountSidebarNavEnhancer({
       return
     }
 
-    const staleLoadTrigger = target.closest<HTMLElement>(STALE_LOAD_TRIGGER_SELECTOR)
+    const archivedLoadTrigger = target.closest<HTMLElement>(ARCHIVED_LOAD_TRIGGER_SELECTOR)
     if (
-      staleLoadTrigger
-      && staleLoadTrigger.closest(STALE_DETAILS_SELECTOR)
-      && !isStaleCharactersVisible(doc)
+      archivedLoadTrigger
+      && archivedLoadTrigger.closest(ARCHIVED_DETAILS_SELECTOR)
+      && !isArchivedCharactersVisible(doc)
     ) {
       event.preventDefault()
-      openStaleDetails()
+      openArchivedDetails()
       return
     }
 
@@ -666,16 +669,16 @@ export function mountSidebarNavEnhancer({
       return
     }
 
-    const isStaleLink = characterLink.dataset.sidebarCharacterStatus === 'stale'
-    const isDeferredStaleLink = isStaleLink && hasDeferredStaleCharacterTarget(doc, href)
-    if (isDeferredStaleLink) {
+    const isArchivedLink = characterLink.dataset.sidebarCharacterStatus === 'archived'
+    const isDeferredArchivedLink = isArchivedLink && hasDeferredArchivedCharacterTarget(doc, href)
+    if (isDeferredArchivedLink) {
       event.preventDefault()
       handleDeferredCharacterLinkLoad({
         href,
         link: characterLink,
-        loadedEvent: STALE_CHARACTERS_LOADED_EVENT,
+        loadedEvent: ARCHIVED_CHARACTERS_LOADED_EVENT,
         requestLoad: () => {
-          deps.requestStaleLoad(win, {
+          deps.requestArchivedLoad(win, {
             preserveScroll: false,
             strategy: 'target',
             targetId: href ?? undefined,
@@ -685,15 +688,15 @@ export function mountSidebarNavEnhancer({
       return
     }
 
-    if (isStaleLink && !isStaleCharactersVisible(doc)) {
+    if (isArchivedLink && !isArchivedCharactersVisible(doc)) {
       event.preventDefault()
-      revealStaleHomeNavTarget({
+      revealArchivedHomeNavTarget({
         onVisible: () => {
           deps.scrollToHashWithoutWrite(href)
           scheduleSyncCharacterLinkAvailability({ invalidateSnapshot: true })
           scheduleSyncActiveDots()
         },
-        requestStaleVisibility: deps.requestStaleVisibility,
+        requestArchivedVisibility: deps.requestArchivedVisibility,
         win,
       })
       trackSidebarCharacterClick(characterLink)
@@ -718,7 +721,7 @@ export function mountSidebarNavEnhancer({
   const onSidebarSearchState = () => {
     scheduleSyncCharacterLinkAvailability({ invalidateSnapshot: true })
     scheduleSyncActiveDots()
-    scheduleClearHashIfTargetIsStale()
+    scheduleClearHashIfTargetIsArchived()
   }
   const onViewModeMaybeChanged = () => {
     clearActivePanelSnapshot()
@@ -740,10 +743,10 @@ export function mountSidebarNavEnhancer({
   }
   navRoot.addEventListener('pointerover', onSidebarPreview)
   navRoot.addEventListener('focusin', onSidebarPreview)
-  staleDetails?.addEventListener('toggle', onStaleDetailsToggle)
+  archivedDetails?.addEventListener('toggle', onArchivedDetailsToggle)
   win.addEventListener('scroll', scheduleSyncActiveDots, { passive: true })
   win.addEventListener('resize', scheduleSyncActiveDots)
-  win.addEventListener('scroll', scheduleClearHashIfTargetIsStale, { passive: true })
+  win.addEventListener('scroll', scheduleClearHashIfTargetIsArchived, { passive: true })
   if (backToTopButton) {
     backToTopButton.addEventListener('click', onBackToTopClick)
     win.addEventListener('scroll', scheduleSyncBackToTopVisibility, { passive: true })
@@ -751,12 +754,12 @@ export function mountSidebarNavEnhancer({
     syncBackToTopVisibility()
   }
   win.addEventListener(SIDEBAR_SEARCH_STATE_EVENT, onSidebarSearchState)
-  win.addEventListener(STALE_CHARACTERS_STATE_CHANGE_EVENT, onStaleStateChanged)
+  win.addEventListener(ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT, onArchivedStateChanged)
   win.addEventListener(COMMISSION_VIEW_MODE_CHANGE_EVENT, onViewModeMaybeChanged)
   win.addEventListener('popstate', onViewModeMaybeChanged)
 
   syncAll()
-  setStaleDetailsVisibility(isStaleCharactersVisible(doc) ? 'visible' : 'hidden')
+  setArchivedDetailsVisibility(isArchivedCharactersVisible(doc) ? 'visible' : 'hidden')
 
   return () => {
     if (disposed)
@@ -769,16 +772,16 @@ export function mountSidebarNavEnhancer({
     }
     navRoot.removeEventListener('pointerover', onSidebarPreview)
     navRoot.removeEventListener('focusin', onSidebarPreview)
-    staleDetails?.removeEventListener('toggle', onStaleDetailsToggle)
+    archivedDetails?.removeEventListener('toggle', onArchivedDetailsToggle)
     win.removeEventListener('scroll', scheduleSyncActiveDots)
     win.removeEventListener('resize', scheduleSyncActiveDots)
-    win.removeEventListener('scroll', scheduleClearHashIfTargetIsStale)
+    win.removeEventListener('scroll', scheduleClearHashIfTargetIsArchived)
     if (backToTopButton) {
       backToTopButton.removeEventListener('click', onBackToTopClick)
       win.removeEventListener('scroll', scheduleSyncBackToTopVisibility)
     }
     win.removeEventListener(SIDEBAR_SEARCH_STATE_EVENT, onSidebarSearchState)
-    win.removeEventListener(STALE_CHARACTERS_STATE_CHANGE_EVENT, onStaleStateChanged)
+    win.removeEventListener(ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT, onArchivedStateChanged)
     win.removeEventListener(COMMISSION_VIEW_MODE_CHANGE_EVENT, onViewModeMaybeChanged)
     win.removeEventListener('popstate', onViewModeMaybeChanged)
 

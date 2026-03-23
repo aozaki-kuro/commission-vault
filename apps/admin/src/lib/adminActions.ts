@@ -198,7 +198,7 @@ export async function replaceCommissionSourceImageAction(formData: FormData): Pr
 
 export async function saveCharacterOrder(payload: {
   active: number[]
-  stale: number[]
+  archived: number[]
 }): Promise<FormState> {
   try {
     return sendAdminJson('/api/admin/characters/order', 'PUT', payload)

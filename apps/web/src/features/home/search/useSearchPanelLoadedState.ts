@@ -2,15 +2,15 @@ import {
   ACTIVE_CHARACTERS_LOADED_EVENT,
   readActiveCharactersLoadedBatchCount,
   readActiveCharactersLoadedState,
-} from '#features/home/commission/activeCharactersEvent'
+} from '#features/home/commission/loader/activeCharactersEvent'
 import {
-  readStaleCharactersLoadedBatchCount,
-  readStaleCharactersState,
-  STALE_CHARACTERS_COLLAPSED_EVENT,
-  STALE_CHARACTERS_LOADED_EVENT,
-  STALE_CHARACTERS_STATE_CHANGE_EVENT,
-} from '#features/home/commission/staleCharactersEvent'
-import { TIMELINE_VIEW_LOADED_EVENT } from '#features/home/commission/timelineViewLoader'
+  ARCHIVED_CHARACTERS_COLLAPSED_EVENT,
+  ARCHIVED_CHARACTERS_LOADED_EVENT,
+  ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT,
+  readArchivedCharactersLoadedBatchCount,
+  readArchivedCharactersState,
+} from '#features/home/commission/loader/archivedCharactersEvent'
+import { TIMELINE_VIEW_LOADED_EVENT } from '#features/home/commission/loader/timelineViewLoader'
 import { useCallback, useEffect, useLayoutEffect, useReducer } from 'react'
 
 const useSafeLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
@@ -18,15 +18,15 @@ const useSafeLayoutEffect = typeof window === 'undefined' ? useEffect : useLayou
 interface PanelLoadedState {
   activeLoaded: boolean
   activeBatchCount: number
-  staleLoaded: boolean
-  staleVisible: boolean
-  staleBatchCount: number
+  archivedLoaded: boolean
+  archivedVisible: boolean
+  archivedBatchCount: number
   timelineLoaded: boolean
 }
 
 type PanelLoadedStateAction
   = | { type: 'sync-active', value: { batchCount: number, loaded: boolean } }
-    | { type: 'sync-stale', value: { batchCount: number, loaded: boolean, visible: boolean } }
+    | { type: 'sync-archived', value: { batchCount: number, loaded: boolean, visible: boolean } }
     | { type: 'sync-timeline', value: boolean }
 
 function readCharacterPanelActiveSnapshot() {
@@ -36,12 +36,12 @@ function readCharacterPanelActiveSnapshot() {
   }
 }
 
-function readCharacterPanelStaleSnapshot() {
-  const state = readStaleCharactersState()
+function readCharacterPanelArchivedSnapshot() {
+  const state = readArchivedCharactersState()
   return {
     loaded: state.loaded,
     visible: state.visibility === 'visible',
-    batchCount: readStaleCharactersLoadedBatchCount(),
+    batchCount: readArchivedCharactersLoadedBatchCount(),
   }
 }
 
@@ -55,13 +55,13 @@ function getTimelinePanelLoaded() {
 
 function readPanelLoadedStateSnapshot(): PanelLoadedState {
   const active = readCharacterPanelActiveSnapshot()
-  const stale = readCharacterPanelStaleSnapshot()
+  const archived = readCharacterPanelArchivedSnapshot()
   return {
     activeLoaded: active.loaded,
     activeBatchCount: active.batchCount,
-    staleLoaded: stale.loaded,
-    staleVisible: stale.visible,
-    staleBatchCount: stale.batchCount,
+    archivedLoaded: archived.loaded,
+    archivedVisible: archived.visible,
+    archivedBatchCount: archived.batchCount,
     timelineLoaded: getTimelinePanelLoaded(),
   }
 }
@@ -78,12 +78,12 @@ function panelLoadedStateReducer(
     }
   }
 
-  if (action.type === 'sync-stale') {
+  if (action.type === 'sync-archived') {
     return {
       ...state,
-      staleLoaded: action.value.loaded,
-      staleVisible: action.value.visible,
-      staleBatchCount: action.value.batchCount,
+      archivedLoaded: action.value.loaded,
+      archivedVisible: action.value.visible,
+      archivedBatchCount: action.value.batchCount,
     }
   }
 
@@ -107,10 +107,10 @@ export function useSearchPanelLoadedState() {
     })
   }, [])
 
-  const syncStaleLoaded = useCallback(() => {
-    const snapshot = readCharacterPanelStaleSnapshot()
+  const syncArchivedLoaded = useCallback(() => {
+    const snapshot = readCharacterPanelArchivedSnapshot()
     dispatchPanelLoadedState({
-      type: 'sync-stale',
+      type: 'sync-archived',
       value: snapshot,
     })
   }, [])
@@ -132,17 +132,17 @@ export function useSearchPanelLoadedState() {
   }, [syncActiveLoaded])
 
   useSafeLayoutEffect(() => {
-    syncStaleLoaded()
-    window.addEventListener(STALE_CHARACTERS_STATE_CHANGE_EVENT, syncStaleLoaded)
-    window.addEventListener(STALE_CHARACTERS_LOADED_EVENT, syncStaleLoaded)
-    window.addEventListener(STALE_CHARACTERS_COLLAPSED_EVENT, syncStaleLoaded)
+    syncArchivedLoaded()
+    window.addEventListener(ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT, syncArchivedLoaded)
+    window.addEventListener(ARCHIVED_CHARACTERS_LOADED_EVENT, syncArchivedLoaded)
+    window.addEventListener(ARCHIVED_CHARACTERS_COLLAPSED_EVENT, syncArchivedLoaded)
 
     return () => {
-      window.removeEventListener(STALE_CHARACTERS_STATE_CHANGE_EVENT, syncStaleLoaded)
-      window.removeEventListener(STALE_CHARACTERS_LOADED_EVENT, syncStaleLoaded)
-      window.removeEventListener(STALE_CHARACTERS_COLLAPSED_EVENT, syncStaleLoaded)
+      window.removeEventListener(ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT, syncArchivedLoaded)
+      window.removeEventListener(ARCHIVED_CHARACTERS_LOADED_EVENT, syncArchivedLoaded)
+      window.removeEventListener(ARCHIVED_CHARACTERS_COLLAPSED_EVENT, syncArchivedLoaded)
     }
-  }, [syncStaleLoaded])
+  }, [syncArchivedLoaded])
 
   useSafeLayoutEffect(() => {
     syncTimelineLoaded()
@@ -156,9 +156,9 @@ export function useSearchPanelLoadedState() {
   return {
     activeLoaded: panelLoadedState.activeLoaded,
     activeBatchCount: panelLoadedState.activeBatchCount,
-    staleLoaded: panelLoadedState.staleLoaded,
-    staleVisible: panelLoadedState.staleVisible,
-    staleBatchCount: panelLoadedState.staleBatchCount,
+    archivedLoaded: panelLoadedState.archivedLoaded,
+    archivedVisible: panelLoadedState.archivedVisible,
+    archivedBatchCount: panelLoadedState.archivedBatchCount,
     timelineLoaded: panelLoadedState.timelineLoaded,
   }
 }

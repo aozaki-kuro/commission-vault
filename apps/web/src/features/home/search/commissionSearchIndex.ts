@@ -21,14 +21,14 @@ export interface SearchSuggestionAliasGroup {
 export interface Section {
   id: string
   element: HTMLElement
-  status: 'active' | 'stale' | undefined
+  status: 'active' | 'archived' | undefined
 }
 
 export type SearchIndex = SearchIndexLike<Entry> & {
   entryById: Map<number, Entry>
   hiddenEntryIds: Set<number>
   sections: Section[]
-  staleDivider: HTMLElement | null
+  archivedDivider: HTMLElement | null
   suggestions: Suggestion[]
   visibleEntriesCount: number
   visibleEntryIds: Set<number>
@@ -117,7 +117,7 @@ export function createEmptySearchIndex(): SearchIndex {
     entryById: new Map(),
     hiddenEntryIds: new Set<number>(),
     sections: [],
-    staleDivider: null,
+    archivedDivider: null,
     allIds: new Set<number>(),
     suggestions: [],
     fuse: null,
@@ -146,10 +146,10 @@ function collectVisibilityMetrics(entries: Entry[]) {
 
 function finalizeSearchIndex(entries: Entry[], {
   sections = [],
-  staleDivider = null,
+  archivedDivider = null,
 }: {
   sections?: Section[]
-  staleDivider?: HTMLElement | null
+  archivedDivider?: HTMLElement | null
 } = {}): SearchIndex {
   const { entryById, suggestions } = getStableEntryDerivedState(entries)
 
@@ -158,7 +158,7 @@ function finalizeSearchIndex(entries: Entry[], {
     ...collectVisibilityMetrics(entries),
     entryById,
     sections,
-    staleDivider,
+    archivedDivider,
     suggestions,
   }
 }
@@ -169,21 +169,21 @@ export function getDisplayMetrics({
   disableDomFiltering,
   hasDeferredQuery,
   mode,
-  staleLoaded,
+  archivedLoaded,
 }: {
   searchIndex: SearchIndex
   matchedIds: Set<number>
   disableDomFiltering: boolean
   hasDeferredQuery: boolean
   mode: 'character' | 'timeline'
-  staleLoaded: boolean
+  archivedLoaded: boolean
 }) {
   if (disableDomFiltering) {
     const visibleEntriesCount = searchIndex.entries.length
     return {
       visibleEntriesCount,
       visibleMatchedCount: hasDeferredQuery ? matchedIds.size : visibleEntriesCount,
-      hiddenStaleMatchedCount: 0,
+      hiddenArchivedMatchedCount: 0,
     }
   }
 
@@ -192,13 +192,13 @@ export function getDisplayMetrics({
     return {
       visibleEntriesCount,
       visibleMatchedCount: visibleEntriesCount,
-      hiddenStaleMatchedCount: 0,
+      hiddenArchivedMatchedCount: 0,
     }
   }
 
   let visibleMatchedCount = 0
-  let hiddenStaleMatchedCount = 0
-  const canHaveHiddenStaleMatches = mode === 'character' && !staleLoaded
+  let hiddenArchivedMatchedCount = 0
+  const canHaveHiddenArchivedMatches = mode === 'character' && !archivedLoaded
 
   for (const id of matchedIds) {
     if (visibleEntryIds.has(id)) {
@@ -206,15 +206,15 @@ export function getDisplayMetrics({
       continue
     }
 
-    if (canHaveHiddenStaleMatches && hiddenEntryIds.has(id)) {
-      hiddenStaleMatchedCount += 1
+    if (canHaveHiddenArchivedMatches && hiddenEntryIds.has(id)) {
+      hiddenArchivedMatchedCount += 1
     }
   }
 
   return {
     visibleEntriesCount,
     visibleMatchedCount,
-    hiddenStaleMatchedCount,
+    hiddenArchivedMatchedCount,
   }
 }
 
@@ -237,7 +237,7 @@ function getDomSearchContext(viewMode: 'character' | 'timeline') {
     return {
       domEntries: [] as Array<{ element: HTMLElement, sectionId?: string, domKey?: string }>,
       sections: [] as Section[],
-      staleDivider: null as HTMLElement | null,
+      archivedDivider: null as HTMLElement | null,
     }
   }
 
@@ -251,12 +251,12 @@ function getDomSearchContext(viewMode: 'character' | 'timeline') {
   const sections = Array.from(root.querySelectorAll<HTMLElement>('[data-character-section="true"]'), element => ({
     id: element.id,
     element,
-    status: element.dataset.characterStatus as 'active' | 'stale' | undefined,
+    status: element.dataset.characterStatus as 'active' | 'archived' | undefined,
   }))
 
-  const staleDivider = root.querySelector<HTMLElement>('[data-stale-divider="true"]')
+  const archivedDivider = root.querySelector<HTMLElement>('[data-archived-divider="true"]')
 
-  return { domEntries, sections, staleDivider }
+  return { domEntries, sections, archivedDivider }
 }
 
 export function buildSearchIndex(viewMode: 'character' | 'timeline', externalEntries?: CommissionSearchEntrySource[], options?: {
@@ -272,10 +272,10 @@ export function buildSearchIndex(viewMode: 'character' | 'timeline', externalEnt
     ? {
         domEntries: [] as Array<{ element: HTMLElement, sectionId?: string, domKey?: string }>,
         sections: [] as Section[],
-        staleDivider: null as HTMLElement | null,
+        archivedDivider: null as HTMLElement | null,
       }
     : getDomSearchContext(viewMode)
-  const { domEntries, sections, staleDivider } = domContext
+  const { domEntries, sections, archivedDivider } = domContext
 
   if (externalEntries) {
     const domEntryByKey = new Map(
@@ -291,7 +291,7 @@ export function buildSearchIndex(viewMode: 'character' | 'timeline', externalEnt
       entry.sectionId = domEntry?.sectionId
     }
 
-    return finalizeSearchIndex(entries, { sections, staleDivider })
+    return finalizeSearchIndex(entries, { sections, archivedDivider })
   }
 
   const entries = domEntries.map(({ element, sectionId, domKey }, id) => {
@@ -307,7 +307,7 @@ export function buildSearchIndex(viewMode: 'character' | 'timeline', externalEnt
     }
   })
 
-  return finalizeSearchIndex(entries, { sections, staleDivider })
+  return finalizeSearchIndex(entries, { sections, archivedDivider })
 }
 
 function addRelatedTerms(related: Map<string, Set<string>>, terms: string[]) {

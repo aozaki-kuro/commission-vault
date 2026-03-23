@@ -2,7 +2,7 @@ import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 
-import { generateRssFeed } from '../rss/feed'
+import { generateRssFeed } from '../rss'
 import { createAstroStyleLogger } from './astroLogger'
 import { writeFileIfChanged } from './writeFileIfChanged'
 

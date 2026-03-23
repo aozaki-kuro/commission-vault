@@ -12,6 +12,7 @@ import {
 } from './adminApi'
 
 const baseUrl = 'http://127.0.0.1:8787'
+const noopCtx = { waitUntil: (_p: Promise<unknown>) => {} }
 
 function createJsonResponse(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -119,7 +120,7 @@ function createImagesBucketRecorder(options: {
 function createAdminReadD1Database() {
   const characters = [
     { id: 1, name: 'Alice', status: 'active', sortOrder: 1, commissionCount: 1 },
-    { id: 2, name: 'Beta', status: 'stale', sortOrder: 2, commissionCount: 1 },
+    { id: 2, name: 'Beta', status: 'archived', sortOrder: 2, commissionCount: 1 },
   ]
   const commissions = [
     {
@@ -287,11 +288,11 @@ describe('admin worker CRUD contract routing', () => {
       },
       body: JSON.stringify({
         name: '  Alice  ',
-        status: 'stale',
+        status: 'archived',
       }),
     })
 
-    const response = await handleAdminApiRequest(request, {}, backend)
+    const response = await handleAdminApiRequest(request, {}, noopCtx, backend)
 
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({
@@ -300,7 +301,7 @@ describe('admin worker CRUD contract routing', () => {
     })
     expect(createCharacter).toHaveBeenCalledWith({
       name: 'Alice',
-      status: 'stale',
+      status: 'archived',
     })
   })
 
@@ -319,7 +320,7 @@ describe('admin worker CRUD contract routing', () => {
       }),
     })
 
-    const response = await handleAdminApiRequest(request, {}, backend)
+    const response = await handleAdminApiRequest(request, {}, noopCtx, backend)
 
     expect(response.status).toBe(400)
     expect(await response.json()).toEqual({
@@ -341,11 +342,11 @@ describe('admin worker CRUD contract routing', () => {
       },
       body: JSON.stringify({
         active: ['1', 2],
-        stale: ['3'],
+        archived: ['3'],
       }),
     })
 
-    const response = await handleAdminApiRequest(request, {}, backend)
+    const response = await handleAdminApiRequest(request, {}, noopCtx, backend)
 
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({
@@ -354,7 +355,7 @@ describe('admin worker CRUD contract routing', () => {
     })
     expect(updateCharacterOrder).toHaveBeenCalledWith({
       active: [1, 2],
-      stale: [3],
+      archived: [3],
     })
   })
 
@@ -378,7 +379,7 @@ describe('admin worker CRUD contract routing', () => {
       body: formData,
     })
 
-    const response = await handleAdminApiRequest(request, {}, backend)
+    const response = await handleAdminApiRequest(request, {}, noopCtx, backend)
 
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({
@@ -415,7 +416,7 @@ describe('admin worker CRUD contract routing', () => {
       body: formData,
     })
 
-    const response = await handleAdminApiRequest(request, {}, backend)
+    const response = await handleAdminApiRequest(request, {}, noopCtx, backend)
 
     expect(response.status).toBe(400)
     expect(await response.json()).toEqual({
@@ -446,7 +447,7 @@ describe('admin worker CRUD contract routing', () => {
       }),
     })
 
-    const response = await handleAdminApiRequest(request, {}, backend)
+    const response = await handleAdminApiRequest(request, {}, noopCtx, backend)
 
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({
@@ -471,6 +472,7 @@ describe('admin worker CRUD contract routing', () => {
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/unknown`, { method: 'GET' }),
       {},
+      noopCtx,
       backend,
     )
 
@@ -497,7 +499,7 @@ describe('admin worker CRUD contract routing', () => {
       }),
     })
 
-    const response = await handleAdminApiRequest(request, {}, backend)
+    const response = await handleAdminApiRequest(request, {}, noopCtx, backend)
 
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({
@@ -529,7 +531,7 @@ describe('admin worker CRUD contract routing', () => {
         },
         body: JSON.stringify({
           name: '  Alice  ',
-          status: 'stale',
+          status: 'archived',
         }),
       }),
       { DB: db },
@@ -542,7 +544,7 @@ describe('admin worker CRUD contract routing', () => {
     })
     const insertOps = executions.filter(item => item.query.includes('INSERT INTO characters'))
     expect(insertOps).toHaveLength(1)
-    expect(insertOps[0]?.values).toEqual(['Alice', 'stale', 5])
+    expect(insertOps[0]?.values).toEqual(['Alice', 'archived', 5])
   })
 
   it('handles update-character natively when DB binding exists', async () => {
@@ -589,7 +591,7 @@ describe('admin worker CRUD contract routing', () => {
         },
         body: JSON.stringify({
           active: [1, 2],
-          stale: [3],
+          archived: [3],
         }),
       }),
       { DB: db },
@@ -607,7 +609,7 @@ describe('admin worker CRUD contract routing', () => {
     expect(updateOps.map(item => item.values)).toEqual([
       [1, 'active', 1],
       [2, 'active', 2],
-      [3, 'stale', 3],
+      [3, 'archived', 3],
     ])
   })
 
@@ -883,6 +885,7 @@ describe('admin worker CRUD contract routing', () => {
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/bootstrap`, { method: 'GET' }),
       { DB: db },
+      noopCtx,
       backend,
     )
 
@@ -899,7 +902,7 @@ describe('admin worker CRUD contract routing', () => {
         {
           id: 2,
           name: 'Beta',
-          status: 'stale',
+          status: 'archived',
           sortOrder: 2,
           commissionCount: 1,
         },
@@ -951,6 +954,7 @@ describe('admin worker CRUD contract routing', () => {
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/aliases/bootstrap`, { method: 'GET' }),
       { DB: db },
+      noopCtx,
       backend,
     )
 
@@ -1012,6 +1016,7 @@ describe('admin worker CRUD contract routing', () => {
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/suggestion`, { method: 'GET' }),
       { DB: db },
+      noopCtx,
       backend,
     )
 
@@ -1039,6 +1044,7 @@ describe('admin worker CRUD contract routing', () => {
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/characters/1/commissions`, { method: 'GET' }),
       { DB: db },
+      noopCtx,
       backend,
     )
 
@@ -1081,6 +1087,7 @@ describe('admin worker CRUD contract routing', () => {
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/source-image/20250301_alice-maker`, { method: 'GET' }),
       { IMAGES: { get } },
+      noopCtx,
       backend,
     )
 
@@ -1127,6 +1134,7 @@ describe('admin worker CRUD contract routing', () => {
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/source-image/20250301_alice-maker`, { method: 'GET' }),
       { DB: db, IMAGES: { get } },
+      noopCtx,
       backend,
     )
 
@@ -1154,6 +1162,7 @@ describe('admin worker CRUD contract routing', () => {
     const response = await handleAdminApiRequest(
       request,
       { DB: db },
+      noopCtx,
       backend,
     )
 
@@ -1197,6 +1206,7 @@ describe('admin worker CRUD contract routing', () => {
     const response = await handleAdminApiRequest(
       request,
       { DB: db },
+      noopCtx,
       backend,
     )
 
@@ -1228,6 +1238,7 @@ describe('admin worker CRUD contract routing', () => {
         }),
       }),
       { DB: db },
+      noopCtx,
       backend,
     )
 
@@ -1259,6 +1270,7 @@ describe('admin worker CRUD contract routing', () => {
         }),
       }),
       {},
+      noopCtx,
       backend,
     )
 
@@ -1297,6 +1309,7 @@ describe('admin worker CRUD contract routing', () => {
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/bootstrap`, { method: 'GET' }),
       {},
+      noopCtx,
       backend,
     )
 
@@ -1313,6 +1326,7 @@ describe('admin worker CRUD contract routing', () => {
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/assets/refresh`, { method: 'POST' }),
       {},
+      noopCtx,
       backend,
     )
 

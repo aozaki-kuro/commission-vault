@@ -1,6 +1,6 @@
 import {
-  STALE_CHARACTERS_STATE_CHANGE_EVENT,
-} from '#features/home/commission/staleCharactersEvent'
+  ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT,
+} from '#features/home/commission/loader/archivedCharactersEvent'
 import { HOME_SCROLL_RESTORE_ABORT_EVENT } from '#features/home/events'
 import { ANALYTICS_EVENTS } from '#lib/analytics/events'
 import { SIDEBAR_SEARCH_STATE_EVENT } from '#lib/navigation/sidebarSearchState'
@@ -25,10 +25,10 @@ function renderSidebarRoot() {
           <a href="#section-alpha" data-sidebar-character-link="true" data-sidebar-character-status="active" data-sidebar-title-id="title-alpha">Alpha</a>
         </li>
         <li>
-          <details data-sidebar-stale-details="true">
-            <summary data-load-stale-characters="true">Stale Characters</summary>
-            <span data-sidebar-dot-for="title-stale" class="scale-0 opacity-0"></span>
-            <a href="#section-stale" data-sidebar-character-link="true" data-sidebar-character-status="stale" data-sidebar-title-id="title-stale">Stale</a>
+          <details data-sidebar-archived-details="true">
+            <summary data-load-archived-characters="true">Archived Characters</summary>
+            <span data-sidebar-dot-for="title-archived" class="scale-0 opacity-0"></span>
+            <a href="#section-archived" data-sidebar-character-link="true" data-sidebar-character-status="archived" data-sidebar-title-id="title-archived">Archived</a>
           </details>
         </li>
       </ul>
@@ -50,7 +50,7 @@ function renderSidebarRoot() {
     <section id="section-alpha"></section>
     <h2 id="timeline-title-2026"></h2>
     <section id="timeline-year-2026"></section>
-    <div data-commission-view-panel="character" data-stale-loaded="false" data-stale-visibility="hidden"></div>
+    <div data-commission-view-panel="character" data-archived-loaded="false" data-archived-visibility="hidden"></div>
   `
 }
 
@@ -195,22 +195,22 @@ describe('sidebarNavEnhancer', () => {
     window.removeEventListener(HOME_SCROLL_RESTORE_ABORT_EVENT, onRestoreAbort)
   })
 
-  it('requests stale loading then scrolls when stale link is clicked', () => {
+  it('requests archived loading then scrolls when archived link is clicked', () => {
     const scrollToHashWithoutWrite = vi.fn()
     const onRestoreAbort = vi.fn()
-    const requestStaleVisibility = vi.fn((win, visibility: 'visible' | 'hidden') => {
+    const requestArchivedVisibility = vi.fn((win, visibility: 'visible' | 'hidden') => {
       expect(visibility).toBe('visible')
-      const staleSection = document.createElement('section')
-      staleSection.id = 'section-stale'
-      document.body.append(staleSection)
+      const archivedSection = document.createElement('section')
+      archivedSection.id = 'section-archived'
+      document.body.append(archivedSection)
       document
         .querySelector<HTMLElement>('[data-commission-view-panel="character"]')
-        ?.setAttribute('data-stale-visibility', 'visible')
+        ?.setAttribute('data-archived-visibility', 'visible')
       document
         .querySelector<HTMLElement>('[data-commission-view-panel="character"]')
-        ?.setAttribute('data-stale-loaded', 'false')
+        ?.setAttribute('data-archived-loaded', 'false')
       win.dispatchEvent(
-        new CustomEvent(STALE_CHARACTERS_STATE_CHANGE_EVENT, {
+        new CustomEvent(ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT, {
           detail: { visibility: 'visible', loaded: false },
         }),
       )
@@ -220,68 +220,68 @@ describe('sidebarNavEnhancer', () => {
     const cleanup = mountSidebarNavEnhancer({
       deps: {
         scrollToHashWithoutWrite,
-        requestStaleVisibility,
+        requestArchivedVisibility,
       },
     })
 
-    const staleLink = [...document.querySelectorAll<HTMLAnchorElement>('[data-sidebar-character-link="true"]')].find(link => link.getAttribute('href') === '#section-stale')
-    staleLink?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    const archivedLink = [...document.querySelectorAll<HTMLAnchorElement>('[data-sidebar-character-link="true"]')].find(link => link.getAttribute('href') === '#section-archived')
+    archivedLink?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
 
-    expect(requestStaleVisibility).toHaveBeenCalledTimes(1)
+    expect(requestArchivedVisibility).toHaveBeenCalledTimes(1)
     expect(onRestoreAbort).toHaveBeenCalledTimes(1)
-    expect(scrollToHashWithoutWrite).toHaveBeenCalledWith('#section-stale')
+    expect(scrollToHashWithoutWrite).toHaveBeenCalledWith('#section-archived')
 
     cleanup()
     window.removeEventListener(HOME_SCROLL_RESTORE_ABORT_EVENT, onRestoreAbort)
   })
 
-  it('collapses stale sections when stale details close after content is loaded', () => {
+  it('collapses archived sections when archived details close after content is loaded', () => {
     document
       .querySelector<HTMLElement>('[data-commission-view-panel="character"]')
-      ?.setAttribute('data-stale-loaded', 'true')
+      ?.setAttribute('data-archived-loaded', 'true')
     document
       .querySelector<HTMLElement>('[data-commission-view-panel="character"]')
-      ?.setAttribute('data-stale-visibility', 'visible')
+      ?.setAttribute('data-archived-visibility', 'visible')
 
-    const requestStaleVisibility = vi.fn()
+    const requestArchivedVisibility = vi.fn()
     const cleanup = mountSidebarNavEnhancer({
       deps: {
-        requestStaleVisibility,
+        requestArchivedVisibility,
       },
     })
 
-    const staleDetails = document.querySelector<HTMLDetailsElement>(
-      '[data-sidebar-stale-details="true"]',
+    const archivedDetails = document.querySelector<HTMLDetailsElement>(
+      '[data-sidebar-archived-details="true"]',
     )
-    staleDetails!.open = true
-    staleDetails!.open = false
-    staleDetails?.dispatchEvent(new Event('toggle'))
+    archivedDetails!.open = true
+    archivedDetails!.open = false
+    archivedDetails?.dispatchEvent(new Event('toggle'))
 
-    expect(requestStaleVisibility).toHaveBeenCalledWith(window, 'hidden')
+    expect(requestArchivedVisibility).toHaveBeenCalledWith(window, 'hidden')
 
     cleanup()
   })
 
-  it('closes stale details when stale sections collapse externally', () => {
-    const staleDetails = document.querySelector<HTMLDetailsElement>(
-      '[data-sidebar-stale-details="true"]',
+  it('closes archived details when archived sections collapse externally', () => {
+    const archivedDetails = document.querySelector<HTMLDetailsElement>(
+      '[data-sidebar-archived-details="true"]',
     )
-    staleDetails!.open = true
+    archivedDetails!.open = true
 
     const cleanup = mountSidebarNavEnhancer()
     document
       .querySelector<HTMLElement>('[data-commission-view-panel="character"]')
-      ?.setAttribute('data-stale-visibility', 'hidden')
+      ?.setAttribute('data-archived-visibility', 'hidden')
     document
       .querySelector<HTMLElement>('[data-commission-view-panel="character"]')
-      ?.setAttribute('data-stale-loaded', 'false')
+      ?.setAttribute('data-archived-loaded', 'false')
     window.dispatchEvent(
-      new CustomEvent(STALE_CHARACTERS_STATE_CHANGE_EVENT, {
+      new CustomEvent(ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT, {
         detail: { visibility: 'hidden', loaded: false },
       }),
     )
 
-    expect(staleDetails?.open).toBe(false)
+    expect(archivedDetails?.open).toBe(false)
     cleanup()
   })
 })

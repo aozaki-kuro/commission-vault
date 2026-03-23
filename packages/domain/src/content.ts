@@ -15,7 +15,7 @@ export interface CharacterCommissions {
 export type CommissionCollection = CharacterCommissions[]
 export type Props = CommissionCollection
 
-export type CharacterStatus = 'active' | 'stale'
+export type CharacterStatus = 'active' | 'archived'
 
 export interface CharacterRecord {
   id: number

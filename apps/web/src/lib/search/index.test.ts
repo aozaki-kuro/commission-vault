@@ -7,11 +7,9 @@ import {
   applySuggestionToQuery,
   buildStrictTermIndex,
   collectSuggestions,
-  extractSuggestionContextQuery,
-  extractSuggestionQuery,
   filterSuggestions,
   getMatchedEntryIds,
-  getSuggestionTokenOperator,
+  parseSuggestionInputState,
   parseSuggestionRows,
   resolveSuggestionContextMatchedIds,
 
@@ -121,10 +119,11 @@ describe('search utils (trimmed + real db sample)', () => {
 
   it('parses token operator around quoted terms correctly', () => {
     const rawQuery = '"Kanaut Nishe" | N'
+    const parsed = parseSuggestionInputState(rawQuery)
 
-    expect(extractSuggestionQuery(rawQuery)).toBe('N')
-    expect(extractSuggestionContextQuery(rawQuery)).toBe('"Kanaut Nishe" |')
-    expect(getSuggestionTokenOperator(rawQuery)).toBe('or')
+    expect(parsed.suggestionQuery).toBe('N')
+    expect(parsed.suggestionContextQuery).toBe('"Kanaut Nishe" |')
+    expect(parsed.suggestionOperator).toBe('or')
   })
 
   it('filters creator suggestions by context and exclusion with real counts', () => {
@@ -135,15 +134,15 @@ describe('search utils (trimmed + real db sample)', () => {
 
     const [creator, ids] = target!
     const rawQuery = creator
-    const suggestionQuery = extractSuggestionQuery(rawQuery)
-    const suggestionContextQuery = extractSuggestionContextQuery(rawQuery)
+    const parsed = parseSuggestionInputState(rawQuery)
     const matchedIds = getMatchedEntryIds(rawQuery, searchIndex)
     const contextIds = resolveSuggestionContextMatchedIds({
       rawQuery,
-      suggestionQuery,
-      suggestionContextQuery,
+      suggestionQuery: parsed.suggestionQuery,
+      suggestionContextQuery: parsed.suggestionContextQuery,
       matchedIds,
       index: searchIndex,
+      suggestionOperator: parsed.suggestionOperator,
     })
 
     const narrowedContext = new Set([ids[0]])
@@ -151,14 +150,14 @@ describe('search utils (trimmed + real db sample)', () => {
     const includeResult = filterSuggestions({
       entries: suggestionEntries,
       suggestions,
-      suggestionQuery,
+      suggestionQuery: parsed.suggestionQuery,
       suggestionContextMatchedIds: narrowedContext,
     }).find(item => item.term === creator)
 
     const excludeResult = filterSuggestions({
       entries: suggestionEntries,
       suggestions,
-      suggestionQuery,
+      suggestionQuery: parsed.suggestionQuery,
       suggestionContextMatchedIds: new Set(ids.slice(0, 2)),
       isExclusionSuggestion: true,
     }).find(item => item.term === creator)

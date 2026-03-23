@@ -10,22 +10,22 @@ interface CharacterProps {
 
 export interface CommissionStatus {
   active: CharacterProps[]
-  stale: CharacterProps[]
+  archived: CharacterProps[]
 }
 
-// 将角色记录划分为 active/stale 状态供前端消费
+// 将角色记录划分为 active/archived 状态供前端消费
 export function buildCharacterStatus(records: CharacterRecord[]): CommissionStatus {
   const active: CharacterProps[] = []
-  const stale: CharacterProps[] = []
+  const archived: CharacterProps[] = []
 
   records.forEach((record) => {
     const entry = { DisplayName: record.name }
     if (record.status === 'active')
       active.push(entry)
-    else stale.push(entry)
+    else archived.push(entry)
   })
 
-  return { active, stale }
+  return { active, archived }
 }
 
 const staticCharacterStatus: CommissionStatus = buildCharacterStatus(characterRecords)

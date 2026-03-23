@@ -5,7 +5,7 @@ import {
   normalizeCharacterAliasKey,
   normalizeCharacterAliasName,
   parseCharacterAliasesJson,
-} from '#lib/characterAliases/shared'
+} from '@commission-index/domain'
 import { getGeneratedFactSourceContent } from './generatedFactSource'
 
 const isDevelopment = process.env.NODE_ENV === 'development'

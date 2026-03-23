@@ -1,28 +1,28 @@
-import type { RequestActiveCharactersLoadOptions } from '#features/home/commission/activeCharactersEvent'
-import type { RequestStaleCharactersLoadOptions } from '#features/home/commission/staleCharactersEvent'
-import type { RequestTimelineViewLoadOptions } from '#features/home/commission/timelineViewEvent'
+import type { RequestActiveCharactersLoadOptions } from '#features/home/commission/loader/activeCharactersEvent'
+import type { RequestArchivedCharactersLoadOptions } from '#features/home/commission/loader/archivedCharactersEvent'
+import type { RequestTimelineViewLoadOptions } from '#features/home/commission/loader/timelineViewEvent'
+import { getHomeCharacterBatchTotalCount } from '#features/home/commission/batch/homeCharacterBatchClient'
 import {
   ACTIVE_CHARACTERS_LOADED_EVENT,
   readActiveCharactersLoadedBatchCount,
   readActiveCharactersLoadedState,
   requestActiveCharactersLoad,
 
-} from '#features/home/commission/activeCharactersEvent'
-import { getHomeCharacterBatchTotalCount } from '#features/home/commission/homeCharacterBatchClient'
+} from '#features/home/commission/loader/activeCharactersEvent'
 import {
-  readStaleCharactersLoadedBatchCount,
-  readStaleCharactersState,
-  requestStaleCharactersLoad,
+  ARCHIVED_CHARACTERS_LOADED_EVENT,
+  readArchivedCharactersLoadedBatchCount,
+  readArchivedCharactersState,
 
-  STALE_CHARACTERS_LOADED_EVENT,
-} from '#features/home/commission/staleCharactersEvent'
+  requestArchivedCharactersLoad,
+} from '#features/home/commission/loader/archivedCharactersEvent'
 import {
   getHomeTimelineBatchTotalCount,
   readTimelineLoadedBatchCount,
   readTimelineLoadedState,
   requestTimelineViewLoad,
-} from '#features/home/commission/timelineViewEvent'
-import { TIMELINE_VIEW_LOADED_EVENT } from '#features/home/commission/timelineViewLoader'
+} from '#features/home/commission/loader/timelineViewEvent'
+import { TIMELINE_VIEW_LOADED_EVENT } from '#features/home/commission/loader/timelineViewLoader'
 import { readCommissionViewMode } from '#features/home/commission/viewModeState'
 import { COMMISSION_VIEW_MODE_CHANGE_EVENT, HOME_SCROLL_RESTORE_ABORT_EVENT } from '#features/home/events'
 import { restoreScrollPosition as restoreWindowScrollPosition } from '#lib/navigation/restoreScrollPosition'
@@ -43,7 +43,7 @@ interface SavedHomeScrollState {
 interface HomeScrollRestoreDeps {
   readNavigationType: (win: Window) => string
   requestActiveLoad: (win: Window, options?: RequestActiveCharactersLoadOptions) => void
-  requestStaleLoad: (win: Window, options?: RequestStaleCharactersLoadOptions) => void
+  requestArchivedLoad: (win: Window, options?: RequestArchivedCharactersLoadOptions) => void
   requestTimelineLoad: (win: Window, options?: RequestTimelineViewLoadOptions) => void
   restoreScrollPosition: (win: Window, position: { x: number, y: number }) => void
 }
@@ -60,7 +60,7 @@ const defaultDeps: HomeScrollRestoreDeps = {
     return navigationEntry && 'type' in navigationEntry ? String(navigationEntry.type) : ''
   },
   requestActiveLoad: requestActiveCharactersLoad,
-  requestStaleLoad: requestStaleCharactersLoad,
+  requestArchivedLoad: requestArchivedCharactersLoad,
   requestTimelineLoad: requestTimelineViewLoad,
   restoreScrollPosition: restoreWindowScrollPosition,
 }
@@ -222,7 +222,7 @@ export function mountHomeScrollRestore({
 
   let disposed = false
   let restored = false
-  const staleTotalBatchCount = getHomeCharacterBatchTotalCount({ doc, status: 'stale' })
+  const archivedTotalBatchCount = getHomeCharacterBatchTotalCount({ doc, status: 'archived' })
   const revealFallbackTimer = win.setTimeout(() => {
     revealRestoringShell(win)
   }, 3000)
@@ -267,9 +267,13 @@ export function mountHomeScrollRestore({
       return
 
     if (readCommissionViewMode(win) === 'timeline') {
-      if (!isTimelineLoaded(doc) && hasPendingTimelineSections(doc)) {
-        deps.requestTimelineLoad(win, { strategy: 'all' })
-        return
+      if (needsMoreContentForRestore(win, savedState)) {
+        if (!isTimelineLoaded(doc) && hasPendingTimelineSections(doc)) {
+          deps.requestTimelineLoad(win, {
+            targetBatchCount: readTimelineLoadedBatchCount(doc) + RESTORE_BATCH_WINDOW,
+          })
+          return
+        }
       }
 
       completeRestore({ schedule: true })
@@ -285,12 +289,12 @@ export function mountHomeScrollRestore({
       }
 
       if (
-        !readStaleCharactersState(doc).loaded
-        && readStaleCharactersLoadedBatchCount(doc) < staleTotalBatchCount
+        !readArchivedCharactersState(doc).loaded
+        && readArchivedCharactersLoadedBatchCount(doc) < archivedTotalBatchCount
       ) {
-        deps.requestStaleLoad(win, {
+        deps.requestArchivedLoad(win, {
           preserveScroll: false,
-          targetBatchCount: readStaleCharactersLoadedBatchCount(doc) + RESTORE_BATCH_WINDOW,
+          targetBatchCount: readArchivedCharactersLoadedBatchCount(doc) + RESTORE_BATCH_WINDOW,
         })
         return
       }
@@ -300,7 +304,7 @@ export function mountHomeScrollRestore({
   }
 
   win.addEventListener(ACTIVE_CHARACTERS_LOADED_EVENT, tryRestore)
-  win.addEventListener(STALE_CHARACTERS_LOADED_EVENT, tryRestore)
+  win.addEventListener(ARCHIVED_CHARACTERS_LOADED_EVENT, tryRestore)
   win.addEventListener(TIMELINE_VIEW_LOADED_EVENT, tryRestore)
   win.addEventListener(COMMISSION_VIEW_MODE_CHANGE_EVENT, tryRestore)
   win.addEventListener(HOME_SCROLL_RESTORE_ABORT_EVENT, abortRestore)
@@ -315,7 +319,7 @@ export function mountHomeScrollRestore({
     win.removeEventListener('pagehide', persistNow)
     win.removeEventListener('beforeunload', persistNow)
     win.removeEventListener(ACTIVE_CHARACTERS_LOADED_EVENT, tryRestore)
-    win.removeEventListener(STALE_CHARACTERS_LOADED_EVENT, tryRestore)
+    win.removeEventListener(ARCHIVED_CHARACTERS_LOADED_EVENT, tryRestore)
     win.removeEventListener(TIMELINE_VIEW_LOADED_EVENT, tryRestore)
     win.removeEventListener(COMMISSION_VIEW_MODE_CHANGE_EVENT, tryRestore)
     win.removeEventListener(HOME_SCROLL_RESTORE_ABORT_EVENT, abortRestore)

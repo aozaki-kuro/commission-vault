@@ -22,7 +22,13 @@ const { groups, characterAliasesMap, creatorAliasesMap, keywordAliasesMap }
       data-total-commissions={group.entries.length}
       class="pb-6"
     >
-      <div id={group.titleId} class="mb-2 pt-4">
+      <div
+        id={group.titleId}
+        class="
+          mb-2 pt-6
+          md:pt-8
+        "
+      >
         <h2 class="group relative">
           {group.yearKey}
           <a
@@ -31,6 +37,7 @@ const { groups, characterAliasesMap, creatorAliasesMap, keywordAliasesMap }
               ml-2 font-bold text-gray-400 no-underline opacity-0
               transition-opacity duration-200
               group-hover:opacity-100
+              focus-visible:opacity-100 focus-visible:outline-none
               dark:text-gray-600
             "
           >

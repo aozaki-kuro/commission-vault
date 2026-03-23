@@ -5,6 +5,15 @@ const ACTIVE_VIEW_PANEL_SELECTOR
 const BACKSLASH_PATTERN = /\\/g
 const DOUBLE_QUOTE_PATTERN = /"/g
 
+function decodeHashId(value: string) {
+  try {
+    return decodeURIComponent(value)
+  }
+  catch {
+    return ''
+  }
+}
+
 function escapeAttributeSelectorValue(value: string) {
   return value.replace(BACKSLASH_PATTERN, '\\\\').replace(DOUBLE_QUOTE_PATTERN, '\\"')
 }
@@ -15,7 +24,7 @@ export function getHashTarget(hash: string): HTMLElement | null {
   if (!hash || !hash.startsWith('#'))
     return null
 
-  const id = decodeURIComponent(hash.slice(1))
+  const id = decodeHashId(hash.slice(1))
   if (!id)
     return null
 
@@ -28,7 +37,7 @@ export function getHashTarget(hash: string): HTMLElement | null {
   }
 
   const activePanel = document.querySelector<HTMLElement>(ACTIVE_VIEW_PANEL_SELECTOR)
-  return activePanel?.querySelector<HTMLElement>(getExactIdSelector(id)) ?? directMatch
+  return activePanel?.querySelector<HTMLElement>(getExactIdSelector(id)) ?? null
 }
 
 export function getHashFromHref(rawHref: string | null): string {
@@ -58,7 +67,7 @@ export function clearLocationHash() {
   history.replaceState(null, '', `${pathname}${search}`)
 }
 
-export function clearHashIfTargetIsStale() {
+export function clearHashIfTargetIsArchived() {
   const hash = window.location.hash
   if (!hash)
     return

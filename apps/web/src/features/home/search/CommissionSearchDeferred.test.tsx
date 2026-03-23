@@ -35,6 +35,7 @@ vi.mock('#features/home/search/CommissionSearch', () => ({
 
 describe('commissionSearchDeferred', () => {
   const appendedEntries: HTMLElement[] = []
+  let fetchMock: ReturnType<typeof vi.fn>
   const appendSearchEntry = (searchSuggest: string) => {
     const element = document.createElement('article')
     element.dataset.commissionEntry = 'true'
@@ -45,7 +46,7 @@ describe('commissionSearchDeferred', () => {
     appendedEntries.push(element)
   }
 
-  const appendStaleTemplateEntry = ({
+  const appendArchivedTemplateEntry = ({
     searchText,
     searchSuggest,
   }: {
@@ -53,12 +54,12 @@ describe('commissionSearchDeferred', () => {
     searchSuggest: string
   }) => {
     const template = document.createElement('template')
-    template.dataset.staleSectionsTemplate = 'true'
+    template.dataset.archivedSectionsTemplate = 'true'
     template.innerHTML = `
       <section>
         <article
           data-commission-entry="true"
-          data-commission-search-key="stale-template"
+          data-commission-search-key="archived-template"
           data-search-text="${searchText}"
           data-search-suggest="${searchSuggest}"
         ></article>
@@ -94,6 +95,8 @@ describe('commissionSearchDeferred', () => {
   beforeEach(() => {
     mockCommissionSearch.mockClear()
     window.history.replaceState(null, '', '/')
+    fetchMock = vi.fn(() => new Promise(() => {}))
+    vi.stubGlobal('fetch', fetchMock)
   })
 
   afterEach(() => {
@@ -116,7 +119,7 @@ describe('commissionSearchDeferred', () => {
     )
   })
 
-  it('passes template-backed active and stale entries to search in development', async () => {
+  it('passes template-backed active and archived entries to search in development', async () => {
     const { default: CommissionSearchDeferred } = await loadDeferredModule()
 
     appendSearchEntry('Keyword\tvisible')
@@ -124,9 +127,9 @@ describe('commissionSearchDeferred', () => {
       searchText: 'activeword hidden',
       searchSuggest: 'Character\tActive',
     })
-    appendStaleTemplateEntry({
-      searchText: 'staleword hidden',
-      searchSuggest: 'Character\tStale',
+    appendArchivedTemplateEntry({
+      searchText: 'archivedword hidden',
+      searchSuggest: 'Character\tArchived',
     })
 
     render(<CommissionSearchDeferred />)
@@ -140,10 +143,49 @@ describe('commissionSearchDeferred', () => {
               searchText: 'activeword hidden',
             }),
             expect.objectContaining({
-              domKey: 'stale-template',
-              searchText: 'staleword hidden',
+              domKey: 'archived-template',
+              searchText: 'archivedword hidden',
             }),
           ]),
+        }),
+      )
+    })
+  })
+
+  it('loads the full search index route and overrides the initial dom seed', async () => {
+    const fetchedEntries = [
+      {
+        id: 0,
+        domKey: 'visible-0',
+        searchText: 'keyword visible',
+        searchSuggest: 'Keyword\tvisible',
+      },
+      {
+        id: 1,
+        domKey: 'fetched-only',
+        searchText: 'keyword fetched-only',
+        searchSuggest: 'Keyword\tfetched-only',
+      },
+    ]
+    fetchMock = vi.fn(async () =>
+      new Response(JSON.stringify(fetchedEntries), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { default: CommissionSearchDeferred } = await loadDeferredModule()
+
+    appendSearchEntry('Keyword\tvisible')
+
+    render(<CommissionSearchDeferred />)
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('/search/home-search-entries.json')
+      expect(mockCommissionSearch).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          externalEntries: fetchedEntries,
         }),
       )
     })

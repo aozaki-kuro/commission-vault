@@ -230,12 +230,11 @@ export default function CommissionSearchDeferred({
   suggestionAliasGroups = [],
 }: CommissionSearchDeferredProps = {}) {
   const controls = resolveHomeSearchControls(locale)
-  const shouldLoadFetchedEntries = Boolean(import.meta.env?.PROD)
   const [popularKeywordPage, setPopularKeywordPage] = useState(0)
   const [hasDismissedFeaturedKeywords, setHasDismissedFeaturedKeywords] = useState(false)
   const [externalEntries, setExternalEntries] = useState<CommissionSearchEntrySource[] | null>(
     () => {
-      if (shouldLoadFetchedEntries)
+      if (cachedHomeSearchEntries)
         return cachedHomeSearchEntries
       const entries = buildSearchEntriesFromDom()
       return entries.length > 0 ? entries : null
@@ -260,46 +259,48 @@ export default function CommissionSearchDeferred({
   )
 
   useEffect(() => {
-    if (shouldLoadFetchedEntries) {
-      let active = true
+    let active = true
+    let didApplyFetchedEntries = false
 
-      const applyEntries = (entries: CommissionSearchEntrySource[]) => {
-        if (!active)
-          return
-        startTransition(() => {
-          setExternalEntries(entries)
-          setPopularKeywordPool(buildPopularKeywordPoolFromEntries(entries))
-        })
-      }
+    const applyEntries = (
+      entries: CommissionSearchEntrySource[],
+      source: 'dom' | 'fetch',
+    ) => {
+      if (!active)
+        return
+      if (source === 'dom' && didApplyFetchedEntries)
+        return
+      if (source === 'fetch')
+        didApplyFetchedEntries = true
 
-      if (cachedHomeSearchEntries) {
-        applyEntries(cachedHomeSearchEntries)
-      }
-      else {
-        void ensureHomeSearchEntriesPromise()
-          .then(applyEntries)
-          .catch((error) => {
-            console.error(error)
-          })
-      }
-
-      return () => {
-        active = false
-      }
-    }
-
-    const rafId = window.requestAnimationFrame(() => {
-      const entries = buildSearchEntriesFromDom()
       startTransition(() => {
         setExternalEntries(entries.length > 0 ? entries : null)
         setPopularKeywordPool(buildPopularKeywordPoolFromEntries(entries))
       })
+    }
+
+    const rafId = window.requestAnimationFrame(() => {
+      if (cachedHomeSearchEntries)
+        return
+      applyEntries(buildSearchEntriesFromDom(), 'dom')
     })
 
+    if (cachedHomeSearchEntries) {
+      applyEntries(cachedHomeSearchEntries, 'fetch')
+    }
+    else {
+      void ensureHomeSearchEntriesPromise()
+        .then(entries => applyEntries(entries, 'fetch'))
+        .catch((error) => {
+          console.error(error)
+        })
+    }
+
     return () => {
+      active = false
       window.cancelAnimationFrame(rafId)
     }
-  }, [shouldLoadFetchedEntries])
+  }, [])
 
   const dedupedPopularKeywordPool = useMemo(
     () =>

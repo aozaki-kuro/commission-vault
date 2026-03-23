@@ -3,7 +3,7 @@ import type { HomeLocale } from '#features/home/i18n/homeLocale'
 import { getCharacterSectionId, getCharacterTitleId } from '#lib/characters/nav'
 import { parseCommissionFileName } from '#lib/commissions'
 
-export type HomeCharacterBatchStatus = 'active' | 'stale'
+export type HomeCharacterBatchStatus = 'active' | 'archived'
 
 interface CharacterDisplay {
   DisplayName: string
@@ -18,7 +18,7 @@ export interface HomeCharacterBatchPlanGroup {
 
 export interface HomeCharacterBatchPlan {
   active: HomeCharacterBatchPlanGroup
-  stale: HomeCharacterBatchPlanGroup
+  archived: HomeCharacterBatchPlanGroup
 }
 
 export interface HomeCharacterBatchManifestGroup {
@@ -30,13 +30,13 @@ export interface HomeCharacterBatchManifestGroup {
 export interface HomeCharacterBatchManifest {
   locale: HomeLocale
   active: HomeCharacterBatchManifestGroup
-  stale: HomeCharacterBatchManifestGroup
+  archived: HomeCharacterBatchManifestGroup
 }
 
 const ACTIVE_INITIAL_SECTION_COUNT = 1
 const ACTIVE_BATCH_SIZE = 1
-const STALE_FIRST_BATCH_SIZE = 1
-const STALE_BATCH_SIZE = 1
+const ARCHIVED_FIRST_BATCH_SIZE = 1
+const ARCHIVED_BATCH_SIZE = 1
 
 function chunk(values: string[], batchSize: number) {
   if (values.length === 0)
@@ -99,18 +99,18 @@ function buildActiveBatchPlan({
   }
 }
 
-function buildStaleBatchPlan({
-  staleChars,
+function buildArchivedBatchPlan({
+  archivedChars,
   commissionMap,
 }: {
-  staleChars: CharacterDisplay[]
+  archivedChars: CharacterDisplay[]
   commissionMap: Map<string, CharacterCommissions>
 }): HomeCharacterBatchPlanGroup {
-  const staleCharacters = staleChars.map(item => item.DisplayName)
-  const firstBatch = staleCharacters.slice(0, STALE_FIRST_BATCH_SIZE)
-  const remainingCharacters = staleCharacters.slice(STALE_FIRST_BATCH_SIZE)
+  const archivedCharacters = archivedChars.map(item => item.DisplayName)
+  const firstBatch = archivedCharacters.slice(0, ARCHIVED_FIRST_BATCH_SIZE)
+  const remainingCharacters = archivedCharacters.slice(ARCHIVED_FIRST_BATCH_SIZE)
   const batches
-    = firstBatch.length > 0 ? [firstBatch, ...chunk(remainingCharacters, STALE_BATCH_SIZE)] : []
+    = firstBatch.length > 0 ? [firstBatch, ...chunk(remainingCharacters, ARCHIVED_BATCH_SIZE)] : []
 
   return {
     initialCharacters: [],
@@ -122,16 +122,16 @@ function buildStaleBatchPlan({
 
 export function buildHomeCharacterBatchPlan({
   activeChars,
-  staleChars,
+  archivedChars,
   commissionMap,
 }: {
   activeChars: CharacterDisplay[]
-  staleChars: CharacterDisplay[]
+  archivedChars: CharacterDisplay[]
   commissionMap: Map<string, CharacterCommissions>
 }): HomeCharacterBatchPlan {
   return {
     active: buildActiveBatchPlan({ activeChars, commissionMap }),
-    stale: buildStaleBatchPlan({ staleChars, commissionMap }),
+    archived: buildArchivedBatchPlan({ archivedChars, commissionMap }),
   }
 }
 
@@ -149,10 +149,10 @@ export function buildHomeCharacterBatchManifest({
       totalBatches: plan.active.totalBatches,
       targetBatchById: plan.active.targetBatchById,
     },
-    stale: {
+    archived: {
       initialSectionIds: [],
-      totalBatches: plan.stale.totalBatches,
-      targetBatchById: plan.stale.targetBatchById,
+      totalBatches: plan.archived.totalBatches,
+      targetBatchById: plan.archived.targetBatchById,
     },
   }
 }

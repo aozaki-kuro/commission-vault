@@ -16,14 +16,14 @@ interface CharacterDisplay {
 
 interface MobileHamburgerMenuProps {
   active: CharacterDisplay[]
-  stale: CharacterDisplay[]
+  archived: CharacterDisplay[]
   monthNavItems: CharacterNavItem[]
   controls: HomeLocaleMessages['controls']
 }
 
-const { active, stale, monthNavItems, controls } = Astro.props as MobileHamburgerMenuProps
+const { active, archived, monthNavItems, controls } = Astro.props as MobileHamburgerMenuProps
 const activeNavItems = buildCharacterNavItems(active)
-const staleNavItems = buildCharacterNavItems(stale)
+const archivedNavItems = buildCharacterNavItems(archived)
 const backdropStyle = {
   WebkitBackdropFilter: STYLES.backdrop,
   backdropFilter: STYLES.backdrop,
@@ -39,13 +39,13 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
   data-mobile-hamburger-mounted="false"
   data-mobile-hamburger-open="false"
   data-mobile-hamburger-active-count={active.length}
-  data-mobile-hamburger-stale-count={stale.length}
+  data-mobile-hamburger-archived-count={archived.length}
   data-mobile-hamburger-timeline-count={monthNavItems.length}
   data-mobile-hamburger-open-label={controls.openNavigationMenu}
   data-mobile-hamburger-close-label={controls.closeNavigationMenu}
   class="
     fixed right-8 bottom-8 z-90
-    md:hidden
+    lg:hidden
   "
 >
   <button
@@ -109,11 +109,11 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
   >
     <div class="space-y-0">
       <div class="
-        space-y-1.5 border-b border-gray-300/50 px-2 py-3
+        space-y-2 border-b border-gray-300/50 px-2 py-3
         dark:border-white/10
       "
       >
-        <ul class="space-y-1.5">
+        <ul class="space-y-2">
           <li class="relative">
             <button
               type="button"
@@ -177,7 +177,7 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
           <div data-mobile-hamburger-nav-panel="character">
           <section
             class="
-              mt-1.5
+              mt-2
               first:mt-0
             "
             data-mobile-character-section="active"
@@ -253,17 +253,17 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
 
           <section
             class="
-              mt-1.5
+              mt-2
               first:mt-0
             "
-            data-mobile-character-section="stale"
+            data-mobile-character-section="archived"
           >
             <button
               type="button"
               data-mobile-character-section-toggle="true"
-              data-mobile-character-section-key="stale"
+              data-mobile-character-section-key="archived"
               aria-expanded="false"
-              aria-controls="mobile-stale-characters"
+              aria-controls="mobile-archived-characters"
               class="
                 flex w-full cursor-pointer items-center justify-between
                 rounded-lg px-4 py-2 text-left font-mono transition-colors
@@ -277,7 +277,7 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
                 dark:text-gray-200
               "
               >
-                {controls.staleCharacters}
+                {controls.archivedCharacters}
               </p>
               <IconChevronDown
                 data-mobile-character-section-chevron="true"
@@ -290,21 +290,21 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
               />
             </button>
             <div
-              id="mobile-stale-characters"
-              data-mobile-character-section-panel="stale"
+              id="mobile-archived-characters"
+              data-mobile-character-section-panel="archived"
               class="mt-1"
               hidden
             >
               {
-                staleNavItems.length > 0
+                archivedNavItems.length > 0
 ? (
                   <ul class="space-y-2">
-                    {staleNavItems.map(item => (
+                    {archivedNavItems.map(item => (
                       <li class="relative">
                         <a
                           href={item.sectionHash}
                           data-mobile-nav-link="true"
-                          data-mobile-nav-character-status="stale"
+                          data-mobile-nav-character-status="archived"
                           data-mobile-nav-section-id={item.sectionId}
                           class={STYLES.listItem}
                         >
@@ -320,7 +320,7 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
                     dark:text-gray-400
                   "
                   >
-                    {controls.noStaleCharacters}
+                    {controls.noArchivedCharacters}
                   </p>
                 )
               }

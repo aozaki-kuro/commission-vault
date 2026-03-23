@@ -25,9 +25,10 @@ function createDeps(trace: Trace) {
     deps: {
       mountCommissionViewModeDomSync: createMount(trace, 'view-sync'),
       mountActiveCharactersLoader: createMount(trace, 'active-loader'),
-      mountStaleCharactersLoader: createMount(trace, 'stale-loader'),
+      mountArchivedCharactersLoader: createMount(trace, 'archived-loader'),
       mountTimelineViewLoader: createMount(trace, 'timeline-loader'),
       mountHomeScrollRestore: createMount(trace, 'scroll-restore'),
+      mountHomeUpdateLinks: createMount(trace, 'update-links'),
       mountSidebarNavEnhancer: createMount(trace, 'sidebar-nav'),
       mountMobileHamburgerMenu: createMount(trace, 'hamburger-menu'),
       mountMobileLanguageMenu: createMount(trace, 'language-menu'),
@@ -51,9 +52,10 @@ describe('mountHomePageClient', () => {
     expect(trace).toEqual([
       'mount:view-sync',
       'mount:active-loader',
-      'mount:stale-loader',
+      'mount:archived-loader',
       'mount:timeline-loader',
       'mount:scroll-restore',
+      'mount:update-links',
     ])
 
     getDeferredTask()?.()
@@ -61,9 +63,10 @@ describe('mountHomePageClient', () => {
     expect(trace).toEqual([
       'mount:view-sync',
       'mount:active-loader',
-      'mount:stale-loader',
+      'mount:archived-loader',
       'mount:timeline-loader',
       'mount:scroll-restore',
+      'mount:update-links',
       'mount:sidebar-nav',
       'mount:hamburger-menu',
       'mount:language-menu',
@@ -76,9 +79,10 @@ describe('mountHomePageClient', () => {
     expect(trace).toEqual([
       'mount:view-sync',
       'mount:active-loader',
-      'mount:stale-loader',
+      'mount:archived-loader',
       'mount:timeline-loader',
       'mount:scroll-restore',
+      'mount:update-links',
       'mount:sidebar-nav',
       'mount:hamburger-menu',
       'mount:language-menu',
@@ -89,9 +93,10 @@ describe('mountHomePageClient', () => {
       'cleanup:language-menu',
       'cleanup:hamburger-menu',
       'cleanup:sidebar-nav',
+      'cleanup:update-links',
       'cleanup:scroll-restore',
       'cleanup:timeline-loader',
-      'cleanup:stale-loader',
+      'cleanup:archived-loader',
       'cleanup:active-loader',
       'cleanup:view-sync',
     ])
@@ -108,12 +113,14 @@ describe('mountHomePageClient', () => {
     expect(trace).toEqual([
       'mount:view-sync',
       'mount:active-loader',
-      'mount:stale-loader',
+      'mount:archived-loader',
       'mount:timeline-loader',
       'mount:scroll-restore',
+      'mount:update-links',
+      'cleanup:update-links',
       'cleanup:scroll-restore',
       'cleanup:timeline-loader',
-      'cleanup:stale-loader',
+      'cleanup:archived-loader',
       'cleanup:active-loader',
       'cleanup:view-sync',
     ])
@@ -122,12 +129,14 @@ describe('mountHomePageClient', () => {
     expect(trace).toEqual([
       'mount:view-sync',
       'mount:active-loader',
-      'mount:stale-loader',
+      'mount:archived-loader',
       'mount:timeline-loader',
       'mount:scroll-restore',
+      'mount:update-links',
+      'cleanup:update-links',
       'cleanup:scroll-restore',
       'cleanup:timeline-loader',
-      'cleanup:stale-loader',
+      'cleanup:archived-loader',
       'cleanup:active-loader',
       'cleanup:view-sync',
     ])
@@ -138,8 +147,8 @@ describe('mountHomePageClient', () => {
     const { deps, scheduleDeferredMount } = createDeps(trace)
     const criticalError = new Error('critical mount failed')
 
-    deps.mountStaleCharactersLoader = vi.fn(() => {
-      trace.push('mount:stale-loader')
+    deps.mountArchivedCharactersLoader = vi.fn(() => {
+      trace.push('mount:archived-loader')
       throw criticalError
     })
 
@@ -148,7 +157,7 @@ describe('mountHomePageClient', () => {
     expect(trace).toEqual([
       'mount:view-sync',
       'mount:active-loader',
-      'mount:stale-loader',
+      'mount:archived-loader',
       'cleanup:active-loader',
       'cleanup:view-sync',
     ])
@@ -170,17 +179,19 @@ describe('mountHomePageClient', () => {
     expect(trace).toEqual([
       'mount:view-sync',
       'mount:active-loader',
-      'mount:stale-loader',
+      'mount:archived-loader',
       'mount:timeline-loader',
       'mount:scroll-restore',
+      'mount:update-links',
       'mount:sidebar-nav',
       'mount:hamburger-menu',
       'mount:language-menu',
       'cleanup:hamburger-menu',
       'cleanup:sidebar-nav',
+      'cleanup:update-links',
       'cleanup:scroll-restore',
       'cleanup:timeline-loader',
-      'cleanup:stale-loader',
+      'cleanup:archived-loader',
       'cleanup:active-loader',
       'cleanup:view-sync',
     ])
@@ -189,17 +200,19 @@ describe('mountHomePageClient', () => {
     expect(trace).toEqual([
       'mount:view-sync',
       'mount:active-loader',
-      'mount:stale-loader',
+      'mount:archived-loader',
       'mount:timeline-loader',
       'mount:scroll-restore',
+      'mount:update-links',
       'mount:sidebar-nav',
       'mount:hamburger-menu',
       'mount:language-menu',
       'cleanup:hamburger-menu',
       'cleanup:sidebar-nav',
+      'cleanup:update-links',
       'cleanup:scroll-restore',
       'cleanup:timeline-loader',
-      'cleanup:stale-loader',
+      'cleanup:archived-loader',
       'cleanup:active-loader',
       'cleanup:view-sync',
     ])

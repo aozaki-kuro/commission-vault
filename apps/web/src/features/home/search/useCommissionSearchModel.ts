@@ -1,13 +1,16 @@
 import type { CommissionSearchEntrySource, SearchIndex, SearchSuggestionAliasGroup } from '#features/home/search/commissionSearchIndex'
 import type { SuggestionViewModel } from '#features/home/search/CommissionSearchSuggestionDropdown'
-import { requestActiveCharactersLoad } from '#features/home/commission/activeCharactersEvent'
-import { requestStaleCharactersLoad } from '#features/home/commission/staleCharactersEvent'
-import { requestTimelineViewLoad } from '#features/home/commission/timelineViewEvent'
+import { requestActiveCharactersLoad } from '#features/home/commission/loader/activeCharactersEvent'
+import { requestArchivedCharactersLoad } from '#features/home/commission/loader/archivedCharactersEvent'
+import { requestTimelineViewLoad } from '#features/home/commission/loader/timelineViewEvent'
+import { LOAD_ARCHIVED_COMMAND_VALUE } from '#features/home/search/commissionSearchConstants'
 import {
   buildRelatedSuggestionTermsMap,
   buildSearchIndex,
+
   createEmptySearchIndex,
   getDisplayMetrics,
+
 } from '#features/home/search/commissionSearchIndex'
 import { useCommissionSearchDomSync } from '#features/home/search/useCommissionSearchDomSync'
 import { useSearchPanelLoadedState } from '#features/home/search/useSearchPanelLoadedState'
@@ -39,7 +42,7 @@ interface SearchControls {
   formatMatchCount: (count: number) => string
   formatSearchResultsStatus: (matchedCount: number, totalCount: number) => string
   formatSearchClearedStatus: (totalCount: number) => string
-  formatHiddenStaleResultsNotice: (hiddenCount: number) => string
+  formatHiddenArchivedResultsNotice: (hiddenCount: number) => string
 }
 
 interface UseCommissionSearchModelOptions {
@@ -60,7 +63,6 @@ interface UseCommissionSearchModelOptions {
 const MIN_TRACK_QUERY_LENGTH = 2
 const EMPTY_RELATED_SUGGESTION_TERMS_MAP = new Map<string, string[]>()
 const SEARCH_QUERY_LOCATION_CHANGE_EVENT = 'home:search-query-location-change'
-const LOAD_STALE_COMMAND_VALUE = '__load-stale__'
 
 function getUrlQuerySnapshot() {
   if (typeof window === 'undefined')
@@ -91,23 +93,23 @@ export function getDomSnapshotKeyForMode({
   activeBatchCount,
   activeLoaded,
   mode,
-  staleBatchCount,
-  staleLoaded,
-  staleVisible,
+  archivedBatchCount,
+  archivedLoaded,
+  archivedVisible,
   timelineLoaded,
 }: {
   activeBatchCount: number
   activeLoaded: boolean
   mode: 'character' | 'timeline'
-  staleBatchCount: number
-  staleLoaded: boolean
-  staleVisible: boolean
+  archivedBatchCount: number
+  archivedLoaded: boolean
+  archivedVisible: boolean
   timelineLoaded: boolean
 }) {
   return mode === 'character'
-    ? `character:active-${activeLoaded ? 'loaded' : 'pending'}-${activeBatchCount}:stale-${
-      staleLoaded ? 'loaded' : staleVisible ? 'visible' : 'hidden'
-    }-${staleBatchCount}`
+    ? `character:active-${activeLoaded ? 'loaded' : 'pending'}-${activeBatchCount}:archived-${
+      archivedLoaded ? 'loaded' : archivedVisible ? 'visible' : 'hidden'
+    }-${archivedBatchCount}`
     : `timeline:${timelineLoaded ? 'timeline-loaded' : 'timeline-pending'}`
 }
 
@@ -198,9 +200,9 @@ export function useCommissionSearchModel({
   const {
     activeBatchCount,
     activeLoaded,
-    staleBatchCount,
-    staleLoaded,
-    staleVisible,
+    archivedBatchCount,
+    archivedLoaded,
+    archivedVisible,
     timelineLoaded,
   } = useSearchPanelLoadedState()
   const shouldBuildIndex = isIndexReady || !deferIndexInit || !!query || !!initialUrlQuery
@@ -209,9 +211,9 @@ export function useCommissionSearchModel({
     activeBatchCount,
     activeLoaded,
     mode,
-    staleBatchCount,
-    staleLoaded,
-    staleVisible,
+    archivedBatchCount,
+    archivedLoaded,
+    archivedVisible,
     timelineLoaded,
   })
   const effectiveDomSnapshotKey = resolveEffectiveDomSnapshotKey({
@@ -219,7 +221,7 @@ export function useCommissionSearchModel({
     skipDomContext: shouldSkipDomContext,
   })
   const didRequestActiveAllRef = useRef(false)
-  const didRequestStaleAllRef = useRef(false)
+  const didRequestArchivedAllRef = useRef(false)
   const didRequestTimelineAllRef = useRef(false)
 
   useEffect(() => {
@@ -235,20 +237,20 @@ export function useCommissionSearchModel({
 
   useEffect(() => {
     syncDeferredAllLoadRequest({
-      didRequestRef: didRequestStaleAllRef,
+      didRequestRef: didRequestArchivedAllRef,
       request: () => {
-        // While searching, stale expansion should eagerly load all deferred stale batches
-        // so filtering can be applied across the full stale set without requiring extra scroll.
-        requestStaleCharactersLoad(window, { preserveScroll: true, strategy: 'all' })
+        // While searching, archived expansion should eagerly load all deferred archived batches
+        // so filtering can be applied across the full archived set without requiring extra scroll.
+        requestArchivedCharactersLoad(window, { preserveScroll: true, strategy: 'all' })
       },
       shouldRequest:
         !disableDomFiltering
         && mode === 'character'
         && hasDeferredQuery
-        && staleVisible
-        && !staleLoaded,
+        && archivedVisible
+        && !archivedLoaded,
     })
-  }, [disableDomFiltering, hasDeferredQuery, mode, staleLoaded, staleVisible])
+  }, [disableDomFiltering, hasDeferredQuery, mode, archivedLoaded, archivedVisible])
 
   useEffect(() => {
     syncDeferredAllLoadRequest({
@@ -309,7 +311,7 @@ export function useCommissionSearchModel({
     () => getMatchedEntryIds(deferredQuery, resolvedIndex),
     [deferredQuery, resolvedIndex],
   )
-  const { visibleEntriesCount, visibleMatchedCount, hiddenStaleMatchedCount } = useMemo(
+  const { visibleEntriesCount, visibleMatchedCount, hiddenArchivedMatchedCount } = useMemo(
     () =>
       getDisplayMetrics({
         searchIndex: resolvedIndex,
@@ -317,9 +319,9 @@ export function useCommissionSearchModel({
         disableDomFiltering,
         hasDeferredQuery,
         mode,
-        staleLoaded,
+        archivedLoaded,
       }),
-    [disableDomFiltering, hasDeferredQuery, matchedIds, mode, resolvedIndex, staleLoaded],
+    [disableDomFiltering, hasDeferredQuery, matchedIds, mode, resolvedIndex, archivedLoaded],
   )
 
   const suggestionContextMatchedIds = useMemo(() => {
@@ -376,11 +378,11 @@ export function useCommissionSearchModel({
     }))
   }, [controls, filteredSuggestions, relatedSuggestionTermsMap, suggestionSourceLabels])
 
-  const shouldShowHiddenStaleNotice = hiddenStaleMatchedCount > 0
+  const shouldShowHiddenArchivedNotice = hiddenArchivedMatchedCount > 0
   const shouldShowSuggestionPanel
     = !isSuggestionPanelDismissed
       && hasQuery
-      && (suggestionViewModels.length > 0 || shouldShowHiddenStaleNotice)
+      && (suggestionViewModels.length > 0 || shouldShowHiddenArchivedNotice)
 
   const visibleStatusMessage = useMemo(
     () =>
@@ -389,14 +391,14 @@ export function useCommissionSearchModel({
         : controls.formatSearchClearedStatus(visibleEntriesCount),
     [controls, hasDeferredQuery, visibleEntriesCount, visibleMatchedCount],
   )
-  const hiddenStaleNoticeMessage = useMemo(
-    () => controls.formatHiddenStaleResultsNotice(hiddenStaleMatchedCount),
-    [controls, hiddenStaleMatchedCount],
+  const hiddenArchivedNoticeMessage = useMemo(
+    () => controls.formatHiddenArchivedResultsNotice(hiddenArchivedMatchedCount),
+    [controls, hiddenArchivedMatchedCount],
   )
 
   const resolvedActiveCommandValue = useMemo(() => {
-    if (shouldShowHiddenStaleNotice && activeCommandValue === LOAD_STALE_COMMAND_VALUE) {
-      return LOAD_STALE_COMMAND_VALUE
+    if (shouldShowHiddenArchivedNotice && activeCommandValue === LOAD_ARCHIVED_COMMAND_VALUE) {
+      return LOAD_ARCHIVED_COMMAND_VALUE
     }
 
     if (suggestionViewModels.some(item => item.term === activeCommandValue)) {
@@ -407,24 +409,26 @@ export function useCommissionSearchModel({
       return suggestionViewModels[0].term
     }
 
-    return shouldShowHiddenStaleNotice ? LOAD_STALE_COMMAND_VALUE : ''
-  }, [activeCommandValue, shouldShowHiddenStaleNotice, suggestionViewModels])
+    return shouldShowHiddenArchivedNotice ? LOAD_ARCHIVED_COMMAND_VALUE : ''
+  }, [activeCommandValue, shouldShowHiddenArchivedNotice, suggestionViewModels])
 
   const shouldSuppressHandoffPanelAnimation
     = suppressInitialSuggestionPanelAnimation && !!initialQuery && query === initialQuery
   const shouldAnimateSuggestionPanel = !shouldSuppressHandoffPanelAnimation
   const statusMessage = useMemo(
     () =>
-      shouldShowHiddenStaleNotice
-        ? `${visibleStatusMessage} ${hiddenStaleNoticeMessage}`
+      shouldShowHiddenArchivedNotice
+        ? `${visibleStatusMessage} ${hiddenArchivedNoticeMessage}`
         : visibleStatusMessage,
-    [hiddenStaleNoticeMessage, shouldShowHiddenStaleNotice, visibleStatusMessage],
+    [hiddenArchivedNoticeMessage, shouldShowHiddenArchivedNotice, visibleStatusMessage],
   )
   const { liveRef } = useCommissionSearchDomSync({
     disableDomFiltering,
     hasDeferredQuery,
     matchedIds,
     resolvedIndex,
+    archivedBatchCount,
+    archivedVisible,
     statusMessage,
     visibleEntriesCount,
   })
@@ -477,7 +481,7 @@ export function useCommissionSearchModel({
     ensureSearchRuntimeReady,
     hasDeferredQuery,
     hasQuery,
-    hiddenStaleNoticeMessage,
+    hiddenArchivedNoticeMessage,
     initialUrlQuery,
     inputQuery,
     liveRef,
@@ -487,7 +491,7 @@ export function useCommissionSearchModel({
     resolvedIndex,
     setInputQuery,
     shouldAnimateSuggestionPanel,
-    shouldShowHiddenStaleNotice,
+    shouldShowHiddenArchivedNotice,
     shouldShowSuggestionPanel,
     statusMessage,
     suggestionIsExclusion,

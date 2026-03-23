@@ -6,7 +6,6 @@ import CommissionDescription from '#features/home/blocks/Description.astro'
 import Footer from '#features/home/blocks/Footer.astro'
 import CommissionImageNoticeScript from '#features/home/commission/CommissionImageNoticeScript.astro'
 import MobileViewModeTabs from '#features/home/commission/MobileViewModeTabs.astro'
-import DevLiveRefreshScript from '#features/home/dev/DevLiveRefreshScript.astro'
 import HomeClientScript from '#features/home/HomeClientScript.astro'
 import {
   getHomeLocaleMessages,
@@ -20,11 +19,11 @@ import CommissionSearchDeferred from '#features/home/search/CommissionSearchDefe
 import StaticCommissionSections from '#features/home/server/StaticCommissionSections.astro'
 import AgeGateScript from '#features/home/warning/AgeGateScript.astro'
 import BaseLayout from '#layouts/BaseLayout.astro'
-import { normalizeCharacterAliasKey } from '#lib/characterAliases/shared'
+import { normalizeCharacterAliasKey } from '#lib/characterAliases'
 import { buildSitePayload } from '#lib/home/buildSitePayload'
 import { buildHomeUpdateSummary } from '#lib/home/updateSummary'
 import { listMissingSourceImages, resolveSourceImageByCommissionFileName } from '#lib/images/sourceImageRegistry'
-import { normalizeKeywordAliasKey } from '#lib/keywordAliases/shared'
+import { normalizeKeywordAliasKey } from '#lib/keywordAliases'
 import { buildCommissionDataMap, buildCreatorAliasesMap } from '#lib/sitePayload'
 import { getImage } from 'astro:assets'
 import { getRelativeLocaleUrl } from 'astro:i18n'
@@ -103,7 +102,7 @@ if (missingSourceImages.length > 0) {
 }
 
 const firstCharacterName
-  = payload.characterStatus.active[0]?.DisplayName ?? payload.characterStatus.stale[0]?.DisplayName
+  = payload.characterStatus.active[0]?.DisplayName ?? payload.characterStatus.archived[0]?.DisplayName
 const firstCommissionFileName = firstCharacterName
   ? commissionMap.get(firstCharacterName)?.Commissions?.[0]?.fileName
   : undefined
@@ -186,7 +185,7 @@ const resolvedCanonicalPath
       />
       <MobileHamburgerMenu
         active={payload.characterStatus.active}
-        stale={payload.characterStatus.stale}
+        archived={payload.characterStatus.archived}
         monthNavItems={payload.monthNavItems}
         controls={messages.controls}
       />
@@ -205,7 +204,7 @@ const resolvedCanonicalPath
         localeSwitcherLabel={messages.localeSwitcherLabel}
         controls={messages.controls}
         active={payload.characterStatus.active}
-        stale={payload.characterStatus.stale}
+        archived={payload.characterStatus.archived}
         monthNavItems={payload.monthNavItems}
       />
       <div data-home-scroll-restore-shell="true">
@@ -213,7 +212,7 @@ const resolvedCanonicalPath
         <StaticCommissionSections
           locale={resolvedLocale}
           activeChars={payload.characterStatus.active}
-          staleChars={payload.characterStatus.stale}
+          archivedChars={payload.characterStatus.archived}
           commissionMap={commissionMap}
           characterAliasesMap={characterAliasesMap}
           creatorAliasesMap={creatorAliasesMap}
@@ -221,7 +220,6 @@ const resolvedCanonicalPath
           timelineGroups={payload.timelineGroups}
         />
         <HomeClientScript />
-        {import.meta.env.DEV ? <DevLiveRefreshScript /> : null}
         <Footer locale={resolvedLocale} />
       </div>
     </div>

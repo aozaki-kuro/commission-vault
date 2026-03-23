@@ -19,7 +19,7 @@ interface OverviewMetrics {
   creatorAliasCount: number
   featuredKeywordCount: number
   keywordAliasCount: number
-  staleCharacters: number
+  archivedCharacters: number
   totalAliasRows: number
   totalCharacters: number
   totalCommissions: number
@@ -78,7 +78,7 @@ function buildOverviewMetrics(payload: AdminOverviewPayload): OverviewMetrics {
     creatorAliasCount,
     featuredKeywordCount: payload.suggestion.featuredKeywords.length,
     keywordAliasCount,
-    staleCharacters: totalCharacters - activeCharacters,
+    archivedCharacters: totalCharacters - activeCharacters,
     totalAliasRows: characterAliasCount + creatorAliasCount + keywordAliasCount,
     totalCharacters,
     totalCommissions: payload.bootstrap.characters.reduce(
@@ -228,7 +228,7 @@ export function AdminOverviewPage() {
             {' '}
             / Stale
             {' '}
-            {getMetricValue(metrics?.staleCharacters ?? null)}
+            {getMetricValue(metrics?.archivedCharacters ?? null)}
           </p>
         </article>
 

@@ -9,7 +9,7 @@ import { buildHomeUpdateSummary } from '../home/updateSummary'
 import { createAstroStyleLogger } from './astroLogger'
 import { writeFileIfChanged } from './writeFileIfChanged'
 
-const outputPath = path.join(process.cwd(), 'src', 'lib', 'generated', 'homeUpdateSummary.ts')
+const outputPath = path.join(process.cwd(), 'src', 'lib', 'generated.ts')
 const logger = createAstroStyleLogger('assets')
 const BACKSLASH_PATTERN = /\\/g
 const SINGLE_QUOTE_PATTERN = /'/g

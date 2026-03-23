@@ -26,7 +26,7 @@ describe('buildHomeCharacterBatchPlan', () => {
 
     const plan = buildHomeCharacterBatchPlan({
       activeChars: [{ DisplayName: 'Alpha' }, { DisplayName: 'Beta' }, { DisplayName: 'Gamma' }],
-      staleChars: [],
+      archivedChars: [],
       commissionMap: new Map(
         [alpha, beta, gamma].map(
           entry => [entry.Character, entry] satisfies [string, CharacterCommissions],
@@ -45,31 +45,31 @@ describe('buildHomeCharacterBatchPlan', () => {
     expect(plan.active.targetBatchById[`${getCharacterSectionId('Gamma')}-20240103`]).toBe(1)
   })
 
-  it('keeps stale batches at single-character granularity including the first batch', () => {
-    const staleOne = buildCharacterCommissions('Stale One', '20240201')
-    const staleTwo = buildCharacterCommissions('Stale Two', '20240202')
-    const staleThree = buildCharacterCommissions('Stale Three', '20240203')
+  it('keeps archived batches at single-character granularity including the first batch', () => {
+    const archivedOne = buildCharacterCommissions('Archived One', '20240201')
+    const archivedTwo = buildCharacterCommissions('Archived Two', '20240202')
+    const archivedThree = buildCharacterCommissions('Archived Three', '20240203')
 
     const plan = buildHomeCharacterBatchPlan({
       activeChars: [],
-      staleChars: [
-        { DisplayName: 'Stale One' },
-        { DisplayName: 'Stale Two' },
-        { DisplayName: 'Stale Three' },
+      archivedChars: [
+        { DisplayName: 'Archived One' },
+        { DisplayName: 'Archived Two' },
+        { DisplayName: 'Archived Three' },
       ],
       commissionMap: new Map(
-        [staleOne, staleTwo, staleThree].map(
+        [archivedOne, archivedTwo, archivedThree].map(
           entry => [entry.Character, entry] satisfies [string, CharacterCommissions],
         ),
       ),
     })
 
-    expect(plan.stale.initialCharacters).toEqual([])
-    expect(plan.stale.batches).toEqual([['Stale One'], ['Stale Two'], ['Stale Three']])
-    expect(plan.stale.totalBatches).toBe(3)
-    expect(plan.stale.targetBatchById[getCharacterSectionId('Stale One')]).toBe(0)
-    expect(plan.stale.targetBatchById[getCharacterSectionId('Stale Two')]).toBe(1)
-    expect(plan.stale.targetBatchById[getCharacterSectionId('Stale Three')]).toBe(2)
+    expect(plan.archived.initialCharacters).toEqual([])
+    expect(plan.archived.batches).toEqual([['Archived One'], ['Archived Two'], ['Archived Three']])
+    expect(plan.archived.totalBatches).toBe(3)
+    expect(plan.archived.targetBatchById[getCharacterSectionId('Archived One')]).toBe(0)
+    expect(plan.archived.targetBatchById[getCharacterSectionId('Archived Two')]).toBe(1)
+    expect(plan.archived.targetBatchById[getCharacterSectionId('Archived Three')]).toBe(2)
   })
 })
 
@@ -77,12 +77,12 @@ describe('buildHomeCharacterBatchManifest', () => {
   it('preserves the first active section as the only eagerly rendered section', () => {
     const plan = buildHomeCharacterBatchPlan({
       activeChars: [{ DisplayName: 'Alpha' }, { DisplayName: 'Beta' }],
-      staleChars: [{ DisplayName: 'Stale One' }],
+      archivedChars: [{ DisplayName: 'Archived One' }],
       commissionMap: new Map(
         [
           buildCharacterCommissions('Alpha', '20240101'),
           buildCharacterCommissions('Beta', '20240102'),
-          buildCharacterCommissions('Stale One', '20240201'),
+          buildCharacterCommissions('Archived One', '20240201'),
         ].map(entry => [entry.Character, entry] satisfies [string, CharacterCommissions]),
       ),
     })
@@ -94,7 +94,7 @@ describe('buildHomeCharacterBatchManifest', () => {
 
     expect(manifest.active.initialSectionIds).toEqual([getCharacterSectionId('Alpha')])
     expect(manifest.active.totalBatches).toBe(1)
-    expect(manifest.stale.initialSectionIds).toEqual([])
-    expect(manifest.stale.totalBatches).toBe(1)
+    expect(manifest.archived.initialSectionIds).toEqual([])
+    expect(manifest.archived.totalBatches).toBe(1)
   })
 })

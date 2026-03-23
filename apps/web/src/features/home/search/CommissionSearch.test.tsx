@@ -1,13 +1,13 @@
 import type { CommissionSearchEntrySource } from './CommissionSearch'
-import { ACTIVE_CHARACTERS_LOAD_REQUEST_EVENT } from '#features/home/commission/activeCharactersEvent'
-import { clearHomeCharacterBatchRequestCacheForTests } from '#features/home/commission/homeCharacterBatchClient'
-import { clearHomeCharacterBatchManifestCacheForTests } from '#features/home/commission/homeCharacterBatchManifest'
+import { clearHomeCharacterBatchRequestCacheForTests } from '#features/home/commission/batch/homeCharacterBatchClient'
+import { clearHomeCharacterBatchManifestCacheForTests } from '#features/home/commission/batch/homeCharacterBatchManifest'
+import { ACTIVE_CHARACTERS_LOAD_REQUEST_EVENT } from '#features/home/commission/loader/activeCharactersEvent'
 import {
-  STALE_CHARACTERS_COLLAPSE_REQUEST_EVENT,
-  STALE_CHARACTERS_LOAD_REQUEST_EVENT,
-  STALE_CHARACTERS_LOADED_EVENT,
-  STALE_CHARACTERS_STATE_CHANGE_EVENT,
-} from '#features/home/commission/staleCharactersEvent'
+  ARCHIVED_CHARACTERS_COLLAPSE_REQUEST_EVENT,
+  ARCHIVED_CHARACTERS_LOAD_REQUEST_EVENT,
+  ARCHIVED_CHARACTERS_LOADED_EVENT,
+  ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT,
+} from '#features/home/commission/loader/archivedCharactersEvent'
 import { ANALYTICS_EVENTS } from '#lib/analytics/events'
 // @vitest-environment jsdom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -91,7 +91,7 @@ describe('commissionSearch', () => {
       expect(
         dispatchEventSpy.mock.calls.some(
           ([event]) =>
-            event instanceof Event && event.type === STALE_CHARACTERS_COLLAPSE_REQUEST_EVENT,
+            event instanceof Event && event.type === ARCHIVED_CHARACTERS_COLLAPSE_REQUEST_EVENT,
         ),
       ).toBe(false)
       await waitFor(() => {
@@ -122,8 +122,8 @@ describe('commissionSearch', () => {
         data-commission-view-panel="character"
         data-commission-view-active="true"
         data-active-sections-loaded="false"
-        data-stale-loaded="false"
-        data-stale-visibility="hidden"
+        data-archived-loaded="false"
+        data-archived-visibility="hidden"
       ></div>
     `
 
@@ -186,7 +186,7 @@ describe('commissionSearch', () => {
       expect(
         dispatchEventSpy.mock.calls.some(
           ([event]) =>
-            event instanceof Event && event.type === STALE_CHARACTERS_COLLAPSE_REQUEST_EVENT,
+            event instanceof Event && event.type === ARCHIVED_CHARACTERS_COLLAPSE_REQUEST_EVENT,
         ),
       ).toBe(false)
       expect(document.querySelector('[cmdk-list]')).not.toBeInTheDocument()
@@ -313,6 +313,58 @@ describe('commissionSearch', () => {
     }
   })
 
+  it('keeps the archived divider hidden after clearing search while archived sections stay collapsed', async () => {
+    document.body.innerHTML = `
+      <div
+        data-commission-view-panel="character"
+        data-commission-view-active="true"
+        data-active-sections-loaded="true"
+        data-archived-loaded="false"
+        data-archived-visibility="hidden"
+        data-archived-batches-loaded-count="0"
+      >
+        <section id="active" data-character-section="true" data-character-status="active">
+          <div data-commission-entry="true" data-character-section-id="active" data-commission-search-key="active::20240101_alpha"></div>
+        </section>
+        <div data-archived-sections-placeholder="true">Archived Characters</div>
+        <div data-archived-divider="true" class="hidden"><hr /></div>
+      </div>
+    `
+
+    const entries: CommissionSearchEntrySource[] = [
+      {
+        id: 1,
+        domKey: 'active::20240101_alpha',
+        searchText: 'alpha',
+      },
+      {
+        id: 2,
+        domKey: 'archived::20240102_beta',
+        searchText: 'beta',
+      },
+    ]
+
+    renderSearchWithDomFiltering(entries)
+
+    const input = screen.getByLabelText('Search commissions') as HTMLInputElement
+    const archivedDivider = document.querySelector<HTMLElement>('[data-archived-divider="true"]')
+    expect(archivedDivider).toHaveClass('hidden')
+
+    fireEvent.input(input, { target: { value: 'alpha' } })
+
+    await waitFor(() => {
+      expect(screen.getByText('Search results: 1 of 1 commissions shown.')).toBeInTheDocument()
+    })
+    expect(archivedDivider).toHaveClass('hidden')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear search' }))
+
+    await waitFor(() => {
+      expect(input.value).toBe('')
+    })
+    expect(archivedDivider).toHaveClass('hidden')
+  })
+
   it('shows shared alias suffix for keyword and character suggestions', async () => {
     const entries: CommissionSearchEntrySource[] = [
       {
@@ -352,9 +404,9 @@ describe('commissionSearch', () => {
     expect(screen.queryByText('should-not-show')).not.toBeInTheDocument()
   })
 
-  it('keeps stale entries searchable before load and reindexes after stale loaded event', async () => {
+  it('keeps archived entries searchable before load and reindexes after archived loaded event', async () => {
     document.body.innerHTML = `
-      <div data-commission-view-panel="character" data-commission-view-active="true" data-stale-loaded="false">
+      <div data-commission-view-panel="character" data-commission-view-active="true" data-archived-loaded="false">
         <section id="active" data-character-section="true" data-character-status="active">
           <div data-commission-entry="true" data-character-section-id="active" data-commission-search-key="active::20240101_alpha"></div>
         </section>
@@ -369,35 +421,35 @@ describe('commissionSearch', () => {
       },
       {
         id: 2,
-        domKey: 'stale::20240102_stale',
-        searchText: 'staleword',
+        domKey: 'archived::20240102_archived',
+        searchText: 'archivedword',
       },
     ]
 
     renderSearchWithDomFiltering(entries)
 
     const input = screen.getByLabelText('Search commissions') as HTMLInputElement
-    fireEvent.input(input, { target: { value: 'staleword' } })
+    fireEvent.input(input, { target: { value: 'archivedword' } })
 
     await waitFor(() => {
       expect(
         screen.getAllByText(/Search results: 0 of 1 commissions shown\./).length,
       ).toBeGreaterThan(0)
     })
-    expect(screen.getByText('1 stale match hidden.')).toBeInTheDocument()
+    expect(screen.getByText('1 archived match hidden.')).toBeInTheDocument()
     expect(screen.getByText('Load')).toBeInTheDocument()
 
     const panel = document.querySelector<HTMLElement>('[data-commission-view-panel="character"]')
-    panel?.setAttribute('data-stale-loaded', 'true')
-    const staleSection = document.createElement('section')
-    staleSection.id = 'stale'
-    staleSection.dataset.characterSection = 'true'
-    staleSection.dataset.characterStatus = 'stale'
-    staleSection.innerHTML
-      = '<div data-commission-entry="true" data-character-section-id="stale" data-commission-search-key="stale::20240102_stale"></div>'
-    panel?.append(staleSection)
+    panel?.setAttribute('data-archived-loaded', 'true')
+    const archivedSection = document.createElement('section')
+    archivedSection.id = 'archived'
+    archivedSection.dataset.characterSection = 'true'
+    archivedSection.dataset.characterStatus = 'archived'
+    archivedSection.innerHTML
+      = '<div data-commission-entry="true" data-character-section-id="archived" data-commission-search-key="archived::20240102_archived"></div>'
+    panel?.append(archivedSection)
     window.dispatchEvent(
-      new CustomEvent(STALE_CHARACTERS_STATE_CHANGE_EVENT, {
+      new CustomEvent(ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT, {
         detail: { visibility: 'visible', loaded: true },
       }),
     )
@@ -405,18 +457,18 @@ describe('commissionSearch', () => {
     await waitFor(() => {
       expect(screen.getByText('Search results: 1 of 2 commissions shown.')).toBeInTheDocument()
     })
-    expect(screen.queryByText('1 stale match hidden.')).not.toBeInTheDocument()
+    expect(screen.queryByText('1 archived match hidden.')).not.toBeInTheDocument()
   })
 
-  it('reapplies the active search filter as soon as stale batches mount', async () => {
+  it('reapplies the active search filter as soon as archived batches mount', async () => {
     document.body.innerHTML = `
       <div
         data-commission-view-panel="character"
         data-commission-view-active="true"
         data-active-sections-loaded="true"
-        data-stale-loaded="false"
-        data-stale-visibility="hidden"
-        data-stale-batches-loaded-count="0"
+        data-archived-loaded="false"
+        data-archived-visibility="hidden"
+        data-archived-batches-loaded-count="0"
       >
         <section id="active" data-character-section="true" data-character-status="active">
           <div data-commission-entry="true" data-character-section-id="active" data-commission-search-key="active::20240101_alpha"></div>
@@ -432,7 +484,7 @@ describe('commissionSearch', () => {
       },
       {
         id: 2,
-        domKey: 'stale::20240102_beta',
+        domKey: 'archived::20240102_beta',
         searchText: 'beta',
       },
     ]
@@ -447,29 +499,29 @@ describe('commissionSearch', () => {
     })
 
     const panel = document.querySelector<HTMLElement>('[data-commission-view-panel="character"]')
-    panel?.setAttribute('data-stale-visibility', 'visible')
-    panel?.setAttribute('data-stale-batches-loaded-count', '1')
+    panel?.setAttribute('data-archived-visibility', 'visible')
+    panel?.setAttribute('data-archived-batches-loaded-count', '1')
 
     window.dispatchEvent(
-      new CustomEvent(STALE_CHARACTERS_STATE_CHANGE_EVENT, {
+      new CustomEvent(ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT, {
         detail: { visibility: 'visible', loaded: false },
       }),
     )
 
-    const staleSection = document.createElement('section')
-    staleSection.id = 'stale'
-    staleSection.dataset.characterSection = 'true'
-    staleSection.dataset.characterStatus = 'stale'
-    staleSection.innerHTML
-      = '<div data-commission-entry="true" data-character-section-id="stale" data-commission-search-key="stale::20240102_beta"></div>'
-    panel?.append(staleSection)
+    const archivedSection = document.createElement('section')
+    archivedSection.id = 'archived'
+    archivedSection.dataset.characterSection = 'true'
+    archivedSection.dataset.characterStatus = 'archived'
+    archivedSection.innerHTML
+      = '<div data-commission-entry="true" data-character-section-id="archived" data-commission-search-key="archived::20240102_beta"></div>'
+    panel?.append(archivedSection)
 
-    window.dispatchEvent(new Event(STALE_CHARACTERS_LOADED_EVENT))
+    window.dispatchEvent(new Event(ARCHIVED_CHARACTERS_LOADED_EVENT))
 
     await waitFor(() => {
-      expect(staleSection.classList.contains('hidden')).toBe(true)
+      expect(archivedSection.classList.contains('hidden')).toBe(true)
       expect(
-        staleSection
+        archivedSection
           .querySelector<HTMLElement>('[data-commission-entry="true"]')
           ?.classList
           .contains('hidden'),
@@ -477,9 +529,9 @@ describe('commissionSearch', () => {
     })
   })
 
-  it('requests stale loading from the inline notice item on click', async () => {
+  it('requests archived loading from the inline notice item on click', async () => {
     document.body.innerHTML = `
-      <div data-commission-view-panel="character" data-commission-view-active="true" data-stale-loaded="false">
+      <div data-commission-view-panel="character" data-commission-view-active="true" data-archived-loaded="false">
         <section id="active" data-character-section="true" data-character-status="active">
           <div data-commission-entry="true" data-character-section-id="active" data-commission-search-key="active::20240101_alpha"></div>
         </section>
@@ -495,8 +547,8 @@ describe('commissionSearch', () => {
       },
       {
         id: 2,
-        domKey: 'stale::20240102_stale',
-        searchText: 'staleword',
+        domKey: 'archived::20240102_archived',
+        searchText: 'archivedword',
       },
     ]
 
@@ -504,14 +556,14 @@ describe('commissionSearch', () => {
       renderSearchWithDomFiltering(entries)
 
       const input = screen.getByLabelText('Search commissions') as HTMLInputElement
-      fireEvent.input(input, { target: { value: 'staleword' } })
+      fireEvent.input(input, { target: { value: 'archivedword' } })
 
       const itemLabel = await screen.findByText('Load')
       fireEvent.click(itemLabel)
 
       expect(
         dispatchEventSpy.mock.calls.some(
-          ([event]) => event instanceof Event && event.type === STALE_CHARACTERS_LOAD_REQUEST_EVENT,
+          ([event]) => event instanceof Event && event.type === ARCHIVED_CHARACTERS_LOAD_REQUEST_EVENT,
         ),
       ).toBe(true)
     }

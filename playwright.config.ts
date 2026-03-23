@@ -30,14 +30,6 @@ export default defineConfig({
       },
     },
     {
-      name: 'admin-legacy',
-      testDir: './apps/admin/test/visual',
-      snapshotPathTemplate: './test/visual/apps/admin/{testFilePath}-snapshots/{arg}-{platform}{ext}',
-      use: {
-        baseURL: 'http://127.0.0.1:4173',
-      },
-    },
-    {
       name: 'admin',
       testDir: './apps/admin/test/visual',
       snapshotPathTemplate: './test/visual/apps/admin/{testFilePath}-snapshots/{arg}-{platform}{ext}',

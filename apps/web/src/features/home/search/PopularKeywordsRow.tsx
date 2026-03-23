@@ -1,6 +1,10 @@
 import type { CSSProperties, Ref } from 'react'
 import { Button } from '#components/ui/button'
 import { IconRefresh } from '@tabler/icons-react'
+import { useRef } from 'react'
+
+const REFRESH_ICON_SPIN_DURATION_MS = 650
+const REFRESH_ICON_SPIN_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'
 
 interface PopularKeywordsRowProps {
   keywords: string[]
@@ -21,6 +25,27 @@ function PopularKeywordsRow({
   onKeywordPointerDown,
   onKeywordSelect,
 }: PopularKeywordsRowProps) {
+  const refreshIconRef = useRef<HTMLSpanElement>(null)
+
+  const triggerRefreshAnimation = () => {
+    const refreshIcon = refreshIconRef.current
+    if (!refreshIcon)
+      return
+
+    refreshIcon.getAnimations?.().forEach(animation => animation.cancel())
+    refreshIcon.animate?.(
+      [
+        { transform: 'rotate(0deg)' },
+        { transform: 'rotate(-360deg)' },
+      ],
+      {
+        duration: REFRESH_ICON_SPIN_DURATION_MS,
+        easing: REFRESH_ICON_SPIN_EASING,
+        iterations: 1,
+      },
+    )
+  }
+
   if (keywords.length === 0)
     return null
 
@@ -91,9 +116,20 @@ function PopularKeywordsRow({
                 dark:hover:shadow-[0_4px_14px_rgba(0,0,0,0.22)]
               "
               aria-label={refreshLabel || 'Refresh keywords'}
-              onClick={() => onRotate()}
+              onClick={() => {
+                triggerRefreshAnimation()
+                onRotate()
+              }}
             >
-              <IconRefresh className="size-4" stroke={1.85} aria-hidden="true" />
+              <span
+                ref={refreshIconRef}
+                className="
+                  inline-flex origin-center
+                  motion-reduce:transform-none
+                "
+              >
+                <IconRefresh className="size-4" stroke={1.85} aria-hidden="true" />
+              </span>
             </Button>
           )
         : null}

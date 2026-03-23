@@ -1,6 +1,8 @@
 import type { SuggestionTokenOperator } from '#lib/search/index'
 import { CommandItem, CommandList } from '#components/ui/command'
 
+import { LOAD_ARCHIVED_COMMAND_VALUE } from './commissionSearchConstants'
+
 export interface SuggestionViewModel {
   term: string
   matchCountLabel: string
@@ -8,16 +10,14 @@ export interface SuggestionViewModel {
   relatedTerms: string[]
 }
 
-const LOAD_STALE_COMMAND_VALUE = '__load-stale__'
-
 interface CommissionSearchSuggestionDropdownProps {
-  hiddenStaleNoticeMessage: string
-  loadStaleCharactersLabel: string
-  onLoadStaleCharacters: () => void
+  hiddenArchivedNoticeMessage: string
+  loadArchivedCharactersLabel: string
+  onLoadArchivedCharacters: () => void
   onSelectSuggestion: (suggestion: string) => void
   shouldAnimate: boolean
   shouldShow: boolean
-  shouldShowHiddenStaleNotice: boolean
+  shouldShowHiddenArchivedNotice: boolean
   sourcePrefix: string
   suggestionIsExclusion: boolean
   suggestionOperator: SuggestionTokenOperator
@@ -26,13 +26,13 @@ interface CommissionSearchSuggestionDropdownProps {
 }
 
 function CommissionSearchSuggestionDropdown({
-  hiddenStaleNoticeMessage,
-  loadStaleCharactersLabel,
-  onLoadStaleCharacters,
+  hiddenArchivedNoticeMessage,
+  loadArchivedCharactersLabel,
+  onLoadArchivedCharacters,
   onSelectSuggestion,
   shouldAnimate,
   shouldShow,
-  shouldShowHiddenStaleNotice,
+  shouldShowHiddenArchivedNotice,
   sourcePrefix,
   suggestionIsExclusion,
   suggestionOperator,
@@ -84,7 +84,7 @@ function CommissionSearchSuggestionDropdown({
                   ? (
                       <span className="
                         shrink-0 rounded-sm border border-gray-300/90
-                        bg-gray-100/85 px-1 py-0.5 text-[9px] leading-none
+                        bg-gray-100/85 px-1 py-0.5 text-[10px] leading-none
                         tracking-[0.06em] text-gray-600
                         dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300
                       "
@@ -96,7 +96,7 @@ function CommissionSearchSuggestionDropdown({
                     ? (
                         <span className="
                           shrink-0 rounded-sm border border-gray-300/90
-                          bg-gray-100/85 px-1 py-0.5 text-[9px] leading-none
+                          bg-gray-100/85 px-1 py-0.5 text-[10px] leading-none
                           tracking-[0.06em] text-gray-600
                           dark:border-gray-600 dark:bg-gray-800
                           dark:text-gray-300
@@ -109,7 +109,7 @@ function CommissionSearchSuggestionDropdown({
                       ? (
                           <span className="
                             shrink-0 rounded-sm border border-gray-300/90
-                            bg-gray-100/85 px-1 py-0.5 text-[9px] leading-none
+                            bg-gray-100/85 px-1 py-0.5 text-[10px] leading-none
                             tracking-[0.06em] text-gray-600
                             dark:border-gray-600 dark:bg-gray-800
                             dark:text-gray-300
@@ -158,7 +158,7 @@ function CommissionSearchSuggestionDropdown({
         )
       })}
 
-      {shouldShowHiddenStaleNotice
+      {shouldShowHiddenArchivedNotice
         ? (
             <div className="
               mt-1 border-t border-gray-200/80 pt-1
@@ -166,8 +166,8 @@ function CommissionSearchSuggestionDropdown({
             "
             >
               <CommandItem
-                value={LOAD_STALE_COMMAND_VALUE}
-                onSelect={onLoadStaleCharacters}
+                value={LOAD_ARCHIVED_COMMAND_VALUE}
+                onSelect={onLoadArchivedCharacters}
                 className="
                   items-start gap-3 px-3 py-2 font-mono text-gray-700
                   data-[selected=true]:bg-gray-900/6
@@ -179,7 +179,7 @@ function CommissionSearchSuggestionDropdown({
               >
                 <div className="min-w-0 flex-1">
                   <p className="text-[12px]/4 wrap-break-word whitespace-normal">
-                    {hiddenStaleNoticeMessage}
+                    {hiddenArchivedNoticeMessage}
                   </p>
                   <p className="
                     mt-0.5 text-[11px]/4 text-gray-500
@@ -194,7 +194,7 @@ function CommissionSearchSuggestionDropdown({
                   dark:text-gray-400
                 "
                 >
-                  {loadStaleCharactersLabel}
+                  {loadArchivedCharactersLabel}
                 </span>
               </CommandItem>
             </div>

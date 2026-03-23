@@ -4,7 +4,7 @@ import {
   normalizeKeywordAliases,
   normalizeKeywordAliasKey,
   parseKeywordAliasesJson,
-} from '#lib/keywordAliases/shared'
+} from '@commission-index/domain'
 import { getGeneratedFactSourceContent } from './generatedFactSource'
 
 const isDevelopment = process.env.NODE_ENV === 'development'

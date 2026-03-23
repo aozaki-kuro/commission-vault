@@ -1,18 +1,19 @@
 import type {
-  StaleCharactersVisibility,
-} from '#features/home/commission/staleCharactersEvent'
-import type { RequestTimelineViewLoadOptions } from '#features/home/commission/timelineViewEvent'
-import { STALE_CHARACTERS_STATE_CHANGE_EVENT } from '#features/home/commission/staleCharactersEvent'
+  ArchivedCharactersVisibility,
+} from '#features/home/commission/loader/archivedCharactersEvent'
+import type { RequestTimelineViewLoadOptions } from '#features/home/commission/loader/timelineViewEvent'
+import { ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT } from '#features/home/commission/loader/archivedCharactersEvent'
 import { dispatchHomeScrollRestoreAbort } from '#features/home/events'
 
-type CharacterStatus = 'active' | 'stale'
+type CharacterStatus = 'active' | 'archived'
+const HOME_NAV_TARGET_WAIT_TIMEOUT_MS = 10000
 
 interface PrefetchHomeNavTargetOptions {
   doc: Document
   href: string | null
   isTimelineTarget: boolean
   prefetchActiveTarget: (doc: Document, targetId: string | null | undefined) => void
-  prefetchStaleTarget: (doc: Document, targetId: string | null | undefined) => void
+  prefetchArchivedTarget: (doc: Document, targetId: string | null | undefined) => void
   requestTimelineLoad: (win: Window, options?: RequestTimelineViewLoadOptions) => void
   status: CharacterStatus | null
   targetId?: string | null
@@ -20,16 +21,24 @@ interface PrefetchHomeNavTargetOptions {
 }
 
 interface LoadDeferredHomeNavTargetOptions {
+  isReady?: () => boolean
   loadedEvent: string
   onLoaded: () => void
-  requestLoad: () => void
+  requestLoad: () => void | Promise<unknown>
+  timeoutMs?: number
   win: Window
 }
 
-interface RevealStaleHomeNavTargetOptions {
+interface RevealArchivedHomeNavTargetOptions {
+  isReady?: () => boolean
   onVisible: () => void
-  requestStaleVisibility: (win: Window, visibility: StaleCharactersVisibility) => void
+  requestArchivedVisibility: (win: Window, visibility: ArchivedCharactersVisibility) => void
+  timeoutMs?: number
   win: Window
+}
+
+function isPromiseLike(value: unknown): value is Promise<unknown> {
+  return typeof value === 'object' && value !== null && 'then' in value
 }
 
 export function prefetchHomeNavTarget({
@@ -37,7 +46,7 @@ export function prefetchHomeNavTarget({
   href,
   isTimelineTarget,
   prefetchActiveTarget,
-  prefetchStaleTarget,
+  prefetchArchivedTarget,
   requestTimelineLoad,
   status,
   targetId,
@@ -58,42 +67,97 @@ export function prefetchHomeNavTarget({
     return
   }
 
-  if (status === 'stale') {
-    prefetchStaleTarget(doc, resolvedTargetId)
+  if (status === 'archived') {
+    prefetchArchivedTarget(doc, resolvedTargetId)
   }
 }
 
 export function loadDeferredHomeNavTarget({
+  isReady,
   loadedEvent,
   onLoaded,
   requestLoad,
+  timeoutMs = HOME_NAV_TARGET_WAIT_TIMEOUT_MS,
   win,
 }: LoadDeferredHomeNavTargetOptions) {
   dispatchHomeScrollRestoreAbort(win)
 
-  const handleLoaded = () => {
+  let timeoutHandle: number | null = null
+
+  function cleanup() {
+    win.removeEventListener(loadedEvent, handleLoaded)
+    if (timeoutHandle !== null) {
+      win.clearTimeout(timeoutHandle)
+      timeoutHandle = null
+    }
+  }
+
+  function handleLoaded() {
+    if (isReady && !isReady()) {
+      return
+    }
+
+    cleanup()
     onLoaded()
   }
 
-  win.addEventListener(loadedEvent, handleLoaded, { once: true })
-  requestLoad()
+  win.addEventListener(loadedEvent, handleLoaded)
+  timeoutHandle = win.setTimeout(cleanup, timeoutMs)
+
+  try {
+    const request = requestLoad()
+    if (isPromiseLike(request)) {
+      void request.catch(() => {
+        cleanup()
+      })
+    }
+  }
+  catch (error) {
+    cleanup()
+    throw error
+  }
 }
 
-export function revealStaleHomeNavTarget({
+export function revealArchivedHomeNavTarget({
+  isReady,
   onVisible,
-  requestStaleVisibility,
+  requestArchivedVisibility,
+  timeoutMs = HOME_NAV_TARGET_WAIT_TIMEOUT_MS,
   win,
-}: RevealStaleHomeNavTargetOptions) {
+}: RevealArchivedHomeNavTargetOptions) {
   dispatchHomeScrollRestoreAbort(win)
 
-  const handleShown = (event: Event) => {
+  let timeoutHandle: number | null = null
+
+  function cleanup() {
+    win.removeEventListener(ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT, handleShown)
+    if (timeoutHandle !== null) {
+      win.clearTimeout(timeoutHandle)
+      timeoutHandle = null
+    }
+  }
+
+  function handleShown(event: Event) {
     if (!(event instanceof CustomEvent) || event.detail?.visibility !== 'visible') {
       return
     }
 
+    if (isReady && !isReady()) {
+      return
+    }
+
+    cleanup()
     onVisible()
   }
 
-  win.addEventListener(STALE_CHARACTERS_STATE_CHANGE_EVENT, handleShown, { once: true })
-  requestStaleVisibility(win, 'visible')
+  win.addEventListener(ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT, handleShown)
+  timeoutHandle = win.setTimeout(cleanup, timeoutMs)
+
+  try {
+    requestArchivedVisibility(win, 'visible')
+  }
+  catch (error) {
+    cleanup()
+    throw error
+  }
 }

@@ -23,7 +23,7 @@
   "r2_buckets": [
     {
       "binding": "IMAGES",
-      "bucket_name": "commission-index-source-images",
+      "bucket_name": "commission-index-images",
       "remote": true
     }
   ],

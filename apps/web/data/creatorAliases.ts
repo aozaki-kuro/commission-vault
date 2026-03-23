@@ -1,6 +1,6 @@
 import type { CreatorAliasEntry } from '@commission-index/domain'
 import process from 'node:process'
-import { normalizeCreatorName, parseAliasesJson } from '#lib/creatorAliases/shared'
+import { normalizeCreatorName, parseAliasesJson } from '@commission-index/domain'
 import { getGeneratedFactSourceContent } from './generatedFactSource'
 
 const isDevelopment = process.env.NODE_ENV === 'development'

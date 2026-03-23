@@ -31,7 +31,7 @@ export interface D1DatabaseLike {
   prepare: (query: string) => D1PreparedStatementLike
 }
 
-type CharacterStatus = 'active' | 'stale'
+type CharacterStatus = 'active' | 'archived'
 
 interface MaxSortOrderRow {
   maxOrder?: number | null
@@ -66,7 +66,7 @@ interface NormalizedCommissionMutation {
 
 interface CharacterOrderPayload {
   active: number[]
-  stale: number[]
+  archived: number[]
 }
 
 interface SourceImageMetadataInput {
@@ -282,19 +282,19 @@ export async function updateCharacterOrder(
   db: D1DatabaseLike,
   payload: CharacterOrderPayload,
 ) {
-  const { active, stale } = payload
+  const { active, archived } = payload
   if (
     !Array.isArray(active)
-    || !Array.isArray(stale)
+    || !Array.isArray(archived)
     || active.some(id => typeof id !== 'number' || !Number.isFinite(id))
-    || stale.some(id => typeof id !== 'number' || !Number.isFinite(id))
+    || archived.some(id => typeof id !== 'number' || !Number.isFinite(id))
   ) {
     throw new Error('Invalid character order payload.')
   }
 
   const combined = [
     ...active.map<[number, CharacterStatus]>(id => [id, 'active']),
-    ...stale.map<[number, CharacterStatus]>(id => [id, 'stale']),
+    ...archived.map<[number, CharacterStatus]>(id => [id, 'archived']),
   ]
 
   for (const [index, [id, status]] of combined.entries()) {

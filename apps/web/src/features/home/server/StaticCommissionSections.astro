@@ -20,7 +20,7 @@ type CharacterDisplay = {
 interface StaticCommissionSectionsProps {
   locale?: string
   activeChars: CharacterDisplay[]
-  staleChars: CharacterDisplay[]
+  archivedChars: CharacterDisplay[]
   commissionMap: Map<string, CharacterCommissions>
   timelineGroups: TimelineYearGroup[]
   characterAliasesMap: Map<string, string[]>
@@ -31,7 +31,7 @@ interface StaticCommissionSectionsProps {
 const {
   locale,
   activeChars,
-  staleChars,
+  archivedChars,
   commissionMap,
   timelineGroups,
   characterAliasesMap,
@@ -43,7 +43,7 @@ const messages = getHomeLocaleMessages(normalizeHomeLocale(locale))
 const resolvedLocale = normalizeHomeLocale(locale)
 const batchPlan = buildHomeCharacterBatchPlan({
   activeChars,
-  staleChars,
+  archivedChars,
   commissionMap,
 })
 const batchManifest = buildHomeCharacterBatchManifest({
@@ -52,7 +52,7 @@ const batchManifest = buildHomeCharacterBatchManifest({
 })
 const initialActiveChars = batchPlan.active.initialCharacters
 const hasDeferredActiveChars = batchPlan.active.totalBatches > 0
-const hasDeferredStaleChars = batchPlan.stale.totalBatches > 0
+const hasDeferredArchivedChars = batchPlan.archived.totalBatches > 0
 const timelineBatchPlan = buildHomeTimelineBatchPlan({
   groups: timelineGroups,
 })
@@ -62,8 +62,8 @@ const timelineBatchManifest = buildHomeTimelineBatchManifest({
 })
 const initialTimelineGroups = timelineBatchPlan.initialGroups
 const hasDeferredTimelineGroups = timelineBatchPlan.totalBatches > 0
-const staleCharacterCount = staleChars.length
-const staleCommissionCount = staleChars.reduce(
+const archivedCharacterCount = archivedChars.length
+const archivedCommissionCount = archivedChars.reduce(
   (count, chara) => count + (commissionMap.get(chara.DisplayName)?.Commissions.length ?? 0),
   0,
 )
@@ -75,9 +75,9 @@ const staleCommissionCount = staleChars.reduce(
     data-commission-view-active="true"
     data-active-sections-loaded={hasDeferredActiveChars ? 'false' : 'true'}
     data-active-batches-loaded-count="0"
-    data-stale-loaded="false"
-    data-stale-visibility="hidden"
-    data-stale-batches-loaded-count="0"
+    data-archived-loaded="false"
+    data-archived-visibility="hidden"
+    data-archived-batches-loaded-count="0"
   >
     {
       initialActiveChars.map(characterName => (
@@ -107,22 +107,22 @@ const staleCommissionCount = staleChars.reduce(
 : null
     }
     {
-      staleChars.length > 0
+      archivedChars.length > 0
 ? (
         <>
-          <div data-stale-sections-placeholder="true" class="pb-10">
-            <div class="pb-8">
+          <div data-archived-sections-placeholder="true" class="pb-8">
+            <div class="pb-6">
               <hr />
             </div>
-            <div class="mx-auto max-w-lg pt-6 text-center">
+            <div class="mx-auto max-w-lg pt-4 text-center">
               <p class="
                 text-[11px] tracking-[0.08em] text-stone-500
                 dark:text-stone-400
               "
               >
-                {messages.controls.formatCollapsedStaleSummary(
-                  staleCharacterCount,
-                  staleCommissionCount,
+                {messages.controls.formatCollapsedArchivedSummary(
+                  archivedCharacterCount,
+                  archivedCommissionCount,
                 )}
               </p>
 
@@ -131,19 +131,19 @@ const staleCommissionCount = staleChars.reduce(
                 dark:text-stone-200
               "
               >
-                {messages.controls.staleCharactersCollapsedTitle}
+                {messages.controls.archivedCharactersCollapsedTitle}
               </p>
               <p class="
                 mx-auto mt-1.5 max-w-md text-sm/6 text-stone-500
                 dark:text-stone-400
               "
               >
-                {messages.controls.staleCharactersCollapsedHint}
+                {messages.controls.archivedCharactersCollapsedHint}
               </p>
 
               <button
                 type="button"
-                data-load-stale-characters="true"
+                data-load-archived-characters="true"
                 class="
                   group mt-5 inline-flex cursor-pointer items-center gap-1.5
                   border-0 bg-transparent p-0 text-sm text-stone-600
@@ -171,20 +171,20 @@ const staleCommissionCount = staleChars.reduce(
                     stroke-linejoin="round"
                   />
                 </svg>
-                <span>{messages.controls.loadStaleCharacters}</span>
+                <span>{messages.controls.loadArchivedCharacters}</span>
               </button>
             </div>
           </div>
-          <div data-stale-divider="true" class="hidden pb-8">
+          <div data-archived-divider="true" class="hidden pb-8">
             <hr />
           </div>
-          <div data-stale-sections-container="true" />
+          <div data-archived-sections-container="true" />
           <div
-            data-stale-deferred-sections-sentinel="true"
+            data-archived-deferred-sections-sentinel="true"
             aria-hidden="true"
             class:list={[
               'pointer-events-none h-px overflow-hidden opacity-0',
-              !hasDeferredStaleChars && 'hidden',
+              !hasDeferredArchivedChars && 'hidden',
             ]}
           />
         </>

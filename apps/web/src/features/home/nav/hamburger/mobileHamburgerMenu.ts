@@ -1,33 +1,33 @@
-import type { RequestActiveCharactersLoadOptions } from '#features/home/commission/activeCharactersEvent'
 import type { CommissionViewMode } from '#features/home/commission/CommissionViewModeSearch'
-import type { RequestStaleCharactersLoadOptions, StaleCharactersVisibility } from '#features/home/commission/staleCharactersEvent'
-import type { RequestTimelineViewLoadOptions } from '#features/home/commission/timelineViewEvent'
+import type { RequestActiveCharactersLoadOptions } from '#features/home/commission/loader/activeCharactersEvent'
+import type { ArchivedCharactersVisibility, RequestArchivedCharactersLoadOptions } from '#features/home/commission/loader/archivedCharactersEvent'
+import type { RequestTimelineViewLoadOptions } from '#features/home/commission/loader/timelineViewEvent'
+import {
+  prefetchDeferredActiveCharacterTarget,
+  prefetchDeferredArchivedCharacterTarget,
+} from '#features/home/commission/batch/deferredCharacterBatchPrefetch'
 import {
   ACTIVE_CHARACTERS_LOADED_EVENT,
   hasDeferredActiveCharacterTarget,
   requestActiveCharactersLoad,
 
-} from '#features/home/commission/activeCharactersEvent'
+} from '#features/home/commission/loader/activeCharactersEvent'
 import {
-  prefetchDeferredActiveCharacterTarget,
-  prefetchDeferredStaleCharacterTarget,
-} from '#features/home/commission/deferredCharacterBatchPrefetch'
-import {
-  hasDeferredStaleCharacterTarget,
-  hasStaleCharacterTarget,
-  isStaleCharactersVisible,
-  requestStaleCharactersLoad,
+  ARCHIVED_CHARACTERS_LOADED_EVENT,
+  ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT,
+  hasArchivedCharacterTarget,
+  hasDeferredArchivedCharacterTarget,
 
-  requestStaleCharactersVisibility,
-  STALE_CHARACTERS_LOADED_EVENT,
-  STALE_CHARACTERS_STATE_CHANGE_EVENT,
+  isArchivedCharactersVisible,
+  requestArchivedCharactersLoad,
+  requestArchivedCharactersVisibility,
 
-} from '#features/home/commission/staleCharactersEvent'
+} from '#features/home/commission/loader/archivedCharactersEvent'
 import {
   hasDeferredTimelineTarget,
   requestTimelineViewLoad,
-} from '#features/home/commission/timelineViewEvent'
-import { TIMELINE_VIEW_LOADED_EVENT } from '#features/home/commission/timelineViewLoader'
+} from '#features/home/commission/loader/timelineViewEvent'
+import { TIMELINE_VIEW_LOADED_EVENT } from '#features/home/commission/loader/timelineViewLoader'
 import {
   readCommissionViewMode,
   replaceCommissionViewModeInAddress,
@@ -36,14 +36,18 @@ import {
 import { COMMISSION_VIEW_MODE_CHANGE_EVENT, dispatchHomeScrollRestoreAbort, HAMBURGER_MENU_MOUNTED_CHANGE_EVENT } from '#features/home/events'
 import { ANALYTICS_EVENTS } from '#lib/analytics/events'
 import { trackRybbitEvent } from '#lib/analytics/track'
-import { scrollToHashTargetFromHrefWithoutHash } from '#lib/navigation/hashAnchor'
+import {
+  getHashFromHref,
+  getHashTarget,
+  scrollToHashTargetFromHrefWithoutHash,
+} from '#lib/navigation/hashAnchor'
 import { jumpToCommissionSearch } from '#lib/navigation/jumpToCommissionSearch'
 import { SIDEBAR_SEARCH_STATE_EVENT } from '#lib/navigation/sidebarSearchState'
 import { syncHiddenSectionLinkAvailability } from '#lib/navigation/syncHiddenSectionLinkAvailability'
 import {
   loadDeferredHomeNavTarget,
   prefetchHomeNavTarget,
-  revealStaleHomeNavTarget,
+  revealArchivedHomeNavTarget,
 } from '../homeNavTargetClient'
 import { MENU_TRANSITION_MS } from './constants'
 
@@ -71,11 +75,11 @@ interface MobileHamburgerMenuDeps {
   syncLinkAvailability: typeof syncHiddenSectionLinkAvailability
   scrollToHashWithoutWrite: typeof scrollToHashTargetFromHrefWithoutHash
   prefetchActiveTarget: (doc: Document, targetId: string | null | undefined) => void
-  prefetchStaleTarget: (doc: Document, targetId: string | null | undefined) => void
+  prefetchArchivedTarget: (doc: Document, targetId: string | null | undefined) => void
   requestActiveLoad: (win: Window, options?: RequestActiveCharactersLoadOptions) => void
-  requestStaleLoad: (win: Window, options?: RequestStaleCharactersLoadOptions) => void
+  requestArchivedLoad: (win: Window, options?: RequestArchivedCharactersLoadOptions) => void
   requestTimelineLoad: (win: Window, options?: RequestTimelineViewLoadOptions) => void
-  requestStaleVisibility: (win: Window, visibility: StaleCharactersVisibility) => void
+  requestArchivedVisibility: (win: Window, visibility: ArchivedCharactersVisibility) => void
 }
 
 interface MountMobileHamburgerMenuOptions {
@@ -84,7 +88,7 @@ interface MountMobileHamburgerMenuOptions {
   deps?: Partial<MobileHamburgerMenuDeps>
 }
 
-type CharacterSectionKey = 'active' | 'stale'
+type CharacterSectionKey = 'active' | 'archived'
 interface CharacterSectionNode {
   key: CharacterSectionKey
   trigger: HTMLButtonElement | null
@@ -98,24 +102,24 @@ const defaultDeps: MobileHamburgerMenuDeps = {
   syncLinkAvailability: syncHiddenSectionLinkAvailability,
   scrollToHashWithoutWrite: scrollToHashTargetFromHrefWithoutHash,
   prefetchActiveTarget: prefetchDeferredActiveCharacterTarget,
-  prefetchStaleTarget: prefetchDeferredStaleCharacterTarget,
+  prefetchArchivedTarget: prefetchDeferredArchivedCharacterTarget,
   requestActiveLoad: requestActiveCharactersLoad,
-  requestStaleLoad: requestStaleCharactersLoad,
+  requestArchivedLoad: requestArchivedCharactersLoad,
   requestTimelineLoad: requestTimelineViewLoad,
-  requestStaleVisibility: requestStaleCharactersVisibility,
+  requestArchivedVisibility: requestArchivedCharactersVisibility,
 }
 
 function resolveCharacterSectionKeyFromElement(target: Element | null): CharacterSectionKey | null {
   if (!target)
     return null
   const key = target.getAttribute('data-mobile-character-section-key')
-  if (key === 'active' || key === 'stale')
+  if (key === 'active' || key === 'archived')
     return key
   return null
 }
 
 function resolveCharacterSectionKeyFromValue(value: string | undefined): CharacterSectionKey | null {
-  if (value === 'active' || value === 'stale')
+  if (value === 'active' || value === 'archived')
     return value
   return null
 }
@@ -213,7 +217,7 @@ export function mountMobileHamburgerMenu({
     .filter((section): section is CharacterSectionNode => Boolean(section))
 
   const activeCount = readCount(root.dataset.mobileHamburgerActiveCount)
-  const staleCount = readCount(root.dataset.mobileHamburgerStaleCount)
+  const archivedCount = readCount(root.dataset.mobileHamburgerArchivedCount)
   const timelineCount = readCount(root.dataset.mobileHamburgerTimelineCount)
   const openNavigationLabel = root.dataset.mobileHamburgerOpenLabel ?? 'Open navigation menu'
   const closeNavigationLabel = root.dataset.mobileHamburgerCloseLabel ?? 'Close navigation menu'
@@ -318,7 +322,7 @@ export function mountMobileHamburgerMenu({
       hasTrackedHamburgerUsage = true
       deps.trackEvent(ANALYTICS_EVENTS.hamburgerMenuUsed, {
         active_count: activeCount,
-        stale_count: staleCount,
+        archived_count: archivedCount,
       })
     }
 
@@ -388,8 +392,8 @@ export function mountMobileHamburgerMenu({
         return (
           (link.dataset.mobileNavCharacterStatus === 'active'
             && hasDeferredActiveCharacterTarget(doc, sectionId))
-          || (link.dataset.mobileNavCharacterStatus === 'stale'
-            && hasStaleCharacterTarget(doc, sectionId))
+          || (link.dataset.mobileNavCharacterStatus === 'archived'
+            && hasArchivedCharacterTarget(doc, sectionId))
         )
       },
     })
@@ -410,13 +414,13 @@ export function mountMobileHamburgerMenu({
         link.closest<HTMLElement>(`${NAV_PANEL_SELECTOR}[data-mobile-hamburger-nav-panel="timeline"]`),
       ),
       prefetchActiveTarget: deps.prefetchActiveTarget,
-      prefetchStaleTarget: deps.prefetchStaleTarget,
+      prefetchArchivedTarget: deps.prefetchArchivedTarget,
       requestTimelineLoad: deps.requestTimelineLoad,
       status:
         link.dataset.mobileNavCharacterStatus === 'active'
           ? 'active'
-          : link.dataset.mobileNavCharacterStatus === 'stale'
-            ? 'stale'
+          : link.dataset.mobileNavCharacterStatus === 'archived'
+            ? 'archived'
             : null,
       targetId,
       win,
@@ -424,7 +428,7 @@ export function mountMobileHamburgerMenu({
   }
 
   const getVisibleItemCount = (mode: CommissionViewMode) =>
-    mode === 'timeline' ? timelineCount : activeCount + staleCount
+    mode === 'timeline' ? timelineCount : activeCount + archivedCount
 
   const trackCharacterNavClick = (navLink: HTMLAnchorElement) => {
     const mode = readCommissionViewMode(win)
@@ -453,6 +457,7 @@ export function mountMobileHamburgerMenu({
   }) => {
     event.preventDefault()
     loadDeferredHomeNavTarget({
+      isReady: () => Boolean(getHashTarget(getHashFromHref(href))),
       loadedEvent,
       onLoaded: () => {
         deps.scrollToHashWithoutWrite(href)
@@ -550,8 +555,8 @@ export function mountMobileHamburgerMenu({
         return
       expandedCharacterSection = expandedCharacterSection === sectionKey ? null : sectionKey
       syncCharacterSectionState()
-      if (expandedCharacterSection === 'stale' && !isStaleCharactersVisible(doc)) {
-        deps.requestStaleVisibility(win, 'visible')
+      if (expandedCharacterSection === 'archived' && !isArchivedCharactersVisible(doc)) {
+        deps.requestArchivedVisibility(win, 'visible')
       }
       return
     }
@@ -611,16 +616,16 @@ export function mountMobileHamburgerMenu({
       return
     }
 
-    const isStaleLink = navLink.dataset.mobileNavCharacterStatus === 'stale'
-    const isDeferredStaleLink = isStaleLink && hasDeferredStaleCharacterTarget(doc, navTargetId)
-    if (isDeferredStaleLink) {
+    const isArchivedLink = navLink.dataset.mobileNavCharacterStatus === 'archived'
+    const isDeferredArchivedLink = isArchivedLink && hasDeferredArchivedCharacterTarget(doc, navTargetId)
+    if (isDeferredArchivedLink) {
       handleDeferredNavLinkLoad({
         event,
         href,
-        loadedEvent: STALE_CHARACTERS_LOADED_EVENT,
+        loadedEvent: ARCHIVED_CHARACTERS_LOADED_EVENT,
         navLink,
         requestLoad: () => {
-          deps.requestStaleLoad(win, {
+          deps.requestArchivedLoad(win, {
             preserveScroll: false,
             strategy: 'target',
             targetId: href ?? navTargetId ?? undefined,
@@ -629,14 +634,14 @@ export function mountMobileHamburgerMenu({
       })
       return
     }
-    if (isStaleLink && !isStaleCharactersVisible(doc)) {
+    if (isArchivedLink && !isArchivedCharactersVisible(doc)) {
       event.preventDefault()
-      revealStaleHomeNavTarget({
+      revealArchivedHomeNavTarget({
         onVisible: () => {
           deps.scrollToHashWithoutWrite(href)
           syncLinkAvailability()
         },
-        requestStaleVisibility: deps.requestStaleVisibility,
+        requestArchivedVisibility: deps.requestArchivedVisibility,
         win,
       })
       trackCharacterNavClick(navLink)
@@ -711,7 +716,7 @@ export function mountMobileHamburgerMenu({
   doc.addEventListener('keydown', onDocumentKeyDown)
   win.addEventListener(COMMISSION_VIEW_MODE_CHANGE_EVENT, onViewModeChanged)
   win.addEventListener(SIDEBAR_SEARCH_STATE_EVENT, onLinkAvailabilityRelatedStateChanged)
-  win.addEventListener(STALE_CHARACTERS_STATE_CHANGE_EVENT, onLinkAvailabilityRelatedStateChanged)
+  win.addEventListener(ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT, onLinkAvailabilityRelatedStateChanged)
   win.addEventListener('popstate', onPopState)
   win.addEventListener(AGE_GATE_STATE_EVENT, onAgeGateStateChanged)
 
@@ -740,7 +745,7 @@ export function mountMobileHamburgerMenu({
     win.removeEventListener(COMMISSION_VIEW_MODE_CHANGE_EVENT, onViewModeChanged)
     win.removeEventListener(SIDEBAR_SEARCH_STATE_EVENT, onLinkAvailabilityRelatedStateChanged)
     win.removeEventListener(
-      STALE_CHARACTERS_STATE_CHANGE_EVENT,
+      ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT,
       onLinkAvailabilityRelatedStateChanged,
     )
     win.removeEventListener('popstate', onPopState)

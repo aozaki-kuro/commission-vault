@@ -121,7 +121,7 @@ function syncSectionVisibility({
 }) {
   let didLayoutChange = false
   let visibleActiveSections = 0
-  let visibleStaleSections = 0
+  let visibleArchivedSections = 0
 
   for (const section of sections) {
     const visible = !hasDeferredQuery || Boolean(visibleSectionIds?.has(section.id))
@@ -137,38 +137,47 @@ function syncSectionVisibility({
       continue
     if (section.status === 'active')
       visibleActiveSections += 1
-    if (section.status === 'stale')
-      visibleStaleSections += 1
+    if (section.status === 'archived')
+      visibleArchivedSections += 1
   }
 
-  return { didLayoutChange, visibleActiveSections, visibleStaleSections }
+  return { didLayoutChange, visibleActiveSections, visibleArchivedSections }
 }
 
-function syncStaleDividerVisibility({
-  staleDivider,
+function syncArchivedDividerVisibility({
+  archivedDivider,
   hasDeferredQuery,
+  archivedBatchCount,
+  archivedVisible,
   visibleActiveSections,
-  visibleStaleSections,
+  visibleArchivedSections,
   previousVisible,
 }: {
-  staleDivider: HTMLElement | null
+  archivedDivider: HTMLElement | null
   hasDeferredQuery: boolean
+  archivedBatchCount: number
+  archivedVisible: boolean
   visibleActiveSections: number
-  visibleStaleSections: number
+  visibleArchivedSections: number
   previousVisible: boolean
 }) {
-  if (!staleDivider) {
+  if (!archivedDivider) {
     return { didLayoutChange: false, nextVisible: previousVisible }
   }
 
   const shouldShowDivider
-    = !hasDeferredQuery || (visibleActiveSections > 0 && visibleStaleSections > 0)
+    = archivedVisible
+      && (
+        hasDeferredQuery
+          ? visibleActiveSections > 0 && visibleArchivedSections > 0
+          : archivedBatchCount > 0
+      )
 
   if (shouldShowDivider === previousVisible) {
     return { didLayoutChange: false, nextVisible: previousVisible }
   }
 
-  const didLayoutChange = toggleHiddenClass(staleDivider, !shouldShowDivider)
+  const didLayoutChange = toggleHiddenClass(archivedDivider, !shouldShowDivider)
   return { didLayoutChange, nextVisible: shouldShowDivider }
 }
 
@@ -177,6 +186,8 @@ interface UseCommissionSearchDomSyncOptions {
   hasDeferredQuery: boolean
   matchedIds: Set<number>
   resolvedIndex: SearchIndex
+  archivedBatchCount: number
+  archivedVisible: boolean
   statusMessage: string
   visibleEntriesCount: number
 }
@@ -186,6 +197,8 @@ export function useCommissionSearchDomSync({
   hasDeferredQuery,
   matchedIds,
   resolvedIndex,
+  archivedBatchCount,
+  archivedVisible,
   statusMessage,
   visibleEntriesCount,
 }: UseCommissionSearchDomSyncOptions) {
@@ -193,7 +206,7 @@ export function useCommissionSearchDomSync({
   const previousMatchedIdsRef = useRef<Set<number>>(new Set())
   const previousFilterIndexRef = useRef<SearchIndex | null>(null)
   const sectionVisibilityRef = useRef(new Map<string, boolean>())
-  const staleDividerVisibilityRef = useRef(true)
+  const archivedDividerVisibilityRef = useRef(false)
 
   useEffect(() => {
     if (disableDomFiltering) {
@@ -203,7 +216,7 @@ export function useCommissionSearchDomSync({
       return
     }
 
-    const { entryById, sections, staleDivider } = resolvedIndex
+    const { entryById, sections, archivedDivider } = resolvedIndex
     const previousMatchedIds = previousMatchedIdsRef.current
     const matchedIdsChanged = !areSetsEqual(previousMatchedIds, matchedIds)
     const indexChanged = previousFilterIndexRef.current !== resolvedIndex
@@ -250,14 +263,16 @@ export function useCommissionSearchDomSync({
     })
     didLayoutChange = sectionSyncResult.didLayoutChange || didLayoutChange
 
-    const dividerSyncResult = syncStaleDividerVisibility({
-      staleDivider,
+    const dividerSyncResult = syncArchivedDividerVisibility({
+      archivedDivider,
       hasDeferredQuery,
+      archivedBatchCount,
+      archivedVisible,
       visibleActiveSections: sectionSyncResult.visibleActiveSections,
-      visibleStaleSections: sectionSyncResult.visibleStaleSections,
-      previousVisible: staleDividerVisibilityRef.current,
+      visibleArchivedSections: sectionSyncResult.visibleArchivedSections,
+      previousVisible: archivedDividerVisibilityRef.current,
     })
-    staleDividerVisibilityRef.current = dividerSyncResult.nextVisible
+    archivedDividerVisibilityRef.current = dividerSyncResult.nextVisible
     didLayoutChange = dividerSyncResult.didLayoutChange || didLayoutChange
 
     setTextContentIfChanged(liveRef.current, statusMessage)
@@ -270,6 +285,8 @@ export function useCommissionSearchDomSync({
     hasDeferredQuery,
     matchedIds,
     resolvedIndex,
+    archivedBatchCount,
+    archivedVisible,
     statusMessage,
     visibleEntriesCount,
   ])

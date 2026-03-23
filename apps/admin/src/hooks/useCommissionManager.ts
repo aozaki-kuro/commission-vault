@@ -52,7 +52,7 @@ interface StoredOpenState {
 
 interface CharacterOrderPayload {
   active: number[]
-  stale: number[]
+  archived: number[]
 }
 
 interface CharacterOrderSaveQueueOptions {
@@ -286,12 +286,12 @@ export function useCommissionManager({
 
   const initialList = useMemo((): ListItem[] => {
     const active = sortedCharacters.filter(character => character.status === 'active')
-    const stale = sortedCharacters.filter(character => character.status === 'stale')
+    const archived = sortedCharacters.filter(character => character.status === 'archived')
 
     return [
       ...active.map(character => ({ data: character, type: 'character' as const })),
       { id: DIVIDER_ID, type: 'divider' as const },
-      ...stale.map(character => ({ data: character, type: 'character' as const })),
+      ...archived.map(character => ({ data: character, type: 'character' as const })),
     ]
   }, [sortedCharacters])
 
@@ -395,14 +395,14 @@ export function useCommissionManager({
       .filter((item): item is CharacterItem => item.type === 'character')
       .map(item => item.data.id)
 
-    const staleIds = currentList
+    const archivedIds = currentList
       .slice(dividerIndex + 1)
       .filter((item): item is CharacterItem => item.type === 'character')
       .map(item => item.data.id)
 
     orderSaveQueueRef.current?.enqueue({
       active: activeIds,
-      stale: staleIds,
+      archived: archivedIds,
     })
   }, [])
 
@@ -450,7 +450,7 @@ export function useCommissionManager({
       return 'active'
     }
 
-    return itemIndex < dividerIndex ? 'active' : 'stale'
+    return itemIndex < dividerIndex ? 'active' : 'archived'
   }, [list])
 
   const startEditingName = useCallback((character: CharacterRow) => {

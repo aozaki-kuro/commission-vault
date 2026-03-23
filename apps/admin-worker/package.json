@@ -12,9 +12,13 @@
     "deploy": "wrangler deploy --config wrangler.jsonc",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
+  "dependencies": {
+    "@commission-index/domain": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "^25.5.0",
     "typescript": "^5.9.3",
+    "vitest": "^3.2.0",
     "wrangler": "^4.74.0"
   }
 }

@@ -1,11 +1,16 @@
-import type { CharacterNavItem } from '@commission-index/domain'
 import { kebabCase } from '#lib/utils/strings'
 
 interface CharacterEntry {
   DisplayName: string
 }
 
-export type { CharacterNavItem } from '@commission-index/domain'
+export interface CharacterNavItem {
+  displayName: string
+  sectionId: string
+  titleId: string
+  sectionHash: string
+  titleHash: string
+}
 
 /**
  * Create a slug used for section anchors.

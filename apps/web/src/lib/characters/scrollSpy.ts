@@ -4,13 +4,6 @@ const isElementVisible = (element: HTMLElement) => element.getClientRects().leng
 
 const isRectInViewport = (rect: DOMRect) => rect.bottom > 0 && rect.top < window.innerHeight
 
-export function isElementAtThreshold(element: HTMLElement, threshold: number) {
-  if (!isElementVisible(element))
-    return false
-  const rect = element.getBoundingClientRect()
-  return rect.top <= threshold && rect.bottom >= threshold
-}
-
 export function getActiveSectionId(elements: HTMLElement[], threshold: number): string {
   let thresholdActiveId = ''
   let firstVisibleInViewportId = ''

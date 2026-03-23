@@ -1,17 +1,17 @@
 // @vitest-environment jsdom
-import { STALE_CHARACTERS_STATE_CHANGE_EVENT } from '#features/home/commission/staleCharactersEvent'
+import { ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT } from '#features/home/commission/loader/archivedCharactersEvent'
 import { HOME_SCROLL_RESTORE_ABORT_EVENT } from '#features/home/events'
 import { describe, expect, it, vi } from 'vitest'
 import {
   loadDeferredHomeNavTarget,
   prefetchHomeNavTarget,
-  revealStaleHomeNavTarget,
+  revealArchivedHomeNavTarget,
 } from './homeNavTargetClient'
 
 describe('homeNavTargetClient', () => {
-  it('prefetches active and stale targets, and requests timeline batches for timeline links', () => {
+  it('prefetches active and archived targets, and requests timeline batches for timeline links', () => {
     const prefetchActiveTarget = vi.fn()
-    const prefetchStaleTarget = vi.fn()
+    const prefetchArchivedTarget = vi.fn()
     const requestTimelineLoad = vi.fn()
 
     prefetchHomeNavTarget({
@@ -19,19 +19,19 @@ describe('homeNavTargetClient', () => {
       href: '#active-alpha',
       isTimelineTarget: false,
       prefetchActiveTarget,
-      prefetchStaleTarget,
+      prefetchArchivedTarget,
       requestTimelineLoad,
       status: 'active',
       win: window,
     })
     prefetchHomeNavTarget({
       doc: document,
-      href: '#stale-beta',
+      href: '#archived-beta',
       isTimelineTarget: false,
       prefetchActiveTarget,
-      prefetchStaleTarget,
+      prefetchArchivedTarget,
       requestTimelineLoad,
-      status: 'stale',
+      status: 'archived',
       win: window,
     })
     prefetchHomeNavTarget({
@@ -39,14 +39,14 @@ describe('homeNavTargetClient', () => {
       href: '#timeline-2026',
       isTimelineTarget: true,
       prefetchActiveTarget,
-      prefetchStaleTarget,
+      prefetchArchivedTarget,
       requestTimelineLoad,
       status: 'active',
       win: window,
     })
 
     expect(prefetchActiveTarget).toHaveBeenCalledWith(document, '#active-alpha')
-    expect(prefetchStaleTarget).toHaveBeenCalledWith(document, '#stale-beta')
+    expect(prefetchArchivedTarget).toHaveBeenCalledWith(document, '#archived-beta')
     expect(requestTimelineLoad).toHaveBeenCalledWith(window, {
       strategy: 'target',
       targetId: '#timeline-2026',
@@ -75,28 +75,71 @@ describe('homeNavTargetClient', () => {
     window.removeEventListener(HOME_SCROLL_RESTORE_ABORT_EVENT, onRestoreAbort)
   })
 
-  it('aborts pending restore and waits for stale visibility before continuing', () => {
+  it('waits until the deferred target is actually ready before completing', () => {
+    const onLoaded = vi.fn()
+    let ready = false
+
+    loadDeferredHomeNavTarget({
+      isReady: () => ready,
+      loadedEvent: 'home:test-loaded',
+      onLoaded,
+      requestLoad: () => {
+        window.dispatchEvent(new Event('home:test-loaded'))
+        ready = true
+        window.dispatchEvent(new Event('home:test-loaded'))
+      },
+      win: window,
+    })
+
+    expect(onLoaded).toHaveBeenCalledTimes(1)
+  })
+
+  it('aborts pending restore and waits for archived visibility before continuing', () => {
     const onRestoreAbort = vi.fn()
     const onVisible = vi.fn()
-    const requestStaleVisibility = vi.fn((win: Window) => {
+    const requestArchivedVisibility = vi.fn((win: Window) => {
       win.dispatchEvent(
-        new CustomEvent(STALE_CHARACTERS_STATE_CHANGE_EVENT, {
+        new CustomEvent(ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT, {
           detail: { visibility: 'visible', loaded: false },
         }),
       )
     })
     window.addEventListener(HOME_SCROLL_RESTORE_ABORT_EVENT, onRestoreAbort)
 
-    revealStaleHomeNavTarget({
+    revealArchivedHomeNavTarget({
       onVisible,
-      requestStaleVisibility,
+      requestArchivedVisibility,
       win: window,
     })
 
     expect(onRestoreAbort).toHaveBeenCalledTimes(1)
-    expect(requestStaleVisibility).toHaveBeenCalledWith(window, 'visible')
+    expect(requestArchivedVisibility).toHaveBeenCalledWith(window, 'visible')
     expect(onVisible).toHaveBeenCalledTimes(1)
 
     window.removeEventListener(HOME_SCROLL_RESTORE_ABORT_EVENT, onRestoreAbort)
+  })
+
+  it('ignores unrelated archived state changes until visibility is actually visible', () => {
+    const onVisible = vi.fn()
+    const requestArchivedVisibility = vi.fn((win: Window) => {
+      win.dispatchEvent(
+        new CustomEvent(ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT, {
+          detail: { visibility: 'hidden', loaded: false },
+        }),
+      )
+      win.dispatchEvent(
+        new CustomEvent(ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT, {
+          detail: { visibility: 'visible', loaded: false },
+        }),
+      )
+    })
+
+    revealArchivedHomeNavTarget({
+      onVisible,
+      requestArchivedVisibility,
+      win: window,
+    })
+
+    expect(onVisible).toHaveBeenCalledTimes(1)
   })
 })

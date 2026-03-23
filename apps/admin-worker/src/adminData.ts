@@ -40,7 +40,7 @@ interface TableInfoRow {
 interface CharacterCountRow {
   id: number
   name: string
-  status: 'active' | 'stale'
+  status: 'active' | 'archived'
   sortOrder: number
   commissionCount: number
 }

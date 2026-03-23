@@ -17,7 +17,7 @@ interface CharacterDisplay {
 
 interface DesktopSidebarNavProps {
   active: CharacterDisplay[]
-  stale: CharacterDisplay[]
+  archived: CharacterDisplay[]
   monthNavItems: CharacterNavItem[]
   locale: string
   localeOptions: HomeLocaleOption[]
@@ -25,19 +25,19 @@ interface DesktopSidebarNavProps {
   controls: HomeLocaleMessages['controls']
 }
 
-const { active, stale, monthNavItems, locale, localeOptions, localeSwitcherLabel, controls }
+const { active, archived, monthNavItems, locale, localeOptions, localeSwitcherLabel, controls }
   = Astro.props as DesktopSidebarNavProps
 
 const activeCharacterNavItems = buildCharacterNavItems(active)
-const staleCharacterNavItems = buildCharacterNavItems(stale)
+const archivedCharacterNavItems = buildCharacterNavItems(archived)
 const sidebarLeadSlotClass = 'flex h-5 w-4 shrink-0 items-center justify-center'
 const sidebarIconClass = 'h-3.5 w-3.5'
 const sidebarLeadOffsetStyle = '--sidebar-lead-offset:1.125rem;'
 const sidebarLabelClass
   = 'font-mono text-sm leading-5 font-bold no-underline transition-colors duration-200'
-const localeLabelClass = 'text-sm leading-5 font-bold no-underline transition-colors duration-200'
+const localeLabelClass = 'font-mono text-sm leading-5 font-bold no-underline transition-colors duration-200'
 const sidebarNavLinkClass
-  = 'flex items-center gap-2 font-mono text-sm no-underline transition-colors duration-200 mb-3'
+  = 'flex items-center gap-2 font-mono text-sm no-underline transition-colors duration-200 mb-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400 rounded-sm'
 ---
 
 <aside
@@ -48,7 +48,7 @@ const sidebarNavLinkClass
     md:max-w-[calc(10rem+var(--sidebar-lead-offset))]
     lg:fixed lg:z-20 lg:block
   "
-  style={sidebarLeadOffsetStyle}
+  style={`${sidebarLeadOffsetStyle} animation: reveal-up 500ms cubic-bezier(0.22, 1, 0.36, 1) both;`}
 >
   <div class="sticky top-4 space-y-2">
     <div class="space-y-4 pb-2">
@@ -245,7 +245,7 @@ const sidebarNavLinkClass
     md:max-w-[calc(12.5rem+var(--sidebar-lead-offset))]
     lg:fixed lg:z-20 lg:block
   "
-  style={sidebarLeadOffsetStyle}
+  style={`${sidebarLeadOffsetStyle} animation: reveal-up 500ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;`}
 >
   <div class="sticky top-4 space-y-2 pl-12">
     <nav>
@@ -306,12 +306,12 @@ const sidebarNavLinkClass
           ))
         }
         {
-          staleCharacterNavItems.length > 0
+          archivedCharacterNavItems.length > 0
 ? (
             <li class="pt-2">
-              <details class="group" data-sidebar-stale-details="true">
+              <details class="group" data-sidebar-archived-details="true">
                 <summary
-                  data-load-stale-characters="true"
+                  data-load-archived-characters="true"
                   class="
                     flex min-h-5 cursor-pointer list-none items-center gap-2
                     text-gray-700 transition-colors
@@ -330,12 +330,12 @@ const sidebarNavLinkClass
                       stroke={2.2}
                     />
                   </span>
-                  <span class="font-mono text-sm/5 font-bold">{controls.staleCharacters}</span>
+                  <span class="font-mono text-sm/5 font-bold">{controls.archivedCharacters}</span>
                 </summary>
 
                 <ul class="mt-4 space-y-2">
                   {
-                    staleCharacterNavItems.map(({ displayName, sectionHash, titleId, sectionId }) => (
+                    archivedCharacterNavItems.map(({ displayName, sectionHash, titleId, sectionId }) => (
                       <li class="
                         text-gray-700
                         hover:text-gray-900
@@ -346,18 +346,10 @@ const sidebarNavLinkClass
                         <a
                           href={sectionHash}
                           data-sidebar-character-link="true"
-                          data-sidebar-character-status="stale"
+                          data-sidebar-character-status="archived"
                           data-sidebar-title-id={titleId}
-                          class="
-                            pointer-events-none flex cursor-not-allowed
-                            items-center gap-2 pb-1 font-mono text-sm
-                            text-gray-500 no-underline opacity-70
-                            transition-colors duration-200
-                            dark:text-gray-400
-                          "
+                          class={sidebarNavLinkClass}
                           data-sidebar-section-id={sectionId}
-                          aria-disabled="true"
-                          tabindex="-1"
                         >
                           <span class={sidebarLeadSlotClass} aria-hidden="true">
                             <span

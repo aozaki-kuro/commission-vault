@@ -18,7 +18,7 @@ describe('creatorAliases data access', () => {
           source: 'remote-admin-fact-source',
           exportedAt: '2026-03-18T00:00:00.000Z',
           databaseBinding: 'DB',
-          imagesBucket: 'commission-index-source-images',
+          imagesBucket: 'commission-index-images',
         },
         characters: [],
         creatorAliases: [

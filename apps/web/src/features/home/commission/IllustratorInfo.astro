@@ -5,6 +5,7 @@ import {
   hasDisplayableLinks,
   selectDisplayLinks,
 } from '#features/home/commission/linkDisplay'
+import { getUnpublishedInterestIconMarkup } from '#features/home/commission/unpublishedInterestIcon'
 import { getHomeLocaleMessages, normalizeHomeLocale } from '#features/home/i18n/homeLocale'
 import { parseCommissionFileName } from '#lib/commissions/index'
 import { parseAndFormatDate } from '#lib/date/format'
@@ -42,7 +43,7 @@ const rootClass = `flex w-full flex-wrap items-center gap-y-2 font-mono text-xs 
       href={linkId}
       class="
         mr-6 text-gray-800 no-underline select-none
-        md:mr-16
+        md:mr-10
         dark:text-gray-300!
       "
     >
@@ -115,7 +116,7 @@ const rootClass = `flex w-full flex-wrap items-center gap-y-2 font-mono text-xs 
             data-link-style="true"
             class={`
               ${COMMISSION_LINK_TEXT_CLASS}
-              inline-flex cursor-pointer appearance-none items-center gap-2.5
+              inline-flex cursor-pointer appearance-none items-center gap-2
               border-0 bg-transparent p-0
               disabled:cursor-default disabled:no-underline
             `}
@@ -124,10 +125,8 @@ const rootClass = `flex w-full flex-wrap items-center gap-y-2 font-mono text-xs 
             data-commission-interest-recorded-label={messages.listing.wantThisRecorded}
             data-commission-interest-recorded-title={messages.listing.wantThisRecordedTitle}
           >
-            <span
-              aria-hidden="true"
-              class="size-1.5 rounded-full bg-current opacity-80"
-            />
+            <Fragment set:html={getUnpublishedInterestIconMarkup({ state: 'default' })} />
+            <Fragment set:html={getUnpublishedInterestIconMarkup({ state: 'recorded', hidden: true })} />
             <span data-commission-interest-label>{messages.listing.wantThis}</span>
           </button>
         )

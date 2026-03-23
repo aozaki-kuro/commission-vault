@@ -28,11 +28,34 @@ const COMMISSION_ITEM_ID_PATTERN = /^\/api\/admin\/commissions\/(\d+)$/
 const COMMISSION_SOURCE_IMAGE_PATH_PATTERN = /^\/api\/admin\/commissions\/\d+\/source-image$/
 const COMMISSION_SOURCE_IMAGE_ID_PATTERN = /^\/api\/admin\/commissions\/(\d+)\/source-image$/
 
-export type CharacterStatus = 'active' | 'stale'
+export type CharacterStatus = 'active' | 'archived'
 
 export interface Env {
   DB?: unknown
   IMAGES?: unknown
+  GITHUB_DISPATCH_TOKEN?: string
+}
+
+async function triggerWebRebuild(env: Env): Promise<void> {
+  if (!env.GITHUB_DISPATCH_TOKEN) {
+    return
+  }
+
+  try {
+    await fetch('https://api.github.com/repos/aozaki-kuro/commission-index/dispatches', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/vnd.github+json',
+        'Authorization': `Bearer ${env.GITHUB_DISPATCH_TOKEN}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'commission-index-admin-worker',
+      },
+      body: JSON.stringify({ event_type: 'admin-data-changed' }),
+    })
+  }
+  catch {
+    // fire-and-forget, never block the response
+  }
 }
 
 export interface ApiState {
@@ -61,7 +84,7 @@ export interface UpdateCharacterInput extends CreateCharacterInput {
 
 export interface CharacterOrderPayload {
   active: number[]
-  stale: number[]
+  archived: number[]
 }
 
 export interface CreateCommissionInput extends CommissionFields {
@@ -156,7 +179,7 @@ function parseOptionalField(rawValue: string) {
 }
 
 function parseCharacterStatus(value: unknown): CharacterStatus {
-  return String(value) === 'stale' ? 'stale' : 'active'
+  return String(value) === 'archived' ? 'archived' : 'active'
 }
 
 function parseCommissionFields(input: {
@@ -480,7 +503,7 @@ async function handleCrudRequest(request: Request, backend: AdminCrudBackend) {
     const body = await parseJsonBody(request)
     return handleCrudBackendRequest(() => backend.updateCharacterOrder({
       active: Array.isArray(body.active) ? body.active.map(Number) : [],
-      stale: Array.isArray(body.stale) ? body.stale.map(Number) : [],
+      archived: Array.isArray(body.archived) ? body.archived.map(Number) : [],
     }))
   }
 
@@ -567,9 +590,16 @@ async function handleCrudRequest(request: Request, backend: AdminCrudBackend) {
   return null
 }
 
+interface CtxLike {
+  waitUntil: (promise: Promise<unknown>) => void
+}
+
+const noopCtx: CtxLike = { waitUntil: () => {} }
+
 export async function handleAdminApiRequest(
   request: Request,
   env: Env,
+  ctx: CtxLike = noopCtx,
   backend: AdminCrudBackend | undefined = undefined,
 ) {
   const { pathname } = new URL(request.url)
@@ -589,11 +619,17 @@ export async function handleAdminApiRequest(
 
   const nativeCrudResponse = await handleCrudRequest(request, resolvedBackend)
   if (nativeCrudResponse) {
+    if (request.method !== 'GET' && nativeCrudResponse.ok) {
+      ctx.waitUntil(triggerWebRebuild(env))
+    }
     return nativeCrudResponse
   }
 
   const nativeWriteResponse = await handleAdminWriteRequest(request, env)
   if (nativeWriteResponse) {
+    if (nativeWriteResponse.ok) {
+      ctx.waitUntil(triggerWebRebuild(env))
+    }
     return nativeWriteResponse
   }
 

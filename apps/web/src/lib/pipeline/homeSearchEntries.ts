@@ -30,7 +30,7 @@ export function buildHomeSearchEntries(): SearchEntry[] {
   const keywordAliasesMap = getKeywordAliasesMap()
   const orderedCharacters = [
     ...records.filter(record => record.status === 'active').map(record => record.name),
-    ...records.filter(record => record.status === 'stale').map(record => record.name),
+    ...records.filter(record => record.status === 'archived').map(record => record.name),
   ]
   const entries: SearchEntry[] = []
   let nextId = 0

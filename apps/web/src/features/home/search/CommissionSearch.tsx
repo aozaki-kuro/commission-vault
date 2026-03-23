@@ -7,16 +7,16 @@ import type { KeyboardEvent, MouseEvent } from 'react'
 import { Button } from '#components/ui/button'
 import { Command, CommandInput } from '#components/ui/command'
 import { Popover, PopoverTrigger } from '#components/ui/popover'
-import { readActiveCharactersLoadedBatchCount } from '#features/home/commission/activeCharactersEvent'
-import { useCommissionViewMode } from '#features/home/commission/CommissionViewMode'
 import {
   getHomeCharacterBatchTotalCount,
   prefetchHomeCharacterBatches,
-} from '#features/home/commission/homeCharacterBatchClient'
+} from '#features/home/commission/batch/homeCharacterBatchClient'
+import { useCommissionViewMode } from '#features/home/commission/CommissionViewMode'
+import { readActiveCharactersLoadedBatchCount } from '#features/home/commission/loader/activeCharactersEvent'
 import {
-  requestStaleCharactersLoad as dispatchStaleCharactersLoad,
-  readStaleCharactersLoadedBatchCount,
-} from '#features/home/commission/staleCharactersEvent'
+  requestArchivedCharactersLoad as dispatchArchivedCharactersLoad,
+  readArchivedCharactersLoadedBatchCount,
+} from '#features/home/commission/loader/archivedCharactersEvent'
 import { resolveHomeSearchControls } from '#features/home/i18n/homeSearchControls'
 import CommissionSearchHelpPopover from '#features/home/search/CommissionSearchHelpPopover'
 import CommissionSearchSuggestionDropdown from '#features/home/search/CommissionSearchSuggestionDropdown'
@@ -55,7 +55,7 @@ function shouldUseTapLikeFocus() {
 }
 const EMPTY_POPULAR_KEYWORDS: string[] = []
 const EMPTY_SUGGESTION_ALIAS_GROUPS: SearchSuggestionAliasGroup[] = []
-type CharacterBatchPrefetchStatus = 'active' | 'stale'
+type CharacterBatchPrefetchStatus = 'active' | 'archived'
 
 function buildSearchUrl(rawQuery: string) {
   const url = new URL(window.location.href)
@@ -112,7 +112,7 @@ function CommissionSearch({
   const ignoreNextHelpTriggerClickRef = useRef(openHelpOnMount)
   const prefetchedBatchStatusesRef = useRef<Record<CharacterBatchPrefetchStatus, boolean>>({
     active: false,
-    stale: false,
+    archived: false,
   })
   const [isHelpOpen, setIsHelpOpen] = useState(openHelpOnMount)
   const [copyState, setCopyState] = useState<'idle' | 'success'>('idle')
@@ -122,14 +122,14 @@ function CommissionSearch({
     ensureIndexReady,
     ensureSearchRuntimeReady,
     hasQuery,
-    hiddenStaleNoticeMessage,
+    hiddenArchivedNoticeMessage,
     initialUrlQuery,
     liveRef,
     query,
     resolvedActiveCommandValue,
     setInputQuery,
     shouldAnimateSuggestionPanel,
-    shouldShowHiddenStaleNotice,
+    shouldShowHiddenArchivedNotice,
     shouldShowSuggestionPanel,
     suggestionIsExclusion,
     suggestionOperator,
@@ -270,8 +270,8 @@ function CommissionSearch({
     }
   }, [setInputQuery, showSuggestionPanel])
 
-  const handleStaleCharactersLoadRequest = useCallback(() => {
-    dispatchStaleCharactersLoad(window, { strategy: 'all', preserveScroll: true })
+  const handleArchivedCharactersLoadRequest = useCallback(() => {
+    dispatchArchivedCharactersLoad(window, { strategy: 'all', preserveScroll: true })
   }, [])
 
   const prefetchDeferredCharacterBatches = useCallback(
@@ -288,7 +288,7 @@ function CommissionSearch({
       const startBatchIndex
         = status === 'active'
           ? readActiveCharactersLoadedBatchCount(document)
-          : readStaleCharactersLoadedBatchCount(document)
+          : readArchivedCharactersLoadedBatchCount(document)
       const targetBatchIndex = totalBatchCount - 1
 
       prefetchedBatchStatusesRef.current[status] = true
@@ -311,10 +311,10 @@ function CommissionSearch({
   }, [ensureSearchRuntimeReady, prefetchDeferredCharacterBatches])
 
   useEffect(() => {
-    if (!shouldShowHiddenStaleNotice)
+    if (!shouldShowHiddenArchivedNotice)
       return
-    prefetchDeferredCharacterBatches('stale')
-  }, [prefetchDeferredCharacterBatches, shouldShowHiddenStaleNotice])
+    prefetchDeferredCharacterBatches('archived')
+  }, [prefetchDeferredCharacterBatches, shouldShowHiddenArchivedNotice])
 
   const { focusInputAfterSelection, searchRootRef, shouldSuppressInputFocusOpen }
     = useSuggestionPanelController({
@@ -464,10 +464,9 @@ function CommissionSearch({
                 autoComplete="off"
                 aria-label={controls.searchCommissions}
                 className="
-                  peer m-0 flex h-10 w-full origin-[left_center]
-                  transform-[scale(0.8)] appearance-none rounded-md
-                  bg-transparent p-0 pr-24 font-mono text-[16px]/5
-                  tracking-[0.01em] outline-none
+                  peer m-0 flex h-10 w-[calc(100%/0.875)] origin-left
+                  scale-[0.875] appearance-none rounded-md bg-transparent p-0
+                  pr-24 font-mono text-base/5 tracking-[0.01em] outline-none
                   placeholder:text-gray-400
                 "
               />
@@ -479,12 +478,12 @@ function CommissionSearch({
                 suggestionIsExclusion={suggestionIsExclusion}
                 suggestionOperator={suggestionOperator}
                 sourcePrefix={controls.sourcePrefix}
-                shouldShowHiddenStaleNotice={shouldShowHiddenStaleNotice}
-                hiddenStaleNoticeMessage={hiddenStaleNoticeMessage}
+                shouldShowHiddenArchivedNotice={shouldShowHiddenArchivedNotice}
+                hiddenArchivedNoticeMessage={hiddenArchivedNoticeMessage}
                 visibleStatusMessage={visibleStatusMessage}
-                loadStaleCharactersLabel={controls.loadStaleCharacters}
+                loadArchivedCharactersLabel={controls.loadArchivedCharacters}
                 onSelectSuggestion={applySuggestion}
-                onLoadStaleCharacters={handleStaleCharactersLoadRequest}
+                onLoadArchivedCharacters={handleArchivedCharactersLoadRequest}
               />
             </Command>
 
@@ -552,10 +551,10 @@ function CommissionSearch({
             >
               {copyState === 'success'
                 ? (
-                    <IconCheck className="h-4.5 w-4.5" stroke={2.2} aria-hidden="true" />
+                    <IconCheck className="size-4.5" stroke={2.2} aria-hidden="true" />
                   )
                 : (
-                    <IconShare3 className="h-4.5 w-4.5" stroke={2} aria-hidden="true" />
+                    <IconShare3 className="size-4.5" stroke={2} aria-hidden="true" />
                   )}
             </Button>
 

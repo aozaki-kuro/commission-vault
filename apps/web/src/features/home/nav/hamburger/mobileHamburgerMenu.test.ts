@@ -1,6 +1,6 @@
 import {
-  STALE_CHARACTERS_STATE_CHANGE_EVENT,
-} from '#features/home/commission/staleCharactersEvent'
+  ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT,
+} from '#features/home/commission/loader/archivedCharactersEvent'
 import { HAMBURGER_MENU_MOUNTED_CHANGE_EVENT, HOME_SCROLL_RESTORE_ABORT_EVENT } from '#features/home/events'
 import { ANALYTICS_EVENTS } from '#lib/analytics/events'
 // @vitest-environment jsdom
@@ -15,7 +15,7 @@ function renderMenu() {
       data-mobile-hamburger-mounted="false"
       data-mobile-hamburger-open="false"
       data-mobile-hamburger-active-count="2"
-      data-mobile-hamburger-stale-count="1"
+      data-mobile-hamburger-archived-count="1"
       data-mobile-hamburger-timeline-count="3"
       data-mobile-hamburger-open-label="Open navigation menu"
       data-mobile-hamburger-close-label="Close navigation menu"
@@ -43,18 +43,18 @@ function renderMenu() {
             </button>
             <div data-mobile-character-section-panel="active"></div>
           </section>
-          <section data-mobile-character-section="stale">
-            <button data-mobile-character-section-toggle="true" data-mobile-character-section-key="stale" aria-expanded="false">
+          <section data-mobile-character-section="archived">
+            <button data-mobile-character-section-toggle="true" data-mobile-character-section-key="archived" aria-expanded="false">
               <span data-mobile-character-section-chevron="true"></span>
             </button>
-            <div data-mobile-character-section-panel="stale" hidden>
+            <div data-mobile-character-section-panel="archived" hidden>
               <a
-                href="#stale-item"
+                href="#archived-item"
                 data-mobile-nav-link="true"
-                data-mobile-nav-character-status="stale"
-                data-mobile-nav-section-id="stale-item"
+                data-mobile-nav-character-status="archived"
+                data-mobile-nav-section-id="archived-item"
               >
-                Stale
+                Archived
               </a>
             </div>
           </section>
@@ -90,17 +90,17 @@ function getTimelineToggle() {
     '[data-mobile-hamburger-view-mode-toggle="true"][data-view-mode="timeline"]',
   )
 }
-function getStaleSectionToggle() {
+function getArchivedSectionToggle() {
   return document.querySelector<HTMLButtonElement>(
-    '[data-mobile-character-section-toggle="true"][data-mobile-character-section-key="stale"]',
+    '[data-mobile-character-section-toggle="true"][data-mobile-character-section-key="archived"]',
   )
 }
-function getStaleSectionPanel() {
-  return document.querySelector<HTMLElement>('[data-mobile-character-section-panel="stale"]')
+function getArchivedSectionPanel() {
+  return document.querySelector<HTMLElement>('[data-mobile-character-section-panel="archived"]')
 }
-function getStaleLink() {
+function getArchivedLink() {
   return document.querySelector<HTMLAnchorElement>(
-    '[data-mobile-nav-link="true"][data-mobile-nav-character-status="stale"]',
+    '[data-mobile-nav-link="true"][data-mobile-nav-character-status="archived"]',
   )
 }
 describe('mobileHamburgerMenu', () => {
@@ -159,7 +159,7 @@ describe('mobileHamburgerMenu', () => {
     expect(jumpToSearch).toHaveBeenCalledWith({ topGap: 40, focusMode: 'immediate' })
     expect(trackEvent).toHaveBeenCalledWith(ANALYTICS_EVENTS.hamburgerMenuUsed, {
       active_count: 2,
-      stale_count: 1,
+      archived_count: 1,
     })
     expect(trackEvent).toHaveBeenCalledWith(ANALYTICS_EVENTS.sidebarNavUsed, {
       source: 'search_link',
@@ -184,40 +184,40 @@ describe('mobileHamburgerMenu', () => {
     cleanup()
   })
 
-  it('lets the stale section toggle collapse back shut without hiding stale content', () => {
-    const requestStaleVisibility = vi.fn()
+  it('lets the archived section toggle collapse back shut without hiding archived content', () => {
+    const requestArchivedVisibility = vi.fn()
     const cleanup = mountMobileHamburgerMenu({
-      deps: { requestStaleVisibility },
+      deps: { requestArchivedVisibility },
     })
 
     getToggle()!.click()
-    getStaleSectionToggle()!.click()
-    getStaleSectionToggle()!.click()
+    getArchivedSectionToggle()!.click()
+    getArchivedSectionToggle()!.click()
 
-    expect(requestStaleVisibility).toHaveBeenCalledTimes(1)
-    expect(getStaleSectionToggle()?.getAttribute('aria-expanded')).toBe('false')
-    expect(getStaleSectionPanel()?.hidden).toBe(true)
+    expect(requestArchivedVisibility).toHaveBeenCalledTimes(1)
+    expect(getArchivedSectionToggle()?.getAttribute('aria-expanded')).toBe('false')
+    expect(getArchivedSectionPanel()?.hidden).toBe(true)
 
     cleanup()
   })
 
-  it('loads stale characters and jumps when a stale link is selected before load', () => {
+  it('loads archived characters and jumps when a archived link is selected before load', () => {
     const trackEvent = vi.fn()
     const scrollToHashWithoutWrite = vi.fn()
     const onRestoreAbort = vi.fn()
-    const requestStaleVisibility = vi.fn(() => {
-      const staleSection = document.createElement('section')
-      staleSection.id = 'stale-item'
-      document.body.append(staleSection)
+    const requestArchivedVisibility = vi.fn(() => {
+      const archivedSection = document.createElement('section')
+      archivedSection.id = 'archived-item'
+      document.body.append(archivedSection)
 
       document
         .querySelector<HTMLElement>('[data-commission-view-panel="character"]')
-        ?.setAttribute('data-stale-loaded', 'false')
+        ?.setAttribute('data-archived-loaded', 'false')
       document
         .querySelector<HTMLElement>('[data-commission-view-panel="character"]')
-        ?.setAttribute('data-stale-visibility', 'visible')
+        ?.setAttribute('data-archived-visibility', 'visible')
       window.dispatchEvent(
-        new CustomEvent(STALE_CHARACTERS_STATE_CHANGE_EVENT, {
+        new CustomEvent(ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT, {
           detail: { visibility: 'visible', loaded: false },
         }),
       )
@@ -225,22 +225,22 @@ describe('mobileHamburgerMenu', () => {
     window.addEventListener(HOME_SCROLL_RESTORE_ABORT_EVENT, onRestoreAbort)
 
     const cleanup = mountMobileHamburgerMenu({
-      deps: { requestStaleVisibility, scrollToHashWithoutWrite, trackEvent },
+      deps: { requestArchivedVisibility, scrollToHashWithoutWrite, trackEvent },
     })
 
     getToggle()!.click()
-    getStaleLink()!.click()
+    getArchivedLink()!.click()
 
-    expect(requestStaleVisibility).toHaveBeenCalledWith(window, 'visible')
+    expect(requestArchivedVisibility).toHaveBeenCalledWith(window, 'visible')
     expect(onRestoreAbort).toHaveBeenCalledTimes(1)
-    expect(scrollToHashWithoutWrite).toHaveBeenCalledWith('#stale-item')
+    expect(scrollToHashWithoutWrite).toHaveBeenCalledWith('#archived-item')
     expect(trackEvent).toHaveBeenCalledWith(ANALYTICS_EVENTS.sidebarNavUsed, {
       source: 'character_link',
       nav_surface: 'hamburger',
       view_mode: 'character',
       item_count: 3,
-      character_name: 'Stale',
-      section_id: 'stale-item',
+      character_name: 'Archived',
+      section_id: 'archived-item',
     })
     expect(getRoot()?.dataset.mobileHamburgerOpen).toBe('false')
 

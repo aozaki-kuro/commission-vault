@@ -1,6 +1,5 @@
 import type { CharacterCommissions, Commission, Props } from '#data/types'
 import { getBaseFileName } from '#lib/utils/strings'
-import { parseCommissionFileName } from '@commission-index/domain'
 
 export type CommissionWithCharacter = Commission & { character: string }
 
@@ -40,6 +39,16 @@ export function sortCommissionsByDate<T extends Commission>(a: T, b: T): number 
 }
 
 /**
+ * Extract metadata from a commission file name.
+ */
+export function parseCommissionFileName(fileName: string) {
+  const date = fileName.slice(0, 8)
+  const year = date.slice(0, 4)
+  const creator = fileName.slice(9)
+  return { date, year, creator }
+}
+
+/**
  * Flatten commission data to include character names for downstream processing.
  */
 export function flattenCommissions(data: Props, predicate?: (character: CharacterCommissions) => boolean): CommissionWithCharacter[] {
@@ -56,5 +65,3 @@ export function flattenCommissions(data: Props, predicate?: (character: Characte
 export function collectUniqueCommissions(commissions: CommissionWithCharacter[]): CommissionWithCharacter[] {
   return [...mergePartsAndPreviews(commissions).values()].toSorted(sortCommissionsByDate)
 }
-
-export { parseCommissionFileName }
