@@ -238,6 +238,35 @@
 - [x] `bun run build:admin` 通过。
 - [x] `bun run build` 通过。
 
+## 本轮执行切片（2026-03-23 事实源同步并发提速）
+
+- [x] 确认 `web:fact-source:export` 与 `fact-source:sync-images` 的串行瓶颈是否都在 R2 下载链路
+- [x] 给图片下载改成有上限的并发执行，避免单文件串行导致 3min 级等待
+- [x] 保持缺图、下载失败、metadata upsert 的既有语义不变
+- [x] 跑通本轮针对性验证并把结果补到 Review
+
+## Review（2026-03-23 事实源同步并发提速）
+
+- [x] `bun run --cwd apps/admin-worker typecheck` 通过。
+- [x] `bun run --cwd apps/admin-worker ./scripts/exportWebFactSource.ts --help` 通过。
+- [x] `FACT_SOURCE_WRANGLER_CONFIG=../web/wrangler.jsonc FACT_SOURCE_DOWNLOAD_CONCURRENCY=4 bun run --cwd apps/admin-worker ./scripts/exportWebFactSource.ts --output-root /tmp/ci-export-smoke` 通过，日志确认图片下载以 `concurrency=4` 并发执行，最终 `materializedImages=124 | downloadedImages=124 | missingImages=0`。
+- [x] `bun run --cwd apps/web fact-source:sync-images` 当前仍会在缺少 `apps/web/generated/fact-source/source-images-manifest.json` 时快速失败；该失败语义未被本轮修改破坏。
+
+## 本轮执行切片（2026-03-23 monorepo 依赖收口）
+
+- [x] 审计根包与各 workspace 的直接工具依赖缺口
+- [x] 修正根级 lint/tooling 依赖声明，解决 `better-tailwindcss` 等包在根上下文不可解析的问题
+- [x] 修正 workspace 自己脚本直接依赖但未声明的工具包
+- [x] 跑安装与校验，并补一份新开发机依赖安装说明
+
+## Review（2026-03-23 monorepo 依赖收口）
+
+- [x] `bun install` 通过，并更新 lockfile。
+- [x] `node -e "console.log(require.resolve('tailwindcss/package.json')); console.log(require.resolve('prettier/package.json'))"` 通过，确认根级工具依赖可从 root workspace 正常解析。
+- [x] `bunx eslint apps/admin-worker/scripts/exportWebFactSource.ts apps/admin-worker/scripts/syncMissingSourceImages.ts` 通过，确认 `better-tailwindcss` 不再因根上下文缺依赖而炸掉。
+- [x] `bun run --cwd packages/domain typecheck` 通过，确认 `packages/domain` 的 workspace 自身工具依赖声明完整。
+- [x] `bun run lint` 通过。
+
 ## 本轮执行切片（2026-03-18 admin 认证边界改为 Zero Trust）
 
 - [x] 删除 `apps/admin-worker/src/index.ts` 内置 Basic Auth 校验

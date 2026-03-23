@@ -6,6 +6,26 @@ Personal use only
 
 ## Development
 
+### Fresh machine setup
+
+This repo uses Bun workspaces. Install dependencies once from the repository root; do not `bun install` inside each app separately.
+
+1. Install runtime tools:
+   - `mise install`
+   - If Bun is not already available: `curl -fsSL https://bun.sh/install | bash`
+2. Install workspace dependencies from the repo root:
+   - `bun install`
+3. Optional sanity checks:
+   - `bun run lint`
+   - `bun run check`
+   - `bun run test`
+
+Workspace notes:
+
+- `apps/web`, `apps/admin`, `apps/admin-worker`, and `packages/domain` all resolve dependencies through the root workspace install.
+- Root-only tooling such as ESLint, Prettier, Playwright, Vitest, and the root `better-tailwindcss` rule also comes from that same root install.
+- If you add a dependency that is used by a root config file (for example `eslint.config.ts`), declare it in the root `package.json` even if app workspaces also use it.
+
 - `bun run dev` — run the public `apps/web` Astro app in development mode.
 - `bun run dev:admin` — start the standalone admin frontend plus `apps/admin-worker` in local `wrangler dev` mode with remote D1/R2 bindings enabled by config.
 - `bun run dev:admin:remote` — compatibility alias for `bun run dev:admin`.
