@@ -2,7 +2,6 @@ import type { AdminBootstrapData } from '@commission-index/domain'
 import { useEffect, useReducer, useState } from 'react'
 import { adminSurfaceStyles } from '../app/ui'
 import { AdminEditDashboard } from '../components/AdminEditDashboard'
-import { refreshAssetsAction } from '../lib/adminActions'
 import { fetchAdminJsonWithRetry } from '../lib/adminApi'
 import { subscribeToDataUpdates } from '../lib/dataUpdateSignal'
 
@@ -114,8 +113,6 @@ function editReducer(state: EditState, action: EditAction): EditState {
 export function AdminEditPage() {
   const [state, dispatch] = useReducer(editReducer, initialEditState)
   const [reloadToken, setReloadToken] = useState(0)
-  const [isRefreshingAssets, setIsRefreshingAssets] = useState(false)
-  const [refreshMessage, setRefreshMessage] = useState<string | null>(null)
   const [pendingScrollTop] = useState<number | null>(() => readStoredScrollTop())
   const [hasRestoredScroll, setHasRestoredScroll] = useState(false)
 
@@ -162,18 +159,6 @@ export function AdminEditPage() {
       controller.abort()
     }
   }, [reloadToken])
-
-  useEffect(() => {
-    if (!refreshMessage) {
-      return
-    }
-
-    const timer = window.setTimeout(() => {
-      setRefreshMessage(null)
-    }, 2400)
-
-    return () => window.clearTimeout(timer)
-  }, [refreshMessage])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -261,70 +246,14 @@ export function AdminEditPage() {
     }
   }, [hasRestoredScroll, pendingScrollTop, state.payload])
 
-  const handleRefreshAssets = async () => {
-    if (isRefreshingAssets) {
-      return
-    }
-
-    setIsRefreshingAssets(true)
-    setRefreshMessage(null)
-
-    const result = await refreshAssetsAction()
-    setIsRefreshingAssets(false)
-    setRefreshMessage(result.message ?? (result.status === 'success' ? 'Assets refreshed.' : null))
-    if (result.status === 'success') {
-      setReloadToken(token => token + 1)
-    }
-  }
-
   if (state.payload) {
     return (
-      <>
-        <AdminEditDashboard
-          characters={state.payload.characters}
-          commissionSearchRows={state.payload.commissionSearchRows}
-          creatorAliases={state.payload.creatorAliases}
-          dataVersion={reloadToken}
-        />
-
-        <div className="
-          fixed right-4 bottom-4 z-40 flex flex-col items-end gap-2
-        "
-        >
-          {refreshMessage
-            ? (
-                <p className="
-                  rounded-md bg-gray-950/90 px-3 py-1.5 text-xs text-gray-100
-                  shadow-md
-                "
-                >
-                  {refreshMessage}
-                </p>
-              )
-            : null}
-
-          <button
-            type="button"
-            onClick={handleRefreshAssets}
-            disabled={isRefreshingAssets}
-            className="
-              inline-flex h-11 items-center rounded-full border border-gray-300
-              bg-white px-4 text-sm font-medium text-gray-800 shadow-lg
-              transition
-              hover:border-gray-400 hover:bg-gray-50
-              focus-visible:ring-2 focus-visible:ring-gray-400
-              focus-visible:ring-offset-2 focus-visible:ring-offset-white
-              focus-visible:outline-none
-              disabled:cursor-not-allowed disabled:opacity-70
-              dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100
-              dark:hover:border-gray-500 dark:hover:bg-gray-800
-              dark:focus-visible:ring-offset-gray-900
-            "
-          >
-            {isRefreshingAssets ? 'Refreshing…' : 'Refresh Assets Cache'}
-          </button>
-        </div>
-      </>
+      <AdminEditDashboard
+        characters={state.payload.characters}
+        commissionSearchRows={state.payload.commissionSearchRows}
+        creatorAliases={state.payload.creatorAliases}
+        dataVersion={reloadToken}
+      />
     )
   }
 

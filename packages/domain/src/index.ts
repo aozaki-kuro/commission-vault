@@ -21,7 +21,6 @@ export {
   normalizeCharacterAliasName,
   parseCharacterAliasesJson,
 } from './characterAliases'
-export type { CommissionFileNameParts } from './commissionFileName'
 export { parseCommissionFileName } from './commissionFileName'
 export type {
   BuildCommissionSearchMetadataInput,

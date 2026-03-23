@@ -6,12 +6,8 @@
       "#layouts/*": ["apps/web/src/layouts/*"],
       "#features/*": ["apps/web/src/features/*"],
       "#components/*": ["apps/web/src/components/*"],
-      "#images/*": ["apps/web/public/images/*"],
-      "#admin/actions": ["apps/web/src/features/admin/actions.client.ts"],
-      "#admin/*": ["apps/web/src/features/admin/*"],
       "#data/*": ["apps/web/data/*"],
       "#lib/*": ["apps/web/src/lib/*"],
-      "#styles/*": ["apps/web/src/styles/*"],
       "#config/*": ["apps/web/src/config/*"]
     },
     "types": ["node"]

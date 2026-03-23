@@ -1320,7 +1320,7 @@ describe('admin worker CRUD contract routing', () => {
     })
   })
 
-  it('handles refresh-assets natively without requiring the legacy bridge', async () => {
+  it('returns 404 for removed assets/refresh endpoint', async () => {
     const backend = createCrudBackend()
 
     const response = await handleAdminApiRequest(
@@ -1330,10 +1330,6 @@ describe('admin worker CRUD contract routing', () => {
       backend,
     )
 
-    expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({
-      status: 'success',
-      message: 'Runtime assets are generated on demand. Refresh is no longer required.',
-    })
+    expect(response.status).toBe(404)
   })
 })

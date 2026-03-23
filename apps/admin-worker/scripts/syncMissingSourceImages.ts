@@ -1,12 +1,13 @@
 /**
- * Fast pre-dev image sync: reads the existing manifest and downloads only missing images from R2.
+ * Fast pre-dev image sync: reads the existing manifest and downloads missing or stale images from R2.
  * Unlike exportWebFactSource, this never queries D1 — just checks local files against the manifest.
- * If all images are present locally, exits immediately with no network calls.
+ * If all images are present locally and match their expected sha256/byteSize, exits with no network calls.
  */
 import type { GeneratedSourceImageManifest } from '@commission-index/domain'
 import type { SpawnSyncReturns } from 'node:child_process'
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -82,6 +83,25 @@ function downloadImage(bucketName: string, objectKey: string, outputPath: string
   return false
 }
 
+function hashFile(filePath: string) {
+  return createHash('sha256').update(readFileSync(filePath)).digest('hex')
+}
+
+function isStale(
+  filePath: string,
+  expected: { byteSize: number | null, sha256: string },
+): boolean {
+  if (!existsSync(filePath)) {
+    return true
+  }
+
+  if (expected.byteSize !== null && statSync(filePath).size !== expected.byteSize) {
+    return true
+  }
+
+  return hashFile(filePath) !== expected.sha256
+}
+
 function main() {
   // ==================== 读取 manifest ====================
   if (!existsSync(manifestPath)) {
@@ -101,19 +121,21 @@ function main() {
 
   const { files } = manifest
 
-  // ==================== 快速检查：哪些图片缺失 ====================
-  const missingFiles = files.filter(file => !existsSync(path.join(outputImagesDir, file.objectKey)))
+  // ==================== 检查：哪些图片缺失或内容已变更 ====================
+  const staleFiles = files.filter(file =>
+    isStale(path.join(outputImagesDir, file.objectKey), file),
+  )
 
-  if (missingFiles.length === 0) {
-    console.log(`Source images OK (${files.length}/${files.length} present locally)`)
+  if (staleFiles.length === 0) {
+    console.log(`Source images OK (${files.length}/${files.length} present and up to date)`)
     return
   }
 
-  console.log(`Downloading ${missingFiles.length} missing source image(s) from R2...`)
+  console.log(`Downloading ${staleFiles.length} missing/stale source image(s) from R2...`)
   mkdirSync(outputImagesDir, { recursive: true })
 
   let failCount = 0
-  for (const file of missingFiles) {
+  for (const file of staleFiles) {
     const outputPath = path.join(outputImagesDir, file.objectKey)
     const tempPath = `${outputPath}.download`
     rmSync(tempPath, { force: true })
@@ -131,8 +153,8 @@ function main() {
     }
   }
 
-  const downloaded = missingFiles.length - failCount
-  console.log(`Downloaded ${downloaded}/${missingFiles.length} images`)
+  const downloaded = staleFiles.length - failCount
+  console.log(`Downloaded ${downloaded}/${staleFiles.length} images`)
 
   if (failCount > 0) {
     console.error(`${failCount} image(s) failed. Run \`bun run fact-source:export\` to retry.`)

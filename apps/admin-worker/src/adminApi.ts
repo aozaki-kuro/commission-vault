@@ -11,13 +11,16 @@ import {
   getCommissionFileName as persistCommissionFileName,
   updateCommission as persistCommissionUpdate,
   saveSourceImageMetadata as persistSourceImageMetadata,
+  saveCharacterAliasesBatch,
+  saveCreatorAliasesBatch,
+  saveHomeFeaturedSearchKeywords,
+  saveKeywordAliasesBatch,
 } from './adminPersistence'
 import {
   removeSourceImageObject,
   resolveImageWriteBucket,
   saveSourceImageToBucket,
 } from './adminSourceImages'
-import { handleAdminWriteRequest } from './adminWriteApi'
 
 const CHARACTER_ITEM_PATH_PATTERN = /^\/api\/admin\/characters\/\d+$/
 const CHARACTER_ITEM_ID_PATTERN = /^\/api\/admin\/characters\/(\d+)$/
@@ -264,6 +267,16 @@ function getUploadedSourceImage(formData: FormData) {
 async function parseJsonBody(request: Request): Promise<Record<string, unknown>> {
   const payload = await request.json() as unknown
   return payload && typeof payload === 'object' ? payload as Record<string, unknown> : {}
+}
+
+function parseStructuredArray<T>(value: unknown, fallbackFieldValue?: unknown): T[] {
+  if (Array.isArray(value)) {
+    return value as T[]
+  }
+
+  const rawValue = fallbackFieldValue ?? value ?? '[]'
+  const parsed = JSON.parse(String(rawValue)) as unknown
+  return Array.isArray(parsed) ? parsed as T[] : []
 }
 
 async function handleCrudBackendRequest(operation: () => Promise<Response>) {
@@ -590,6 +603,106 @@ async function handleCrudRequest(request: Request, backend: AdminCrudBackend) {
   return null
 }
 
+async function handleBatchWriteRequest(request: Request, env: Env) {
+  if (request.method !== 'POST') {
+    return null
+  }
+
+  const { pathname } = new URL(request.url)
+  const db = resolveD1Database(env.DB)
+
+  if (pathname === '/api/admin/aliases/batch') {
+    if (!db) {
+      return bindingFailure('Admin worker DB binding is required for this route.')
+    }
+
+    try {
+      const body = await parseJsonBody(request)
+      const rows = parseStructuredArray<{
+        creatorName?: string
+        alias?: string
+        aliases?: string[] | string
+      }>(body.rows, body.rowsJson).map(row => ({
+        creatorName: row.creatorName ?? '',
+        aliases: row.aliases ?? row.alias ?? '',
+      }))
+
+      await saveCreatorAliasesBatch(db, rows)
+      return json({ status: 'success', message: 'Creator aliases saved.' } satisfies ApiState)
+    }
+    catch (error) {
+      return failure(error instanceof Error ? error.message : 'Failed to save creator aliases.')
+    }
+  }
+
+  if (pathname === '/api/admin/character-aliases/batch') {
+    if (!db) {
+      return bindingFailure('Admin worker DB binding is required for this route.')
+    }
+
+    try {
+      const body = await parseJsonBody(request)
+      const rows = parseStructuredArray<{
+        characterName?: string
+        alias?: string
+        aliases?: string[] | string
+      }>(body.rows, body.rowsJson).map(row => ({
+        characterName: row.characterName ?? '',
+        aliases: row.aliases ?? row.alias ?? '',
+      }))
+
+      await saveCharacterAliasesBatch(db, rows)
+      return json({ status: 'success', message: 'Character aliases saved.' } satisfies ApiState)
+    }
+    catch (error) {
+      return failure(error instanceof Error ? error.message : 'Failed to save character aliases.')
+    }
+  }
+
+  if (pathname === '/api/admin/keyword-aliases/batch') {
+    if (!db) {
+      return bindingFailure('Admin worker DB binding is required for this route.')
+    }
+
+    try {
+      const body = await parseJsonBody(request)
+      const rows = parseStructuredArray<{
+        baseKeyword?: string
+        alias?: string
+        aliases?: string[] | string
+      }>(body.rows, body.rowsJson).map(row => ({
+        baseKeyword: row.baseKeyword ?? '',
+        aliases: row.aliases ?? row.alias ?? '',
+      }))
+
+      await saveKeywordAliasesBatch(db, rows)
+      return json({ status: 'success', message: 'Keyword aliases saved.' } satisfies ApiState)
+    }
+    catch (error) {
+      return failure(error instanceof Error ? error.message : 'Failed to save keyword aliases.')
+    }
+  }
+
+  if (pathname === '/api/admin/suggestion') {
+    if (!db) {
+      return bindingFailure('Admin worker DB binding is required for this route.')
+    }
+
+    try {
+      const body = await parseJsonBody(request)
+      const keywords = parseStructuredArray<unknown>(body.keywords, body.keywordsJson).map(String)
+
+      await saveHomeFeaturedSearchKeywords(db, keywords)
+      return json({ status: 'success', message: 'Home featured keywords saved.' } satisfies ApiState)
+    }
+    catch (error) {
+      return failure(error instanceof Error ? error.message : 'Failed to save home featured keywords.')
+    }
+  }
+
+  return null
+}
+
 interface CtxLike {
   waitUntil: (promise: Promise<unknown>) => void
 }
@@ -657,12 +770,12 @@ export async function handleAdminApiRequest(
     return nativeCrudResponse
   }
 
-  const nativeWriteResponse = await handleAdminWriteRequest(request, env)
-  if (nativeWriteResponse) {
-    if (nativeWriteResponse.ok) {
+  const batchWriteResponse = await handleBatchWriteRequest(request, env)
+  if (batchWriteResponse) {
+    if (batchWriteResponse.ok) {
       ctx.waitUntil(triggerWebRebuild(env))
     }
-    return nativeWriteResponse
+    return batchWriteResponse
   }
 
   return notFound()

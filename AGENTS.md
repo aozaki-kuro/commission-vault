@@ -194,7 +194,7 @@ Additional guidance:
 - Added `apps/admin-worker/src/adminData.ts` so worker read routes can serve bootstrap, aliases, suggestion, character commissions, and source-image GETs from D1/R2 bindings before falling back to the legacy bridge.
 - Added worker-native D1 persistence for character create/update/reorder/delete and made `apps/admin-worker` prefer native character CRUD when `DB` bindings exist.
 - Added worker-owned D1 persistence for alias batch saves and featured-keyword suggestion writes, removed those routes from the primary legacy passthrough path when bindings exist, and extended admin worker contract coverage.
-- Split worker-owned non-CRUD admin write compatibility handling into `apps/admin-worker/src/adminWriteApi.ts` and moved `/api/admin/assets/refresh` off the legacy passthrough path.
+- Merged batch write routes (aliases, suggestion) from removed `apps/admin-worker/src/adminWriteApi.ts` into `adminApi.ts`; removed dead `assets/refresh` endpoint.
 - Moved standalone admin CRUD route matching/validation into `apps/admin-worker/src/adminApi.ts` and added worker contract tests.
 - Moved Vitest and Playwright configuration to repository-root entrypoints, kept app-owned suites under `apps/*/test`, moved committed Playwright baselines to root `test/visual/apps/*`, routed generated test outputs to root directories, and started downshifting web runtime/build dependencies out of the root workspace manifest.
 - Migrated the standalone `edit` route in `apps/admin`, bridged edit CRUD/source-image/refresh flows through `apps/admin-worker`, and added standalone edit visual regression coverage.
