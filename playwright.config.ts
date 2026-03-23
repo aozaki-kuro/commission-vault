@@ -46,8 +46,14 @@ export default defineConfig({
       reuseExistingServer,
     },
     {
-      // Points at the web dev server as a stub — admin visual tests only capture UI rendering
-      command: 'ADMIN_API_BASE_URL=http://127.0.0.1:4173 bun run --cwd apps/admin dev',
+      command: 'bun run --cwd apps/admin-worker dev -- --ip 127.0.0.1 --port 8787',
+      url: 'http://127.0.0.1:8787/api/admin/health',
+      timeout: 120_000,
+      reuseExistingServer,
+    },
+    {
+      // Admin visuals depend on worker-backed bootstrap data, not the legacy web stub.
+      command: 'ADMIN_API_BASE_URL=http://127.0.0.1:8787 bun run --cwd apps/admin dev',
       url: 'http://127.0.0.1:4174',
       timeout: 120_000,
       reuseExistingServer,

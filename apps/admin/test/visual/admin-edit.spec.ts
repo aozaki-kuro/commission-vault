@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test'
 import {
   ADMIN_PROJECT_NAME,
-  expectUnionToMatchSnapshot,
   getAdminPageContainer,
   prepareStablePage,
   skipUnlessProject,
@@ -22,12 +21,15 @@ test('edit page stays visually stable', async ({ page }, testInfo) => {
 test('edit manager stays visually stable', async ({ page }, testInfo) => {
   skipUnlessProject(testInfo, ADMIN_PROJECT_NAME)
   await page.goto('/edit')
+  const managerSection = page.locator('section.space-y-5').filter({
+    has: page.getByRole('heading', { name: 'Existing commissions' }),
+  })
+
   await page.getByRole('heading', { name: 'Existing commissions' }).waitFor()
   await prepareStablePage(page)
 
-  await expectUnionToMatchSnapshot(page, 'admin-edit-manager.png', [
-    page.getByRole('heading', { name: 'Existing commissions' }),
-    page.getByRole('combobox', { name: 'Search commissions' }),
-    page.getByRole('button', { name: 'Refresh Assets Cache' }),
-  ])
+  await expect(managerSection).toHaveScreenshot('admin-edit-manager.png', {
+    animations: 'disabled',
+    caret: 'hide',
+  })
 })
