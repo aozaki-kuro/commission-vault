@@ -612,6 +612,38 @@ export async function handleAdminApiRequest(
     })
   }
 
+  if (request.method === 'POST' && pathname === '/api/admin/rebuild') {
+    if (!env.GITHUB_DISPATCH_TOKEN) {
+      return failure('GITHUB_DISPATCH_TOKEN is not configured on the worker.', 503)
+    }
+
+    try {
+      const response = await fetch(
+        'https://api.github.com/repos/aozaki-kuro/commission-index/dispatches',
+        {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': `Bearer ${env.GITHUB_DISPATCH_TOKEN}`,
+            'Content-Type': 'application/json',
+            'User-Agent': 'commission-index-admin-worker',
+          },
+          body: JSON.stringify({ event_type: 'admin-data-changed' }),
+        },
+      )
+
+      if (response.status === 204) {
+        return json({ status: 'success', message: 'Web rebuild dispatched to GitHub Actions.' } satisfies ApiState)
+      }
+
+      const text = await response.text().catch(() => '')
+      return failure(`GitHub API returned ${response.status}${text ? `: ${text}` : ''}`, 502)
+    }
+    catch (error) {
+      return failure(error instanceof Error ? error.message : 'Failed to dispatch rebuild.', 502)
+    }
+  }
+
   const nativeReadResponse = await handleAdminReadRequest(request, env)
   if (nativeReadResponse) {
     return nativeReadResponse

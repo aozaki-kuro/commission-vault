@@ -3,6 +3,7 @@ name: Rebuild Web
 on:
   repository_dispatch:
     types: [admin-data-changed]
+  workflow_dispatch:
 
 jobs:
   rebuild:
