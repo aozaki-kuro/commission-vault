@@ -23,3 +23,5 @@
 - 2026-03-18: monorepo 里只要某个 app 的构建阶段需要远端 Cloudflare 资源，就不要再隐式借用另一个 app 的默认 `wrangler.jsonc`；必须把“由谁的 Worker 项目持有绑定、构建时用哪份 config 拉数据”写成显式配置，否则 push build 很容易在 Dashboard 上失去资源上下文。
 - 2026-03-23: 任何依赖 `apps/web/generated/*` 这类构建产物的真实样本测试，都不能在模块顶层直接 import 会触发文件读取的数据模块；必须先做“生成物是否存在”的守门，再用懒加载导入，否则 CI 在未导出事实源时会在测试收集阶段直接失败。
 - 2026-03-23: monorepo 里当同仓同时存在 Astro(Vite 7) 和独立 Vite 8 应用时，`@tailwindcss/vite` 这类插件很容易在类型层解析到另一份 Vite 定义；如果运行时构建已正常，就不要急着重排整棵依赖图，先在 Astro config 侧把插件结果收口到 Astro 自己的 `vite.plugins` 类型面上，再验证 `astro check` 和真实 build。
+- 2026-03-23: 像 duplicate hint 这种带判断色彩的提示，默认必须偏向高精度而不是高召回；只要规则还停留在“有点像”，就不能直接贴上 duplicate 标签，否则用户只会把整块提示当噪音。
+- 2026-03-23: 对外表现成 SPA 的后台，不能只把页面内容搬进 React；只要 section 切换还在走原生 `<a href>` 整页导航，闪动和状态丢失就迟早会露出来。至少要补 client-side history 导航，并用回归测试显式防住 `beforeunload`。

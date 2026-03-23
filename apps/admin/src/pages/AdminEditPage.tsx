@@ -1,13 +1,14 @@
 import type { AdminBootstrapData } from '@commission-index/domain'
-import { useEffect, useReducer, useState } from 'react'
+import { useEffect, useEffectEvent, useReducer, useState } from 'react'
 import { adminSurfaceStyles } from '../app/ui'
 import { AdminEditDashboard } from '../components/AdminEditDashboard'
-import { fetchAdminJsonWithRetry } from '../lib/adminApi'
+import { fetchAdminJsonWithRetry, readCachedAdminJson } from '../lib/adminApi'
 import { subscribeToDataUpdates } from '../lib/dataUpdateSignal'
 
 const scrollStorageKey = 'admin-dashboard-scroll'
 const scrollExpiryMs = 10 * 60 * 1000
 const scrollPersistThrottleMs = 200
+const bootstrapCacheKey = '/api/admin/bootstrap'
 
 interface EditState {
   errorMessage: string | null
@@ -25,10 +26,14 @@ type EditAction
     | { payload: AdminBootstrapData, type: 'loaded' }
     | { message: string, type: 'failed' }
 
-const initialEditState: EditState = {
-  errorMessage: null,
-  isLoading: true,
-  payload: null,
+function createInitialEditState(): EditState {
+  const payload = readCachedAdminJson<AdminBootstrapData>(bootstrapCacheKey)
+
+  return {
+    errorMessage: null,
+    isLoading: payload === null,
+    payload,
+  }
 }
 
 function getCurrentScrollTop() {
@@ -111,10 +116,11 @@ function editReducer(state: EditState, action: EditAction): EditState {
 }
 
 export function AdminEditPage() {
-  const [state, dispatch] = useReducer(editReducer, initialEditState)
+  const [state, dispatch] = useReducer(editReducer, undefined, createInitialEditState)
   const [reloadToken, setReloadToken] = useState(0)
   const [pendingScrollTop] = useState<number | null>(() => readStoredScrollTop())
   const [hasRestoredScroll, setHasRestoredScroll] = useState(false)
+  const hasPayload = useEffectEvent(() => state.payload !== null)
 
   useEffect(() => subscribeToDataUpdates(() => {
     setReloadToken(token => token + 1)
@@ -124,9 +130,11 @@ export function AdminEditPage() {
     const controller = new AbortController()
     let isDisposed = false
 
-    dispatch({ type: 'loading' })
+    if (!hasPayload()) {
+      dispatch({ type: 'loading' })
+    }
 
-    void fetchAdminJsonWithRetry<AdminBootstrapData>('/api/admin/bootstrap', {
+    void fetchAdminJsonWithRetry<AdminBootstrapData>(bootstrapCacheKey, {
       signal: controller.signal,
     })
       .then((payload) => {

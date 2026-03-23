@@ -1,8 +1,10 @@
 import type { HomeSuggestionAdminData } from '@commission-index/domain'
-import { useEffect, useReducer, useState } from 'react'
+import { useEffect, useEffectEvent, useReducer, useState } from 'react'
 import { adminSurfaceStyles } from '../app/ui'
 import { AdminSuggestionDashboard } from '../components/AdminSuggestionDashboard'
-import { fetchAdminJsonWithRetry } from '../lib/adminApi'
+import { fetchAdminJsonWithRetry, readCachedAdminJson } from '../lib/adminApi'
+
+const suggestionCacheKey = '/api/admin/suggestion'
 
 interface SuggestionState {
   errorMessage: string | null
@@ -15,10 +17,14 @@ type SuggestionAction
     | { payload: HomeSuggestionAdminData, type: 'loaded' }
     | { message: string, type: 'failed' }
 
-const initialSuggestionState: SuggestionState = {
-  errorMessage: null,
-  isLoading: true,
-  payload: null,
+function createInitialSuggestionState(): SuggestionState {
+  const payload = readCachedAdminJson<HomeSuggestionAdminData>(suggestionCacheKey)
+
+  return {
+    errorMessage: null,
+    isLoading: payload === null,
+    payload,
+  }
 }
 
 function suggestionReducer(state: SuggestionState, action: SuggestionAction): SuggestionState {
@@ -45,16 +51,19 @@ function suggestionReducer(state: SuggestionState, action: SuggestionAction): Su
 }
 
 export function AdminSuggestionPage() {
-  const [state, dispatch] = useReducer(suggestionReducer, initialSuggestionState)
+  const [state, dispatch] = useReducer(suggestionReducer, undefined, createInitialSuggestionState)
   const [reloadToken, setReloadToken] = useState(0)
+  const hasPayload = useEffectEvent(() => state.payload !== null)
 
   useEffect(() => {
     const controller = new AbortController()
     let isDisposed = false
 
-    dispatch({ type: 'loading' })
+    if (!hasPayload()) {
+      dispatch({ type: 'loading' })
+    }
 
-    void fetchAdminJsonWithRetry<HomeSuggestionAdminData>('/api/admin/suggestion', {
+    void fetchAdminJsonWithRetry<HomeSuggestionAdminData>(suggestionCacheKey, {
       signal: controller.signal,
     })
       .then((payload) => {

@@ -1,9 +1,11 @@
 import type { AdminBootstrapData } from '@commission-index/domain'
-import { useEffect, useReducer, useState } from 'react'
+import { useEffect, useEffectEvent, useReducer, useState } from 'react'
 import { adminSurfaceStyles } from '../app/ui'
 import { AdminCreateDashboard } from '../components/AdminCreateDashboard'
-import { fetchAdminJsonWithRetry } from '../lib/adminApi'
+import { fetchAdminJsonWithRetry, readCachedAdminJson } from '../lib/adminApi'
 import { subscribeToDataUpdates } from '../lib/dataUpdateSignal'
+
+const bootstrapCacheKey = '/api/admin/bootstrap'
 
 interface CreateState {
   errorMessage: string | null
@@ -16,10 +18,14 @@ type CreateAction
     | { payload: AdminBootstrapData, type: 'loaded' }
     | { message: string, type: 'failed' }
 
-const initialCreateState: CreateState = {
-  errorMessage: null,
-  isLoading: true,
-  payload: null,
+function createInitialCreateState(): CreateState {
+  const payload = readCachedAdminJson<AdminBootstrapData>(bootstrapCacheKey)
+
+  return {
+    errorMessage: null,
+    isLoading: payload === null,
+    payload,
+  }
 }
 
 function createReducer(state: CreateState, action: CreateAction): CreateState {
@@ -46,8 +52,9 @@ function createReducer(state: CreateState, action: CreateAction): CreateState {
 }
 
 export function AdminCreatePage() {
-  const [state, dispatch] = useReducer(createReducer, initialCreateState)
+  const [state, dispatch] = useReducer(createReducer, undefined, createInitialCreateState)
   const [reloadToken, setReloadToken] = useState(0)
+  const hasPayload = useEffectEvent(() => state.payload !== null)
 
   useEffect(() => subscribeToDataUpdates(() => {
     setReloadToken(token => token + 1)
@@ -57,9 +64,11 @@ export function AdminCreatePage() {
     const controller = new AbortController()
     let isDisposed = false
 
-    dispatch({ type: 'loading' })
+    if (!hasPayload()) {
+      dispatch({ type: 'loading' })
+    }
 
-    void fetchAdminJsonWithRetry<AdminBootstrapData>('/api/admin/bootstrap', {
+    void fetchAdminJsonWithRetry<AdminBootstrapData>(bootstrapCacheKey, {
       signal: controller.signal,
     })
       .then((payload) => {

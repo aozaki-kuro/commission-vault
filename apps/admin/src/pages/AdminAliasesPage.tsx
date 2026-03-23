@@ -1,8 +1,10 @@
 import type { AdminAliasesData } from '@commission-index/domain'
-import { useEffect, useReducer, useState } from 'react'
+import { useEffect, useEffectEvent, useReducer, useState } from 'react'
 import { adminSurfaceStyles } from '../app/ui'
 import { AdminAliasesDashboard } from '../components/AdminAliasesDashboard'
-import { fetchAdminJsonWithRetry } from '../lib/adminApi'
+import { fetchAdminJsonWithRetry, readCachedAdminJson } from '../lib/adminApi'
+
+const aliasesCacheKey = '/api/admin/aliases/bootstrap'
 
 interface AliasesState {
   errorMessage: string | null
@@ -15,10 +17,14 @@ type AliasesAction
     | { payload: AdminAliasesData, type: 'loaded' }
     | { message: string, type: 'failed' }
 
-const initialAliasesState: AliasesState = {
-  errorMessage: null,
-  isLoading: true,
-  payload: null,
+function createInitialAliasesState(): AliasesState {
+  const payload = readCachedAdminJson<AdminAliasesData>(aliasesCacheKey)
+
+  return {
+    errorMessage: null,
+    isLoading: payload === null,
+    payload,
+  }
 }
 
 function aliasesReducer(state: AliasesState, action: AliasesAction): AliasesState {
@@ -45,16 +51,19 @@ function aliasesReducer(state: AliasesState, action: AliasesAction): AliasesStat
 }
 
 export function AdminAliasesPage() {
-  const [state, dispatch] = useReducer(aliasesReducer, initialAliasesState)
+  const [state, dispatch] = useReducer(aliasesReducer, undefined, createInitialAliasesState)
   const [reloadToken, setReloadToken] = useState(0)
+  const hasPayload = useEffectEvent(() => state.payload !== null)
 
   useEffect(() => {
     const controller = new AbortController()
     let isDisposed = false
 
-    dispatch({ type: 'loading' })
+    if (!hasPayload()) {
+      dispatch({ type: 'loading' })
+    }
 
-    void fetchAdminJsonWithRetry<AdminAliasesData>('/api/admin/aliases/bootstrap', {
+    void fetchAdminJsonWithRetry<AdminAliasesData>(aliasesCacheKey, {
       signal: controller.signal,
     })
       .then((payload) => {

@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import type { MouseEvent } from 'react'
+import { startTransition, useCallback, useEffect, useRef, useState } from 'react'
 import { adminSections, getAdminSectionForPath, normalizeAdminPath } from './app/sections'
 import { adminActionLinkStyles, adminSurfaceStyles } from './app/ui'
 import { AdminPageShell, AdminRootLayout } from './components/AdminLayout'
@@ -26,17 +27,97 @@ function getPublicSiteUrl() {
   return `${protocol}//${hostname}`
 }
 
+function getWindowScrollTop() {
+  return Math.max(window.scrollY, window.pageYOffset, 0)
+}
+
+function shouldHandleInternalNavigation(event: MouseEvent<HTMLAnchorElement>) {
+  return !event.defaultPrevented
+    && !event.metaKey
+    && !event.ctrlKey
+    && !event.shiftKey
+    && !event.altKey
+}
+
 export function App() {
-  const currentPath = typeof window === 'undefined'
+  const [currentPath, setCurrentPath] = useState(() => typeof window === 'undefined'
     ? '/'
-    : normalizeAdminPath(window.location.pathname)
+    : normalizeAdminPath(window.location.pathname))
+  const scrollPositionByPathRef = useRef(new Map<string, number>())
+  const currentPathRef = useRef(currentPath)
   const currentSection = getAdminSectionForPath(currentPath)
   const publicSiteUrl = getPublicSiteUrl()
+
+  useEffect(() => {
+    currentPathRef.current = currentPath
+  }, [currentPath])
 
   useEffect(() => {
     const pageTitle = currentSection ? currentSection.title : 'Not Found'
     document.title = `${pageTitle} | Commission Admin`
   }, [currentSection])
+
+  const navigateTo = useCallback((nextPath: string, historyMode: 'push' | 'replace' = 'push') => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const previousPath = currentPathRef.current
+    const normalizedPath = normalizeAdminPath(nextPath)
+    if (normalizedPath === previousPath) {
+      return
+    }
+
+    scrollPositionByPathRef.current.set(previousPath, getWindowScrollTop())
+
+    if (historyMode === 'push') {
+      window.history.pushState(null, '', normalizedPath)
+    }
+    else {
+      window.history.replaceState(null, '', normalizedPath)
+    }
+
+    startTransition(() => {
+      setCurrentPath(normalizedPath)
+    })
+
+    window.requestAnimationFrame(() => {
+      const nextScrollTop = scrollPositionByPathRef.current.get(normalizedPath) ?? 0
+      window.scrollTo({
+        behavior: 'auto',
+        top: nextScrollTop,
+      })
+    })
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const handlePopState = () => {
+      scrollPositionByPathRef.current.set(currentPathRef.current, getWindowScrollTop())
+
+      const normalizedPath = normalizeAdminPath(window.location.pathname)
+      startTransition(() => {
+        setCurrentPath(normalizedPath)
+      })
+
+      window.requestAnimationFrame(() => {
+        const nextScrollTop = scrollPositionByPathRef.current.get(normalizedPath) ?? 0
+        window.scrollTo({
+          behavior: 'auto',
+          top: nextScrollTop,
+        })
+      })
+    }
+
+    window.addEventListener('popstate', handlePopState)
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [])
 
   if (!currentSection) {
     return (
@@ -80,6 +161,14 @@ export function App() {
                 <a
                   key={section.key}
                   href={section.path}
+                  onClick={(event) => {
+                    if (!shouldHandleInternalNavigation(event)) {
+                      return
+                    }
+
+                    event.preventDefault()
+                    navigateTo(section.path)
+                  }}
                   className={adminActionLinkStyles}
                 >
                   {section.title}
@@ -123,6 +212,7 @@ export function App() {
         current={currentSection.key}
         title={currentSection.title}
         description={currentSection.description}
+        onNavigate={navigateTo}
         publicSiteUrl={publicSiteUrl}
       >
         {page}

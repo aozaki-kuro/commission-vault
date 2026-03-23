@@ -1,7 +1,7 @@
 import type { AdminCommissionSearchRow } from '@commission-index/domain'
 import type { StatusTone } from '../app/ui'
 import type { AdminOverviewPayload } from '../lib/adminApi'
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useReducer, useRef, useState } from 'react'
 import {
   adminActionLinkStyles,
   adminInsetCardStyles,
@@ -9,9 +9,15 @@ import {
   getStatusBadgeStyles,
 
 } from '../app/ui'
-import { fetchAdminOverviewPayload, getAdminApiBaseUrl, triggerRebuildDeploy } from '../lib/adminApi'
+import {
+  fetchAdminOverviewPayload,
+  getAdminApiBaseUrl,
+  readCachedAdminJson,
+  triggerRebuildDeploy,
+} from '../lib/adminApi'
 
 const LATEST_ENTRY_LIMIT = 10
+const overviewCacheKey = '/api/admin/overview'
 
 interface OverviewMetrics {
   activeCharacters: number
@@ -36,10 +42,14 @@ type OverviewAction
     | { payload: AdminOverviewPayload, type: 'loaded' }
     | { message: string, type: 'failed' }
 
-const initialOverviewState: OverviewState = {
-  errorMessage: null,
-  isLoading: true,
-  payload: null,
+function createInitialOverviewState(): OverviewState {
+  const payload = readCachedAdminJson<AdminOverviewPayload>(overviewCacheKey)
+
+  return {
+    errorMessage: null,
+    isLoading: payload === null,
+    payload,
+  }
 }
 
 function overviewReducer(state: OverviewState, action: OverviewAction): OverviewState {
@@ -141,12 +151,13 @@ function getStatusDescription(
 type RebuildState = 'idle' | 'pending' | 'success' | 'error'
 
 export function AdminOverviewPage() {
-  const [state, dispatch] = useReducer(overviewReducer, initialOverviewState)
+  const [state, dispatch] = useReducer(overviewReducer, undefined, createInitialOverviewState)
   const [reloadToken, setReloadToken] = useState(0)
   const apiBaseUrl = getAdminApiBaseUrl() || 'same-origin'
   const [rebuildState, setRebuildState] = useState<RebuildState>('idle')
   const [rebuildMessage, setRebuildMessage] = useState('')
   const rebuildAbortRef = useRef<AbortController | null>(null)
+  const hasPayload = useEffectEvent(() => state.payload !== null)
 
   const handleRebuild = useCallback(async () => {
     rebuildAbortRef.current?.abort()
@@ -174,7 +185,9 @@ export function AdminOverviewPage() {
     const controller = new AbortController()
     let isDisposed = false
 
-    dispatch({ type: 'loading' })
+    if (!hasPayload()) {
+      dispatch({ type: 'loading' })
+    }
 
     void fetchAdminOverviewPayload({
       signal: controller.signal,

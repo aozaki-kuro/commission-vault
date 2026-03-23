@@ -8,6 +8,7 @@ const DEFAULT_ATTEMPTS = 4
 const DEFAULT_BASE_DELAY_MS = 250
 const DEFAULT_REQUEST_TIMEOUT_MS = 8000
 const TRAILING_SLASH_PATTERN = /\/+$/
+const adminJsonCache = new Map<string, unknown>()
 
 export interface AdminHealthPayload {
   status: string
@@ -30,6 +31,14 @@ interface FetchAdminJsonOptions {
 
 function trimTrailingSlash(value: string) {
   return value.replace(TRAILING_SLASH_PATTERN, '')
+}
+
+export function readCachedAdminJson<TPayload>(cacheKey: string) {
+  return (adminJsonCache.get(cacheKey) as TPayload | undefined) ?? null
+}
+
+export function writeCachedAdminJson<TPayload>(cacheKey: string, payload: TPayload) {
+  adminJsonCache.set(cacheKey, payload)
 }
 
 export function getAdminApiBaseUrl() {
@@ -138,7 +147,10 @@ export async function fetchAdminJsonWithRetry<TPayload>(
         throw new Error(`Failed to load ${pathname}: ${response.status}`)
       }
 
-      return (await response.json()) as TPayload
+      const payload = (await response.json()) as TPayload
+      writeCachedAdminJson(pathname, payload)
+
+      return payload
     }
     catch (error) {
       if (signal?.aborted) {
@@ -186,10 +198,14 @@ export async function fetchAdminOverviewPayload(
     fetchAdminJsonWithRetry<HomeSuggestionAdminData>('/api/admin/suggestion', options),
   ])
 
-  return {
+  const payload = {
     aliases,
     bootstrap,
     health,
     suggestion,
   }
+
+  writeCachedAdminJson('/api/admin/overview', payload)
+
+  return payload
 }

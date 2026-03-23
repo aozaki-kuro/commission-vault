@@ -1,5 +1,12 @@
 # 统一迁移状态板（2026-03-18）
 
+## 本轮执行切片（2026-03-23 duplicate hints 降噪）
+
+- [x] 梳理 `apps/admin` commission duplicate hint 的评分规则与触发条件，确认误报根因
+- [x] 收紧 duplicate 判定，只保留“高概率同一条记录”的提示信号
+- [x] 调整后台提示文案，避免把相似项误说成 duplicate
+- [x] 补针对性测试并验证受影响的 admin 用例
+
 ## 本轮执行切片（2026-03-23 CI generated fact-source 测试守门）
 
 - [x] 给 generated fact-source 读取层补充“生成物是否存在”的显式检测入口
@@ -15,6 +22,13 @@
 
 - [x] 修复 `apps/web/astro.config.ts` 里 Tailwind Vite 插件与 Astro 内置 Vite 类型版本错配
 - [x] 跑通 `bun run --cwd apps/web check:astro` 与 `bun run --cwd apps/web build:astro`
+
+## 本轮执行切片（2026-03-23 admin 导航减闪动）
+
+- [x] 梳理 `apps/admin` 当前路由切换链路，确认整页闪动根因
+- [x] 把 admin 顶部导航改成 client-side history 导航，避免整页 reload
+- [x] 给 route 级数据读取加轻量缓存，减少已访问页面回切时的 loading 闪动
+- [x] 跑通针对性验证，并把本轮结论补进任务文档
 
 ## 北极星目标
 

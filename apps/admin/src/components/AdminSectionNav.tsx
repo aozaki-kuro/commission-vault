@@ -1,12 +1,22 @@
+import type { MouseEvent } from 'react'
 import type { AdminSectionKey } from '../app/sections'
 import { adminSections } from '../app/sections'
 
 interface AdminSectionNavProps {
   current: AdminSectionKey
+  onNavigate: (path: string) => void
   publicSiteUrl: string
 }
 
-export function AdminSectionNav({ current, publicSiteUrl }: AdminSectionNavProps) {
+function shouldHandleInternalNavigation(event: MouseEvent<HTMLAnchorElement>) {
+  return !event.defaultPrevented
+    && !event.metaKey
+    && !event.ctrlKey
+    && !event.shiftKey
+    && !event.altKey
+}
+
+export function AdminSectionNav({ current, onNavigate, publicSiteUrl }: AdminSectionNavProps) {
   return (
     <nav
       aria-label="Admin sections"
@@ -28,7 +38,18 @@ export function AdminSectionNav({ current, publicSiteUrl }: AdminSectionNavProps
                 </span>
               )
             : (
-                <a key={item.key} href={item.path}>
+                <a
+                  key={item.key}
+                  href={item.path}
+                  onClick={(event) => {
+                    if (!shouldHandleInternalNavigation(event)) {
+                      return
+                    }
+
+                    event.preventDefault()
+                    onNavigate(item.path)
+                  }}
+                >
                   {item.label}
                 </a>
               ),

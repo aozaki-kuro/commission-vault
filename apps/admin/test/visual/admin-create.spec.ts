@@ -33,3 +33,23 @@ test('create forms stay visually stable', async ({ page }, testInfo) => {
     page.getByRole('button', { name: 'Save commission' }),
   ])
 })
+
+test('admin nav switches sections without a full reload', async ({ page }, testInfo) => {
+  skipUnlessProject(testInfo, ADMIN_PROJECT_NAME)
+  await page.goto('/create')
+  await page.getByRole('heading', { name: 'Add Character' }).waitFor()
+
+  await page.evaluate(() => {
+    sessionStorage.removeItem('__admin-beforeunload')
+    window.addEventListener('beforeunload', () => {
+      sessionStorage.setItem('__admin-beforeunload', '1')
+    }, { once: true })
+  })
+
+  await page.getByRole('navigation', { name: 'Admin sections' }).getByRole('link', { name: 'Edit' }).click()
+  await page.getByRole('heading', { level: 1, name: 'Edit' }).waitFor()
+  await page.getByRole('heading', { name: 'Existing commissions' }).waitFor()
+
+  await expect(page).toHaveURL(/\/edit$/)
+  await expect.poll(async () => page.evaluate(() => sessionStorage.getItem('__admin-beforeunload'))).toBeNull()
+})

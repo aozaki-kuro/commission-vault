@@ -11,6 +11,7 @@ interface AdminPageShellProps {
   current: AdminSectionKey
   title: string
   description: string
+  onNavigate: (path: string) => void
   publicSiteUrl: string
 }
 
@@ -39,6 +40,7 @@ export function AdminPageShell({
   current,
   title,
   description,
+  onNavigate,
   publicSiteUrl,
 }: AdminPageShellProps) {
   return (
@@ -64,7 +66,7 @@ export function AdminPageShell({
         </p>
       </header>
 
-      <AdminSectionNav current={current} publicSiteUrl={publicSiteUrl} />
+      <AdminSectionNav current={current} onNavigate={onNavigate} publicSiteUrl={publicSiteUrl} />
 
       {children}
     </div>
