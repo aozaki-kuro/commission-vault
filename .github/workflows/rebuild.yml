@@ -51,7 +51,8 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: apps/web/generated
-          key: generated-${{ runner.os }}-master-rebuild-${{ github.run_id }}
+          # Same key family as ci.yml and deploy.yml — can hit cache saved by either
+          key: generated-${{ runner.os }}-master-${{ hashFiles('apps/web/wrangler.jsonc', 'apps/admin-worker/scripts/exportWebFactSource.ts', 'packages/domain/src/factSource.ts') }}
           restore-keys: |
             generated-${{ runner.os }}-master-
             generated-${{ runner.os }}-
@@ -80,7 +81,7 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: apps/web/generated
-          key: generated-${{ runner.os }}-master-rebuild-${{ github.run_id }}
+          key: generated-${{ runner.os }}-master-${{ hashFiles('apps/web/wrangler.jsonc', 'apps/admin-worker/scripts/exportWebFactSource.ts', 'packages/domain/src/factSource.ts') }}
 
       - name: Rebuild summary
         if: always()
