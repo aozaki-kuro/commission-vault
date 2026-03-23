@@ -13,6 +13,15 @@ interface SyncHiddenSectionLinkAvailabilityOptions {
   isDeferredTarget?: (sectionId: string, link: HTMLAnchorElement) => boolean
 }
 
+function sectionHasNoAvailableCommission(section: HTMLElement) {
+  const rawTotalCommissions = section.dataset.totalCommissions
+  if (rawTotalCommissions === undefined)
+    return false
+
+  const totalCommissions = Number(rawTotalCommissions)
+  return Number.isFinite(totalCommissions) && totalCommissions <= 0
+}
+
 function setLinkDisabledState(link: HTMLAnchorElement, disabled: boolean) {
   const alreadyDisabled = link.getAttribute('aria-disabled') === 'true'
   if (disabled === alreadyDisabled)
@@ -53,7 +62,7 @@ export function syncHiddenSectionLinkAvailability({
     const isDisabled
       = !section && sectionId
         ? !isDeferredTarget?.(sectionId, link)
-        : !section || section.classList.contains('hidden')
+        : !section || section.classList.contains('hidden') || sectionHasNoAvailableCommission(section)
     setLinkDisabledState(link, isDisabled)
   }
 }

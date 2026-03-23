@@ -126,7 +126,15 @@ function getVisibleTitleIds(panel: HTMLElement | null) {
   if (!panel)
     return []
 
-  return Array.from(panel.querySelectorAll<HTMLAnchorElement>(CHARACTER_LINK_SELECTOR), link => link.dataset.sidebarTitleId)
+  return Array.from(
+    panel.querySelectorAll<HTMLAnchorElement>(CHARACTER_LINK_SELECTOR),
+    (link) => {
+      if (link.getAttribute('aria-disabled') === 'true')
+        return null
+
+      return link.dataset.sidebarTitleId ?? null
+    },
+  )
     .filter((id): id is string => Boolean(id))
 }
 

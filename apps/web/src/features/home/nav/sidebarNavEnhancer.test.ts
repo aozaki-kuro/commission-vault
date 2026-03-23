@@ -25,6 +25,10 @@ function renderSidebarRoot() {
           <a href="#section-alpha" data-sidebar-character-link="true" data-sidebar-character-status="active" data-sidebar-title-id="title-alpha">Alpha</a>
         </li>
         <li>
+          <span data-sidebar-dot-for="title-empty" class="scale-0 opacity-0"></span>
+          <a href="#section-empty" data-sidebar-character-link="true" data-sidebar-character-status="active" data-sidebar-title-id="title-empty">Empty</a>
+        </li>
+        <li>
           <details data-sidebar-archived-details="true">
             <summary data-load-archived-characters="true">Archived Characters</summary>
             <span data-sidebar-dot-for="title-archived" class="scale-0 opacity-0"></span>
@@ -48,6 +52,8 @@ function renderSidebarRoot() {
     <h2 id="title-introduction"></h2>
     <h2 id="title-alpha"></h2>
     <section id="section-alpha"></section>
+    <h2 id="title-empty"></h2>
+    <section id="section-empty" data-total-commissions="0"></section>
     <h2 id="timeline-title-2026"></h2>
     <section id="timeline-year-2026"></section>
     <div data-commission-view-panel="character" data-archived-loaded="false" data-archived-visibility="hidden"></div>
@@ -115,6 +121,77 @@ describe('sidebarNavEnhancer', () => {
     )
     expect(characterLink?.getAttribute('aria-disabled')).toBe('true')
     expect(characterLink?.tabIndex).toBe(-1)
+
+    cleanup()
+  })
+
+  it('disables sidebar links for characters without commissions', () => {
+    const cleanup = mountSidebarNavEnhancer()
+
+    const emptyLink = [...document.querySelectorAll<HTMLAnchorElement>('[data-sidebar-character-link="true"]')]
+      .find(link => link.getAttribute('href') === '#section-empty')
+
+    expect(emptyLink?.getAttribute('aria-disabled')).toBe('true')
+    expect(emptyLink?.tabIndex).toBe(-1)
+
+    cleanup()
+  })
+
+  it('does not light the active dot for disabled empty characters', () => {
+    const title = document.getElementById('title-alpha')
+    const emptyTitle = document.getElementById('title-empty')
+    const introduction = document.getElementById('title-introduction')
+
+    emptyTitle!.getBoundingClientRect = () =>
+      ({
+        top: 180,
+        bottom: 220,
+        left: 0,
+        right: 0,
+        width: 200,
+        height: 40,
+        x: 0,
+        y: 180,
+        toJSON: () => ({}),
+      }) as DOMRect
+    emptyTitle!.getClientRects = () =>
+      [emptyTitle!.getBoundingClientRect()] as unknown as DOMRectList
+    title!.getBoundingClientRect = () =>
+      ({
+        top: 900,
+        bottom: 940,
+        left: 0,
+        right: 0,
+        width: 200,
+        height: 40,
+        x: 0,
+        y: 900,
+        toJSON: () => ({}),
+      }) as DOMRect
+    title!.getClientRects = () => [title!.getBoundingClientRect()] as unknown as DOMRectList
+    introduction!.getBoundingClientRect = () =>
+      ({
+        top: -200,
+        bottom: -100,
+        left: 0,
+        right: 0,
+        width: 200,
+        height: 40,
+        x: 0,
+        y: -200,
+        toJSON: () => ({}),
+      }) as DOMRect
+    introduction!.getClientRects = () =>
+      [introduction!.getBoundingClientRect()] as unknown as DOMRectList
+
+    Object.defineProperty(window, 'scrollY', { value: 300, writable: true })
+
+    const cleanup = mountSidebarNavEnhancer()
+    window.dispatchEvent(new Event('scroll'))
+
+    const emptyDot = document.querySelector<HTMLElement>('[data-sidebar-dot-for="title-empty"]')
+    expect(emptyDot?.classList.contains('scale-100')).toBe(false)
+    expect(emptyDot?.classList.contains('opacity-100')).toBe(false)
 
     cleanup()
   })

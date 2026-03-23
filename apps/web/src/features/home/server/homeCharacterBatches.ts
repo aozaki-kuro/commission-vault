@@ -60,12 +60,14 @@ function buildTargetBatchById({
 
   batches.forEach((characters, batchIndex) => {
     characters.forEach((characterName) => {
+      const commissions = commissionMap.get(characterName)?.Commissions ?? []
+      if (commissions.length === 0)
+        return
+
       const sectionId = getCharacterSectionId(characterName)
       const titleId = getCharacterTitleId(characterName)
       targetBatchById[sectionId] = batchIndex
       targetBatchById[titleId] = batchIndex
-
-      const commissions = commissionMap.get(characterName)?.Commissions ?? []
       commissions.forEach((commission) => {
         const { date } = parseCommissionFileName(commission.fileName)
         targetBatchById[`${sectionId}-${date}`] = batchIndex

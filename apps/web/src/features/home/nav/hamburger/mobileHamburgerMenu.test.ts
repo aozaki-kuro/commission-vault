@@ -68,10 +68,20 @@ function renderMenu() {
           >
             Active
           </a>
+          <a
+            href="#empty-item"
+            data-mobile-nav-link="true"
+            data-mobile-nav-character-status="active"
+            data-mobile-nav-section-id="empty-item"
+          >
+            Empty
+          </a>
           <a href="/?view=timeline#year-2025" data-mobile-nav-link="true" data-mobile-nav-section-id="year-2025">Year</a>
         </div>
       </div>
     </div>
+    <section id="active-item"></section>
+    <section id="empty-item" data-total-commissions="0"></section>
   `
 }
 
@@ -102,6 +112,10 @@ function getArchivedLink() {
   return document.querySelector<HTMLAnchorElement>(
     '[data-mobile-nav-link="true"][data-mobile-nav-character-status="archived"]',
   )
+}
+function getEmptyActiveLink() {
+  return [...document.querySelectorAll<HTMLAnchorElement>('[data-mobile-nav-link="true"]')]
+    .find(link => link.dataset.mobileNavSectionId === 'empty-item') ?? null
 }
 describe('mobileHamburgerMenu', () => {
   beforeEach(() => {
@@ -180,6 +194,15 @@ describe('mobileHamburgerMenu', () => {
 
     expect(window.location.search).toBe('?view=timeline')
     expect(timelineToggle?.getAttribute('aria-pressed')).toBe('true')
+
+    cleanup()
+  })
+
+  it('disables menu links for characters without commissions', () => {
+    const cleanup = mountMobileHamburgerMenu()
+
+    expect(getEmptyActiveLink()?.getAttribute('aria-disabled')).toBe('true')
+    expect(getEmptyActiveLink()?.tabIndex).toBe(-1)
 
     cleanup()
   })

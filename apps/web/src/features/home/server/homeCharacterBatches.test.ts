@@ -45,6 +45,35 @@ describe('buildHomeCharacterBatchPlan', () => {
     expect(plan.active.targetBatchById[`${getCharacterSectionId('Gamma')}-20240103`]).toBe(1)
   })
 
+  it('does not register empty active characters as deferred navigation targets', () => {
+    const alpha = buildCharacterCommissions('Alpha', '20240101')
+    const gamma = buildCharacterCommissions('Gamma', '20240103')
+
+    const plan = buildHomeCharacterBatchPlan({
+      activeChars: [
+        { DisplayName: 'Alpha' },
+        { DisplayName: 'Empty Active' },
+        { DisplayName: 'Gamma' },
+      ],
+      archivedChars: [],
+      commissionMap: new Map(
+        [
+          alpha,
+          {
+            Character: 'Empty Active',
+            Commissions: [],
+          },
+          gamma,
+        ].map(entry => [entry.Character, entry] satisfies [string, CharacterCommissions]),
+      ),
+    })
+
+    expect(plan.active.batches).toEqual([['Empty Active'], ['Gamma']])
+    expect(plan.active.targetBatchById[getCharacterSectionId('Empty Active')]).toBeUndefined()
+    expect(plan.active.targetBatchById[getCharacterTitleId('Empty Active')]).toBeUndefined()
+    expect(plan.active.targetBatchById[getCharacterSectionId('Gamma')]).toBe(1)
+  })
+
   it('keeps archived batches at single-character granularity including the first batch', () => {
     const archivedOne = buildCharacterCommissions('Archived One', '20240201')
     const archivedTwo = buildCharacterCommissions('Archived Two', '20240202')
@@ -70,6 +99,32 @@ describe('buildHomeCharacterBatchPlan', () => {
     expect(plan.archived.targetBatchById[getCharacterSectionId('Archived One')]).toBe(0)
     expect(plan.archived.targetBatchById[getCharacterSectionId('Archived Two')]).toBe(1)
     expect(plan.archived.targetBatchById[getCharacterSectionId('Archived Three')]).toBe(2)
+  })
+
+  it('does not register empty archived characters as deferred navigation targets', () => {
+    const archivedTwo = buildCharacterCommissions('Archived Two', '20240202')
+
+    const plan = buildHomeCharacterBatchPlan({
+      activeChars: [],
+      archivedChars: [
+        { DisplayName: 'Archived Empty' },
+        { DisplayName: 'Archived Two' },
+      ],
+      commissionMap: new Map(
+        [
+          {
+            Character: 'Archived Empty',
+            Commissions: [],
+          },
+          archivedTwo,
+        ].map(entry => [entry.Character, entry] satisfies [string, CharacterCommissions]),
+      ),
+    })
+
+    expect(plan.archived.batches).toEqual([['Archived Empty'], ['Archived Two']])
+    expect(plan.archived.targetBatchById[getCharacterSectionId('Archived Empty')]).toBeUndefined()
+    expect(plan.archived.targetBatchById[getCharacterTitleId('Archived Empty')]).toBeUndefined()
+    expect(plan.archived.targetBatchById[getCharacterSectionId('Archived Two')]).toBe(1)
   })
 })
 
