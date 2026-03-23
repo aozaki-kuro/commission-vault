@@ -1,0 +1,407 @@
+---
+import type { CharacterCommissions } from '#data/types'
+import type { TimelineYearGroup } from '#lib/commissions/timeline'
+import Listing from '#features/home/commission/Listing.astro'
+import TimelineView from '#features/home/commission/TimelineView.astro'
+import { getHomeLocaleMessages, normalizeHomeLocale } from '#features/home/i18n/homeLocale'
+import {
+  buildHomeCharacterBatchManifest,
+  buildHomeCharacterBatchPlan,
+} from '#features/home/server/homeCharacterBatches'
+import {
+  buildHomeTimelineBatchManifest,
+  buildHomeTimelineBatchPlan,
+} from '#features/home/server/homeTimelineBatches'
+
+type CharacterDisplay = {
+  DisplayName: string
+}
+
+interface StaticCommissionSectionsProps {
+  locale?: string
+  activeChars: CharacterDisplay[]
+  archivedChars: CharacterDisplay[]
+  commissionMap: Map<string, CharacterCommissions>
+  timelineGroups: TimelineYearGroup[]
+  characterAliasesMap: Map<string, string[]>
+  creatorAliasesMap: Map<string, string[]>
+  keywordAliasesMap: Map<string, string[]>
+}
+
+const {
+  locale,
+  activeChars,
+  archivedChars,
+  commissionMap,
+  timelineGroups,
+  characterAliasesMap,
+  creatorAliasesMap,
+  keywordAliasesMap,
+}
+  = Astro.props as StaticCommissionSectionsProps
+const messages = getHomeLocaleMessages(normalizeHomeLocale(locale))
+const resolvedLocale = normalizeHomeLocale(locale)
+const batchPlan = buildHomeCharacterBatchPlan({
+  activeChars,
+  archivedChars,
+  commissionMap,
+})
+const batchManifest = buildHomeCharacterBatchManifest({
+  locale: resolvedLocale,
+  plan: batchPlan,
+})
+const initialActiveChars = batchPlan.active.initialCharacters
+const hasDeferredActiveChars = batchPlan.active.totalBatches > 0
+const hasDeferredArchivedChars = batchPlan.archived.totalBatches > 0
+const timelineBatchPlan = buildHomeTimelineBatchPlan({
+  groups: timelineGroups,
+})
+const timelineBatchManifest = buildHomeTimelineBatchManifest({
+  locale: resolvedLocale,
+  plan: timelineBatchPlan,
+})
+const initialTimelineGroups = timelineBatchPlan.initialGroups
+const hasDeferredTimelineGroups = timelineBatchPlan.totalBatches > 0
+const archivedCharacterCount = archivedChars.length
+const archivedCommissionCount = archivedChars.reduce(
+  (count, chara) => count + (commissionMap.get(chara.DisplayName)?.Commissions.length ?? 0),
+  0,
+)
+---
+
+<div id="--------Commissions--------">
+  <div
+    data-commission-view-panel="character"
+    data-commission-view-active="true"
+    data-active-sections-loaded={hasDeferredActiveChars ? 'false' : 'true'}
+    data-active-batches-loaded-count="0"
+    data-archived-loaded="false"
+    data-archived-visibility="hidden"
+    data-archived-batches-loaded-count="0"
+  >
+    {
+      initialActiveChars.map(characterName => (
+        <Listing
+          locale={locale}
+          Character={characterName}
+          status="active"
+          commissionMap={commissionMap}
+          characterAliasesMap={characterAliasesMap}
+          creatorAliasesMap={creatorAliasesMap}
+          keywordAliasesMap={keywordAliasesMap}
+        />
+      ))
+    }
+    {
+      hasDeferredActiveChars
+? (
+        <>
+          <div data-active-sections-container="true" />
+          <div
+            data-active-sections-sentinel="true"
+            aria-hidden="true"
+            class="pointer-events-none h-px overflow-hidden opacity-0"
+          />
+        </>
+      )
+: null
+    }
+    {
+      archivedChars.length > 0
+? (
+        <>
+          <div data-archived-sections-placeholder="true" class="pb-8">
+            <div class="pb-6">
+              <hr />
+            </div>
+            <div class="mx-auto max-w-lg pt-4 text-center">
+              <p class="
+                text-[11px] tracking-[0.08em] text-stone-500
+                dark:text-stone-400
+              "
+              >
+                {messages.controls.formatCollapsedArchivedSummary(
+                  archivedCharacterCount,
+                  archivedCommissionCount,
+                )}
+              </p>
+
+              <p class="
+                mt-3 text-base/7 font-semibold text-stone-700
+                dark:text-stone-200
+              "
+              >
+                {messages.controls.archivedCharactersCollapsedTitle}
+              </p>
+              <p class="
+                mx-auto mt-1.5 max-w-md text-sm/6 text-stone-500
+                dark:text-stone-400
+              "
+              >
+                {messages.controls.archivedCharactersCollapsedHint}
+              </p>
+
+              <button
+                type="button"
+                data-load-archived-characters="true"
+                class="
+                  group mt-5 inline-flex cursor-pointer items-center gap-1.5
+                  border-0 bg-transparent p-0 text-sm text-stone-600
+                  transition-colors
+                  hover:text-stone-900
+                  dark:text-stone-300
+                  dark:hover:text-white
+                "
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  class="
+                    size-4 text-stone-400 transition-transform duration-200
+                    group-hover:translate-y-0.5 group-hover:text-current
+                    dark:text-stone-500
+                  "
+                  fill="none"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="m6 9 6 6 6-6"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <span>{messages.controls.loadArchivedCharacters}</span>
+              </button>
+            </div>
+          </div>
+          <div data-archived-divider="true" class="hidden pb-8">
+            <hr />
+          </div>
+          <div data-archived-sections-container="true" />
+          <div
+            data-archived-deferred-sections-sentinel="true"
+            aria-hidden="true"
+            class:list={[
+              'pointer-events-none h-px overflow-hidden opacity-0',
+              !hasDeferredArchivedChars && 'hidden',
+            ]}
+          />
+        </>
+      )
+: null
+    }
+  </div>
+
+  <div
+    data-commission-view-panel="timeline"
+    data-commission-view-active="false"
+    data-timeline-loaded={hasDeferredTimelineGroups ? 'false' : 'true'}
+    data-timeline-batches-loaded-count="0"
+    class="hidden"
+  >
+    <div data-timeline-sections-container="true">
+      <TimelineView
+        groups={initialTimelineGroups}
+        characterAliasesMap={characterAliasesMap}
+        creatorAliasesMap={creatorAliasesMap}
+        keywordAliasesMap={keywordAliasesMap}
+      />
+    </div>
+    {
+      hasDeferredTimelineGroups
+? (
+        <>
+          <div
+            data-timeline-sections-sentinel="true"
+            aria-hidden="true"
+            class="pointer-events-none h-px overflow-hidden opacity-0"
+          />
+        </>
+      )
+: null
+    }
+  </div>
+  <script
+    is:inline
+    type="application/json"
+    data-home-character-batch-manifest="true"
+    set:html={JSON.stringify(batchManifest)}
+  />
+  <script
+    is:inline
+    type="application/json"
+    data-home-timeline-batch-manifest="true"
+    set:html={JSON.stringify(timelineBatchManifest)}
+  />
+</div>
+
+<script is:inline>
+const initialMode
+  = new URLSearchParams(window.location.search).get('view') === 'timeline'
+    ? 'timeline'
+    : 'character'
+
+if (initialMode === 'timeline') {
+  const setCommissionPanelState = (panelName, active) => {
+    const panel = document.querySelector(`[data-commission-view-panel="${panelName}"]`)
+    if (!(panel instanceof HTMLElement))
+      return
+
+    panel.dataset.commissionViewActive = active ? 'true' : 'false'
+    panel.classList.toggle('hidden', !active)
+  }
+
+  const readTimelineBatchManifest = () => {
+    const script = document.querySelector('script[data-home-timeline-batch-manifest="true"]')
+    if (!(script instanceof HTMLScriptElement) || !script.textContent)
+      return null
+
+    try {
+      return JSON.parse(script.textContent)
+    }
+    catch {
+      return null
+    }
+  }
+
+  const normalizeTargetId = (rawValue) => {
+    if (!rawValue)
+      return ''
+    const value = rawValue.startsWith('#') ? rawValue.slice(1) : rawValue
+    if (!value)
+      return ''
+
+    try {
+      return decodeURIComponent(value)
+    }
+    catch {
+      return ''
+    }
+  }
+
+  const preloadTimelineSections = () => {
+    const panel = document.querySelector('[data-commission-view-panel="timeline"]')
+    if (!(panel instanceof HTMLElement))
+      return
+
+    const container = panel.querySelector('[data-timeline-sections-container="true"]')
+    if (!(container instanceof HTMLElement))
+      return
+
+    const manifest = readTimelineBatchManifest()
+    const totalBatchCount = Number.isInteger(manifest?.totalBatches)
+      ? Number(manifest.totalBatches)
+      : 0
+    const loadedBatchCount = Number(panel.dataset.timelineBatchesLoadedCount ?? '0')
+    const resolvedLoadedBatchCount
+      = Number.isFinite(loadedBatchCount) && loadedBatchCount > 0 ? Math.floor(loadedBatchCount) : 0
+
+    const targetId = normalizeTargetId(window.location.hash)
+    const targetBatchIndex
+      = targetId
+        && !document.getElementById(targetId)
+        && Number.isInteger(manifest?.targetBatchById?.[targetId])
+        ? Number(manifest.targetBatchById[targetId])
+        : null
+
+    let nextLoadedBatchCount = resolvedLoadedBatchCount
+    const finalBatchIndex
+      = targetBatchIndex === null
+        ? resolvedLoadedBatchCount - 1
+        : Math.min(Math.floor(targetBatchIndex), totalBatchCount - 1)
+
+    for (let batchIndex = resolvedLoadedBatchCount; batchIndex <= finalBatchIndex; batchIndex += 1) {
+      const template = panel.querySelector(`template[data-timeline-batch-index="${batchIndex}"]`)
+      if (!(template instanceof HTMLTemplateElement))
+        break
+      container.append(template.content.cloneNode(true))
+      nextLoadedBatchCount = batchIndex + 1
+    }
+
+    panel.dataset.timelineBatchesLoadedCount = String(nextLoadedBatchCount)
+    panel.dataset.timelineLoaded = nextLoadedBatchCount >= totalBatchCount ? 'true' : 'false'
+  }
+
+  const syncPanelGroupVisibility = ({ panelSelector, dataKey }) => {
+    document.querySelectorAll(panelSelector).forEach((panel) => {
+      if (!(panel instanceof HTMLElement))
+        return
+      panel.classList.toggle('hidden', panel.dataset[dataKey] !== initialMode)
+    })
+  }
+
+  const syncToggleGroupState = ({
+    toggleSelector,
+    indicatorSelector,
+    activeTextClasses,
+    inactiveTextClasses,
+    activeIndicatorClasses,
+    inactiveIndicatorClasses,
+  }) => {
+    document.querySelectorAll(toggleSelector).forEach((button) => {
+      if (!(button instanceof HTMLButtonElement))
+        return
+
+      const active = button.dataset.viewMode === initialMode
+      button.setAttribute('aria-pressed', String(active))
+
+      activeTextClasses.forEach((className) => {
+        button.classList.toggle(className, active)
+      })
+      inactiveTextClasses.forEach((className) => {
+        button.classList.toggle(className, !active)
+      })
+
+      const indicator = button.querySelector(indicatorSelector)
+      if (!(indicator instanceof HTMLElement))
+        return
+
+      activeIndicatorClasses.forEach((className) => {
+        indicator.classList.toggle(className, active)
+      })
+      inactiveIndicatorClasses.forEach((className) => {
+        indicator.classList.toggle(className, !active)
+      })
+    })
+  }
+
+  setCommissionPanelState('character', false)
+  preloadTimelineSections()
+  setCommissionPanelState('timeline', true)
+
+  syncPanelGroupVisibility({
+    panelSelector: '[data-sidebar-nav-panel]',
+    dataKey: 'sidebarNavPanel',
+  })
+  syncPanelGroupVisibility({
+    panelSelector: '[data-mobile-hamburger-nav-panel]',
+    dataKey: 'mobileHamburgerNavPanel',
+  })
+
+  syncToggleGroupState({
+    toggleSelector: '[data-sidebar-view-mode-toggle="true"]',
+    indicatorSelector: '[data-sidebar-view-mode-indicator]',
+    activeTextClasses: ['text-gray-900', 'dark:text-white'],
+    inactiveTextClasses: ['text-gray-700', 'dark:text-gray-200'],
+    activeIndicatorClasses: ['scale-100', 'opacity-100'],
+    inactiveIndicatorClasses: ['scale-0', 'opacity-0'],
+  })
+  syncToggleGroupState({
+    toggleSelector: '[data-mobile-view-mode-toggle="true"]',
+    indicatorSelector: '[data-mobile-view-mode-indicator]',
+    activeTextClasses: ['text-gray-700', 'dark:text-gray-300'],
+    inactiveTextClasses: ['text-gray-500', 'dark:text-gray-500'],
+    activeIndicatorClasses: ['w-full', 'opacity-100'],
+    inactiveIndicatorClasses: ['w-0', 'opacity-0'],
+  })
+  syncToggleGroupState({
+    toggleSelector: '[data-mobile-hamburger-view-mode-toggle="true"]',
+    indicatorSelector: '[data-mobile-hamburger-view-mode-indicator="true"]',
+    activeTextClasses: ['text-gray-900', 'dark:text-white'],
+    inactiveTextClasses: ['text-gray-700', 'dark:text-gray-200'],
+    activeIndicatorClasses: ['scale-100', 'opacity-100'],
+    inactiveIndicatorClasses: ['scale-0', 'opacity-0'],
+  })
+}
+</script>

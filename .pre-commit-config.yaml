@@ -1,0 +1,33 @@
+default_install_hook_types:
+  - pre-commit
+  - pre-push
+
+repos:
+  - repo: local
+    hooks:
+      - id: bun-install
+        name: bun install (frozen)
+        entry: bun install --frozen-lockfile
+        language: system
+        pass_filenames: false
+        stages:
+          - pre-commit
+        always_run: true
+
+      - id: lint-staged
+        name: lint staged
+        entry: bun lint-staged
+        language: system
+        pass_filenames: false
+        stages:
+          - pre-commit
+        always_run: true
+
+      - id: tests
+        name: vitest
+        entry: bun run test
+        language: system
+        pass_filenames: false
+        stages:
+          - pre-push
+        always_run: true

@@ -1,0 +1,45 @@
+---
+import { getHomeLocaleMessages, normalizeHomeLocale } from '#features/home/i18n/homeLocale'
+
+interface Props {
+  locale?: string
+}
+
+const { locale } = Astro.props as Props
+const messages = getHomeLocaleMessages(normalizeHomeLocale(locale))
+const currentYear = new Date().getFullYear()
+---
+
+<div id="--------Footer--------">
+  <hr class="
+    my-8
+    md:mt-12
+  "
+  />
+
+  <div class="pb-8 text-center text-xs">
+    {messages.footer.rightsLines.map(line => <p class="pt-2">{line}</p>)}
+    <p class="pt-2">{messages.footer.obscuredNames}</p>
+    <p class="pt-2">{messages.footer.noIndexing}</p>
+  </div>
+
+  <small class="
+    block pt-16 pb-10 font-mono text-xs text-gray-800
+    md:pb-0
+    dark:text-gray-300
+  "
+  >
+    <time class="tracking-tight">2022 - {currentYear}</time> © Crystallize
+    <div class="float-right">
+      <a
+        href="mailto:dmca@crystallize.cc"
+        class="
+          decoration-inherit decoration-dotted underline-offset-2
+          dark:text-gray-300
+        "
+      >
+        DMCA
+      </a>
+    </div>
+  </small>
+</div>

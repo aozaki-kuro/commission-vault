@@ -1,0 +1,25 @@
+{
+  "name": "@commission-index/admin-worker",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build:assets": "bun run --cwd ../admin build",
+    "dev": "wrangler dev --config wrangler.jsonc",
+    "dev:remote": "wrangler dev --config wrangler.jsonc",
+    "d1:migrate": "wrangler d1 migrations apply DB --config wrangler.jsonc --remote",
+    "web:fact-source:export": "bun run ./scripts/exportWebFactSource.ts",
+    "web:fact-source:sync-images": "bun run ./scripts/syncMissingSourceImages.ts",
+    "deploy": "wrangler deploy --config wrangler.jsonc",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@commission-index/domain": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.0",
+    "wrangler": "^4.74.0"
+  }
+}

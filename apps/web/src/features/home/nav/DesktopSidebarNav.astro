@@ -1,0 +1,477 @@
+---
+import type { HomeLocaleMessages, HomeLocaleOption } from '#features/home/i18n/homeLocale'
+import type { CharacterNavItem } from '#lib/characters/nav'
+import { buildCharacterNavItems } from '#lib/characters/nav'
+import {
+  IconChevronDown,
+  IconChevronRight,
+  IconChevronUp,
+  IconFlare,
+  IconZoom,
+} from '@tabler/icons-react'
+
+interface CharacterDisplay {
+  DisplayName: string
+}
+
+interface DesktopSidebarNavProps {
+  active: CharacterDisplay[]
+  archived: CharacterDisplay[]
+  monthNavItems: CharacterNavItem[]
+  locale: string
+  localeOptions: HomeLocaleOption[]
+  localeSwitcherLabel: string
+  controls: HomeLocaleMessages['controls']
+}
+
+const { active, archived, monthNavItems, locale, localeOptions, localeSwitcherLabel, controls }
+  = Astro.props as DesktopSidebarNavProps
+
+const activeCharacterNavItems = buildCharacterNavItems(active)
+const archivedCharacterNavItems = buildCharacterNavItems(archived)
+const sidebarLeadSlotClass = 'flex h-5 w-4 shrink-0 items-center justify-center'
+const sidebarIconClass = 'h-3.5 w-3.5'
+const sidebarLeadOffsetStyle = '--sidebar-lead-offset:1.125rem;'
+const sidebarLabelClass
+  = 'font-mono text-sm leading-5 font-bold no-underline transition-colors duration-200'
+const localeLabelClass = 'font-mono text-sm leading-5 font-bold no-underline transition-colors duration-200'
+const sidebarNavLinkClass
+  = 'flex items-center gap-2 font-mono text-sm no-underline transition-colors duration-200 mb-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400 rounded-sm'
+---
+
+<aside
+  id="Home Controls"
+  class="
+    hidden
+    md:top-52 md:right-[calc(50%+22rem)] md:h-screen md:w-full
+    md:max-w-[calc(10rem+var(--sidebar-lead-offset))]
+    lg:fixed lg:z-20 lg:block
+  "
+  style={`${sidebarLeadOffsetStyle} animation: reveal-up 500ms cubic-bezier(0.22, 1, 0.36, 1) both;`}
+>
+  <div class="sticky top-4 space-y-2">
+    <div class="space-y-4 pb-2">
+      <div class="
+        flex min-h-5 items-center gap-2 text-gray-700
+        hover:text-gray-900
+        dark:text-gray-200
+        dark:hover:text-white
+      "
+      >
+        <span class={sidebarLeadSlotClass} aria-hidden="true">
+          <IconZoom
+            className={`
+              ${sidebarIconClass}
+              text-gray-400 transition-all duration-300
+            `}
+            stroke={1.95}
+          />
+        </span>
+        <a
+          href="#commission-search"
+          data-sidebar-search-link="true"
+          class={sidebarLabelClass}
+        >
+          {controls.search}
+        </a>
+      </div>
+
+      <details data-sidebar-locale-menu class="group relative">
+        <summary
+          data-link-style="true"
+          class="
+            flex min-h-5 cursor-pointer list-none items-center gap-2
+            text-gray-700 no-underline transition-colors
+            hover:text-gray-900
+            dark:text-gray-200
+            dark:hover:text-white
+          "
+          aria-label={localeSwitcherLabel}
+        >
+          <span class={sidebarLeadSlotClass} aria-hidden="true">
+            <IconChevronDown
+              className={`
+                ${sidebarIconClass}
+                text-gray-400 transition-colors duration-200
+                group-hover:text-gray-500
+                dark:group-hover:text-gray-300
+              `}
+              stroke={2.2}
+            />
+          </span>
+          <span class={localeLabelClass}>{localeSwitcherLabel}</span>
+        </summary>
+
+        <ul
+          data-sidebar-locale-panel="true"
+          class="
+            absolute top-full left-0 z-95 mt-2 w-48 space-y-1 rounded-xl border
+            border-white/20 bg-white/80 p-2 shadow-[0_8px_30px_rgb(0,0,0,0.12)]
+            backdrop-blur-md
+            dark:bg-black/80
+          "
+        >
+          {
+            localeOptions.map((option) => {
+              const isActive = option.locale === locale
+              return (
+                <li>
+                  <a
+                    href={option.href}
+                    aria-current={isActive ? 'page' : undefined}
+                    class={`group flex w-full items-center justify-between rounded-lg px-4 py-1 text-sm no-underline transition-colors duration-150 ${
+                      isActive
+                        ? 'text-gray-900 dark:text-white'
+                        : 'text-gray-700 hover:bg-white/70 dark:text-gray-200 dark:hover:bg-white/10'
+                    }`.trim()}
+                  >
+                    <span>{option.label}</span>
+                    {isActive
+? (
+                      <span
+                        aria-hidden="true"
+                        class="
+                          size-1.5 rounded-full bg-gray-500/80
+                          dark:bg-gray-300/80
+                        "
+                      />
+                    )
+: null}
+                  </a>
+                </li>
+              )
+            })
+          }
+        </ul>
+      </details>
+
+      <div class="space-y-2">
+        <button
+          type="button"
+          data-sidebar-view-mode-toggle="true"
+          data-view-mode="character"
+          aria-pressed="true"
+          data-link-style="true"
+          class="
+            flex min-h-5 w-full cursor-pointer appearance-none items-center
+            gap-2 border-0 bg-transparent p-0 text-left text-gray-900
+            no-underline transition-colors
+            hover:text-gray-900
+            dark:text-white
+            dark:hover:text-white
+          "
+        >
+          <span class={sidebarLeadSlotClass} aria-hidden="true">
+            <span
+              data-sidebar-view-mode-indicator
+              class="
+                size-1.5 scale-100 rounded-full bg-gray-500 opacity-100
+                transition-all duration-300
+              "
+            />
+          </span>
+          <span class={sidebarLabelClass}>
+            {controls.byCharacter}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          data-sidebar-view-mode-toggle="true"
+          data-view-mode="timeline"
+          aria-pressed="false"
+          data-link-style="true"
+          class="
+            flex min-h-5 w-full cursor-pointer appearance-none items-center
+            gap-2 border-0 bg-transparent p-0 text-left text-gray-700
+            no-underline transition-colors
+            hover:text-gray-900
+            dark:text-gray-200
+            dark:hover:text-white
+          "
+        >
+          <span class={sidebarLeadSlotClass} aria-hidden="true">
+            <span
+              data-sidebar-view-mode-indicator
+              class="
+                size-1.5 scale-0 rounded-full bg-gray-500 opacity-0
+                transition-all duration-300
+              "
+            />
+          </span>
+          <span class={sidebarLabelClass}>
+            {controls.byDate}
+          </span>
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+</aside>
+
+<aside
+  id="Character List"
+  class="
+    hidden
+    md:top-52 md:left-[calc(50%+22rem)] md:h-screen md:w-full
+    md:max-w-[calc(12.5rem+var(--sidebar-lead-offset))]
+    lg:fixed lg:z-20 lg:block
+  "
+  style={`${sidebarLeadOffsetStyle} animation: reveal-up 500ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;`}
+>
+  <div class="sticky top-4 space-y-2 pl-12">
+    <nav>
+      <ul data-sidebar-nav-panel="character" class="space-y-2">
+        {
+          activeCharacterNavItems.length > 0
+? (
+            <li>
+              <div class="
+                flex min-h-5 items-center gap-2 pb-1 text-gray-700
+                dark:text-gray-200
+              "
+              >
+                <span class={sidebarLeadSlotClass} aria-hidden="true">
+                  <IconFlare
+                    className={`
+                      ${sidebarIconClass}
+                      text-gray-400
+                    `}
+                    stroke={1.95}
+                  />
+                </span>
+                <span class="font-mono text-sm/5 font-bold">{controls.activeCharacters}</span>
+              </div>
+            </li>
+          )
+: null
+        }
+        {
+          activeCharacterNavItems.map(({ displayName, sectionHash, titleId, sectionId }) => (
+            <li class="
+              text-gray-700
+              hover:text-gray-900
+              dark:text-gray-200
+              dark:hover:text-white
+            "
+            >
+              <a
+                href={sectionHash}
+                data-sidebar-character-link="true"
+                data-sidebar-character-status="active"
+                data-sidebar-title-id={titleId}
+                class={sidebarNavLinkClass}
+                data-sidebar-section-id={sectionId}
+              >
+                <span class={sidebarLeadSlotClass} aria-hidden="true">
+                  <span
+                    data-sidebar-dot-for={titleId}
+                    class="
+                      size-1.5 scale-0 rounded-full bg-gray-400 opacity-0
+                      transition-all duration-300
+                    "
+                  />
+                </span>
+                {displayName}
+              </a>
+            </li>
+          ))
+        }
+        {
+          archivedCharacterNavItems.length > 0
+? (
+            <li class="pt-2">
+              <details class="group" data-sidebar-archived-details="true">
+                <summary
+                  data-load-archived-characters="true"
+                  class="
+                    flex min-h-5 cursor-pointer list-none items-center gap-2
+                    text-gray-700 transition-colors
+                    hover:text-gray-900
+                    dark:text-gray-200
+                    dark:hover:text-white
+                  "
+                >
+                  <span class={sidebarLeadSlotClass} aria-hidden="true">
+                    <IconChevronRight
+                      className={`
+                        ${sidebarIconClass}
+                        text-gray-400 transition-transform duration-200
+                        group-open:rotate-90
+                      `}
+                      stroke={2.2}
+                    />
+                  </span>
+                  <span class="font-mono text-sm/5 font-bold">{controls.archivedCharacters}</span>
+                </summary>
+
+                <ul class="mt-4 space-y-2">
+                  {
+                    archivedCharacterNavItems.map(({ displayName, sectionHash, titleId, sectionId }) => (
+                      <li class="
+                        text-gray-700
+                        hover:text-gray-900
+                        dark:text-gray-200
+                        dark:hover:text-white
+                      "
+                      >
+                        <a
+                          href={sectionHash}
+                          data-sidebar-character-link="true"
+                          data-sidebar-character-status="archived"
+                          data-sidebar-title-id={titleId}
+                          class={sidebarNavLinkClass}
+                          data-sidebar-section-id={sectionId}
+                        >
+                          <span class={sidebarLeadSlotClass} aria-hidden="true">
+                            <span
+                              data-sidebar-dot-for={titleId}
+                              class="
+                                size-1.5 scale-0 rounded-full bg-gray-400
+                                opacity-0 transition-all duration-300
+                              "
+                            />
+                          </span>
+                          {displayName}
+                        </a>
+                      </li>
+                    ))
+                  }
+                </ul>
+              </details>
+            </li>
+          )
+: null
+        }
+      </ul>
+
+      <ul data-sidebar-nav-panel="timeline" class="hidden space-y-2">
+        {
+          monthNavItems.map(({ displayName, sectionHash, titleId, sectionId }) => (
+            <li class="
+              text-gray-700
+              hover:text-gray-900
+              dark:text-gray-200
+              dark:hover:text-white
+            "
+            >
+              <a
+                href={sectionHash}
+                data-sidebar-character-link="true"
+                data-sidebar-character-status="active"
+                data-sidebar-title-id={titleId}
+                class={sidebarNavLinkClass}
+                data-sidebar-section-id={sectionId}
+              >
+                <span class={sidebarLeadSlotClass} aria-hidden="true">
+                  <span
+                    data-sidebar-dot-for={titleId}
+                    class="
+                      size-1.5 scale-0 rounded-full bg-gray-400 opacity-0
+                      transition-all duration-300
+                    "
+                  />
+                </span>
+                {displayName}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </div>
+
+  <div
+    class="
+      pointer-events-none fixed bottom-8 left-[calc(50%+22rem)] z-30 hidden
+      w-full max-w-[calc(12.5rem+var(--sidebar-lead-offset))]
+      lg:block
+    "
+    style={sidebarLeadOffsetStyle}
+  >
+    <div class="pl-12">
+      <button
+        type="button"
+        data-sidebar-back-to-top-button="true"
+        aria-label={controls.backToTop}
+        title={controls.backToTop}
+        class="
+          pointer-events-none inline-flex size-10 translate-y-1 items-center
+          justify-center rounded-full border border-white/20 bg-white/80
+          text-gray-500 opacity-0 shadow-[0_8px_30px_rgb(0,0,0,0.12)]
+          backdrop-blur-md transition-[opacity,transform,color,background-color]
+          duration-220 ease-out
+          hover:bg-white/90 hover:text-gray-900
+          focus-visible:ring-2 focus-visible:ring-gray-400/70
+          focus-visible:outline-hidden
+          dark:border-white/10 dark:bg-black/80 dark:text-gray-300
+          dark:hover:bg-black/90 dark:hover:text-white
+        "
+      >
+        <IconChevronUp className="size-5" stroke={2.3} />
+        <span class="sr-only">{controls.backToTop}</span>
+      </button>
+    </div>
+  </div>
+</aside>
+
+<script>
+const localeMenu = document.querySelector('[data-sidebar-locale-menu]')
+
+if (localeMenu instanceof HTMLDetailsElement) {
+  const localePanel = localeMenu.querySelector<HTMLElement>('[data-sidebar-locale-panel="true"]')
+
+  const syncLocalePanelState = () => {
+    if (!localePanel)
+      return
+
+    localePanel.classList.toggle('pointer-events-auto', localeMenu.open)
+    localePanel.classList.toggle('opacity-100', localeMenu.open)
+    localePanel.classList.toggle('translate-y-0', localeMenu.open)
+    localePanel.classList.toggle('scale-100', localeMenu.open)
+
+    localePanel.classList.toggle('pointer-events-none', !localeMenu.open)
+    localePanel.classList.toggle('opacity-0', !localeMenu.open)
+    localePanel.classList.toggle('-translate-y-1', !localeMenu.open)
+    localePanel.classList.toggle('scale-95', !localeMenu.open)
+  }
+
+  const closeMenu = (event: Event) => {
+    const target = event.target
+    if (target instanceof Node && localeMenu.contains(target))
+      return
+    localeMenu.open = false
+  }
+
+  const closeOnEscape = (event: KeyboardEvent) => {
+    if (event.key !== 'Escape')
+      return
+    localeMenu.open = false
+  }
+
+  if (localePanel) {
+    localePanel.classList.add(
+      'origin-top-left',
+      'transition-[opacity,transform]',
+      'duration-220',
+      'ease-out',
+    )
+  }
+
+  localeMenu.addEventListener('toggle', syncLocalePanelState)
+  document.addEventListener('click', closeMenu)
+  document.addEventListener('keydown', closeOnEscape)
+  syncLocalePanelState()
+
+  window.addEventListener(
+    'pagehide',
+    () => {
+      localeMenu.removeEventListener('toggle', syncLocalePanelState)
+      document.removeEventListener('click', closeMenu)
+      document.removeEventListener('keydown', closeOnEscape)
+    },
+    { once: true },
+  )
+}
+</script>

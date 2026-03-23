@@ -1,0 +1,227 @@
+---
+import { getCharacterAliases } from '#data/characterAliases'
+import { getHomeFeaturedSearchKeywords } from '#data/homeFeaturedSearchKeywords'
+import { getKeywordAliases } from '#data/keywordAliases'
+import CommissionDescription from '#features/home/blocks/Description.astro'
+import Footer from '#features/home/blocks/Footer.astro'
+import CommissionImageNoticeScript from '#features/home/commission/CommissionImageNoticeScript.astro'
+import MobileViewModeTabs from '#features/home/commission/MobileViewModeTabs.astro'
+import HomeClientScript from '#features/home/HomeClientScript.astro'
+import {
+  getHomeLocaleMessages,
+  HOME_LOCALE_SWITCH_ITEMS,
+  normalizeHomeLocale,
+} from '#features/home/i18n/homeLocale'
+import DesktopSidebarNav from '#features/home/nav/DesktopSidebarNav.astro'
+import MobileHamburgerMenu from '#features/home/nav/hamburger/MobileHamburgerMenu.astro'
+import MobileLanguageMenu from '#features/home/nav/hamburger/MobileLanguageMenu.astro'
+import CommissionSearchDeferred from '#features/home/search/CommissionSearchDeferred'
+import StaticCommissionSections from '#features/home/server/StaticCommissionSections.astro'
+import AgeGateScript from '#features/home/warning/AgeGateScript.astro'
+import BaseLayout from '#layouts/BaseLayout.astro'
+import { normalizeCharacterAliasKey } from '#lib/characterAliases'
+import { buildSitePayload } from '#lib/home/buildSitePayload'
+import { buildHomeUpdateSummary } from '#lib/home/updateSummary'
+import { listMissingSourceImages, resolveSourceImageByCommissionFileName } from '#lib/images/sourceImageRegistry'
+import { normalizeKeywordAliasKey } from '#lib/keywordAliases'
+import { buildCommissionDataMap, buildCreatorAliasesMap } from '#lib/sitePayload'
+import { getImage } from 'astro:assets'
+import { getRelativeLocaleUrl } from 'astro:i18n'
+
+interface HomePageProps {
+  locale?: string
+  canonicalPath?: string
+}
+
+const { locale, canonicalPath } = Astro.props as HomePageProps
+const resolvedLocale = normalizeHomeLocale(locale)
+const messages = getHomeLocaleMessages(resolvedLocale)
+const localeOptions = HOME_LOCALE_SWITCH_ITEMS.map(item => ({
+  locale: item.locale,
+  label: item.label,
+  href: getRelativeLocaleUrl(item.locale),
+}))
+
+const payload = buildSitePayload()
+const homeUpdateSummary = buildHomeUpdateSummary(payload.commissionData, payload.activeCharacterNames)
+const featuredSearchKeywords = getHomeFeaturedSearchKeywords()
+const characterAliases = getCharacterAliases()
+const keywordAliases = getKeywordAliases()
+const commissionMap = buildCommissionDataMap(payload.commissionData)
+const creatorAliasesMap = buildCreatorAliasesMap(payload.creatorAliases)
+const characterAliasesMap = new Map(
+  characterAliases
+    .map((row) => {
+      const key = normalizeCharacterAliasKey(row.characterName)
+      if (!key)
+return null
+      return [key, row.aliases] as const
+    })
+    .filter((entry): entry is readonly [string, string[]] => Boolean(entry)),
+)
+const keywordAliasesMap = new Map(
+  keywordAliases
+    .map((row) => {
+      const key = normalizeKeywordAliasKey(row.baseKeyword)
+      if (!key)
+return null
+      return [key, row.aliases] as const
+    })
+    .filter((entry): entry is readonly [string, string[]] => Boolean(entry)),
+)
+const suggestionAliasGroups = [
+  ...characterAliases.map(row => ({
+    term: row.characterName,
+    aliases: row.aliases,
+  })),
+  ...payload.creatorAliases.map(row => ({
+    term: row.creatorName,
+    aliases: row.aliases,
+  })),
+  ...keywordAliases.map(row => ({
+    term: row.baseKeyword,
+    aliases: row.aliases,
+  })),
+]
+const COMMISSION_IMAGE_SIZES = '(max-width: 768px) 92vw, 640px'
+
+const commissionFileNames = payload.commissionData.flatMap(character =>
+  character.Commissions.map(commission => commission.fileName),
+)
+const missingSourceImages = listMissingSourceImages(commissionFileNames)
+
+if (missingSourceImages.length > 0) {
+  const message = `Missing source images for ${missingSourceImages.length} commissions: ${missingSourceImages.join(', ')}`
+
+  if (import.meta.env.DEV) {
+    console.warn(`[images] ${message}`)
+  }
+ else {
+    throw new Error(message)
+  }
+}
+
+const firstCharacterName
+  = payload.characterStatus.active[0]?.DisplayName ?? payload.characterStatus.archived[0]?.DisplayName
+const firstCommissionFileName = firstCharacterName
+  ? commissionMap.get(firstCharacterName)?.Commissions?.[0]?.fileName
+  : undefined
+const firstSourceImage = firstCommissionFileName
+  ? resolveSourceImageByCommissionFileName(firstCommissionFileName)
+  : null
+
+const priorityImage = firstSourceImage
+  ? (() =>
+      getImage({
+        src: firstSourceImage,
+        widths: [768, 960, 1280],
+        format: 'webp',
+        sizes: COMMISSION_IMAGE_SIZES,
+      }).then(image => ({
+        src: image.src,
+        srcSet: image.srcSet.attribute,
+        sizes: COMMISSION_IMAGE_SIZES,
+      })))()
+  : undefined
+
+const resolvedCanonicalPath
+  = canonicalPath ?? (resolvedLocale === 'en' ? '/' : `/${resolvedLocale}/`)
+---
+
+<BaseLayout priorityImage={await priorityImage} lang={messages.lang} canonicalPath={resolvedCanonicalPath}>
+  <style is:global slot="head">
+    html[data-home-scroll-restoring='true'] [data-home-scroll-restore-shell='true'] {
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+  <script is:inline slot="head">
+    try {
+      const rawState = window.sessionStorage.getItem('home:scroll-state')
+      if (!rawState || window.location.hash) {
+        // noop
+      }
+      else {
+        const navigationEntry = window.performance.getEntriesByType('navigation')[0]
+        const navigationType
+          = navigationEntry && 'type' in navigationEntry ? String(navigationEntry.type) : ''
+        const parsedState = JSON.parse(rawState)
+
+        if (
+          navigationType === 'reload'
+          && parsedState
+          && parsedState.pathname === window.location.pathname
+          && parsedState.search === window.location.search
+        ) {
+          document.documentElement.dataset.homeScrollRestoring = 'true'
+
+          try {
+            window.history.scrollRestoration = 'manual'
+          }
+          catch {
+            // Ignore unsupported browsers.
+          }
+        }
+      }
+    }
+    catch {
+      // Ignore malformed session state and allow the page to render normally.
+    }
+  </script>
+  <AgeGateScript locale={resolvedLocale} />
+  <CommissionDescription
+    locale={resolvedLocale}
+    commissionData={payload.commissionData}
+    activeCharacters={payload.activeCharacterNames}
+    updateSummary={homeUpdateSummary}
+  />
+  <div class="relative mx-auto flex justify-center">
+    <div id="Main Contents" class="w-full max-w-2xl">
+      <CommissionSearchDeferred
+        client:load
+        locale={resolvedLocale}
+        featuredKeywords={featuredSearchKeywords}
+        suggestionAliasGroups={suggestionAliasGroups}
+      />
+      <MobileHamburgerMenu
+        active={payload.characterStatus.active}
+        archived={payload.characterStatus.archived}
+        monthNavItems={payload.monthNavItems}
+        controls={messages.controls}
+      />
+      <MobileLanguageMenu
+        locale={resolvedLocale}
+        localeOptions={localeOptions}
+        localeSwitcherLabel={messages.localeSwitcherLabel}
+      />
+      <MobileViewModeTabs
+        byCharacterLabel={messages.controls.byCharacter}
+        byDateLabel={messages.controls.byDate}
+      />
+      <DesktopSidebarNav
+        locale={resolvedLocale}
+        localeOptions={localeOptions}
+        localeSwitcherLabel={messages.localeSwitcherLabel}
+        controls={messages.controls}
+        active={payload.characterStatus.active}
+        archived={payload.characterStatus.archived}
+        monthNavItems={payload.monthNavItems}
+      />
+      <div data-home-scroll-restore-shell="true">
+        <CommissionImageNoticeScript />
+        <StaticCommissionSections
+          locale={resolvedLocale}
+          activeChars={payload.characterStatus.active}
+          archivedChars={payload.characterStatus.archived}
+          commissionMap={commissionMap}
+          characterAliasesMap={characterAliasesMap}
+          creatorAliasesMap={creatorAliasesMap}
+          keywordAliasesMap={keywordAliasesMap}
+          timelineGroups={payload.timelineGroups}
+        />
+        <HomeClientScript />
+        <Footer locale={resolvedLocale} />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

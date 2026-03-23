@@ -1,0 +1,33 @@
+# Lessons
+
+- 2026-03-23: 做 Git 历史清理前，不能只看本地 `origin/*` remote-tracking refs；先用 `git ls-remote --heads origin` 确认真正还存在的远端分支，再决定删除列表，否则很容易对着已经消失的 refs 误判。
+- 2026-03-12: 涉及折叠区展开、模板注入、占位节点隐藏这类 DOM 替换时，不能只验证数据状态和可见性；必须显式检查滚动位置是否被浏览器默认行为或焦点丢失重置，并补对应回归测试。
+- 2026-03-12: 任何“先跳转到锚点，再在锚点上方继续注入懒加载内容”的方案，都要默认视为滚动漂移高风险；如果不能把目标区块以上的 DOM 高度完全固定，就不要把该层懒加载留在导航主路径里。
+- 2026-03-12: 只处理点击/展开时的滚动稳定还不够；只要页面支持刷新后继续浏览，就必须验证浏览器原生 scroll restoration 与懒加载注入的时序冲突，并在必要时接管刷新态滚动恢复。
+- 2026-03-14: 调整折叠菜单语义前，先确认它在产品上是否同时承担“菜单开关”和“内容可见性开关”；不要把自己偏好的交互语义直接替换成产品既有语义，尤其是用户已经把它当成主操作入口时。
+- 2026-03-14: 任何依赖懒加载 section DOM 做搜索过滤/重建索引的逻辑，不能只用 `visible/loaded` 这类布尔状态当快照键；如果 batch 是分批挂载的，必须把“已挂载批次数”或等价的结构变化计数纳入快照，否则首批注入后的新 DOM 会短暂以未筛选态暴露出来。
+- 2026-03-17: 用户明确说明某个配置文件是手工维护时，不要把它当成可顺手清理/格式化的上下文文件；即使是工具链副作用把它改脏，也必须立刻恢复，并在后续验证里避免再对该文件使用 `--fix` 类命令。
+- 2026-03-17: 做 workspace 级测试收口时，测试资产必须继续归属真实 app；如果用例或快照明显对应 `apps/admin`，不要因为根配置统一就继续挂在 `apps/web` 下面。
+- 2026-03-17: 迁移态视觉基线的事实源要先固定在 legacy 页面本身；如果目标是校验 `apps/admin` 是否继承旧后台观感，基线应先从 `apps/web` 的 `/admin*` 页面生成，再让新实现去对齐这套基线。
+- 2026-03-17: 当迁移路线已经从旧方案切到新架构时，必须立即收敛 `tasks/todo.md`，只保留唯一主线；被放弃或暂缓的方案要显式移到“暂停/备选”，不能继续和主计划并排存在。
+- 2026-03-17: 记录 Cloudflare 迁移状态时，必须把“代码支持某个 binding-backed 路径”和“wrangler 已真实配置该 binding”明确分开；条件能力不能写成当前环境真值。
+- 2026-03-17: 后台迁移不能把“页面已经搬过去”和“设计已经 1:1 复刻”混为一谈；route 存在不代表迁移完成。只要 standalone 和 legacy 在视觉、间距、控件形态、交互语义上还有漂移，就必须继续标记为未完成，尤其是 legacy 已使用 shadcn/Radix `Select` / dropdown 的地方，不能退回成原生 `<select>` 或自定义近似实现。
+- 2026-03-17: 只要用户关心“什么时候能真正用远程 D1/R2”，计划里就必须显式区分四件事：`worker 里有 binding-aware code path`、`wrangler 已接真实 bindings`、`admin 后台已能远程读写`、`公开站已脱离本地 SQLite/data/images`。这四层不能再混写成“迁移进行中”。
+- 2026-03-17: 在任何文档里描述迁移进展时，必须强调“worker + D1/R2 是主路径”与“legacy 仅作回滚/bridge”；不要让读者以为 legacy API 仍在接收新功能，否则会破坏迁移方向感。
+- 2026-03-17: 当用户已经明确要舍弃本地兼容/本地预览时，不能继续围绕 fallback 做工程。要先把默认入口切到目标架构，并让缺失的远程依赖显式失败，而不是继续保留隐形回退路径。
+- 2026-03-17: Cloudflare 已支持“本地 `wrangler dev` + remote bindings”时，不要继续默认使用 `wrangler dev --remote` 整段远程预览链。前者更接近目标开发拓扑，也更容易直接暴露本机 HTTP 链路问题。
+- 2026-03-18: 当用户明确要求“直接拔掉本地数据”时，roadmap/todo 里不能再保留 local adapter、过渡窗口、双轨并存、必要时切回本地 这类表述；计划必须改成单线硬切，并把失败处理写成“继续修远端导出链路”，而不是“先回退本地再说”。
+- 2026-03-18: 在 Bun 作为默认脚本运行时的仓库里，新增长期维护脚本时优先用 `.ts` 而不是 `.mjs`；同时把对应脚本纳入 app 自己的 `tsconfig` 覆盖范围，避免“能跑但不受类型检查”的灰区。
+- 2026-03-18: 当用户进一步要求“把本地数据源彻底删掉”时，不能只把公开站 build 切到 generated inputs 就停手；还要同步删除仓库里的本地 SQLite/源图文件、下线依赖这些文件的 bootstrap/check 脚本和测试，并关掉仍会命中本地数据的 dev 入口。
+- 2026-03-18: 当用户明确表示生产认证要交给 Cloudflare Zero Trust 这类平台边界时，不要继续在 worker 里保留并行的 Basic Auth/密码门；应该直接删掉应用内认证提示和对应配置，把生产访问控制真值收口到平台层。
+- 2026-03-18: 在 Bun 脚本里包装 Wrangler 时，不要默认再套一层 `bunx wrangler`。Cloudflare Builds 环境下这会干扰 `wrangler d1 execute --command <SQL>` 的参数解析，导致整段 SQL 被拆成未知参数；应优先直接调用仓库内 `node_modules/.bin/wrangler`，再回退到 PATH 里的 `wrangler`。
+- 2026-03-18: monorepo 里只要某个 app 的构建阶段需要远端 Cloudflare 资源，就不要再隐式借用另一个 app 的默认 `wrangler.jsonc`；必须把“由谁的 Worker 项目持有绑定、构建时用哪份 config 拉数据”写成显式配置，否则 push build 很容易在 Dashboard 上失去资源上下文。
+- 2026-03-23: 任何依赖 `apps/web/generated/*` 这类构建产物的真实样本测试，都不能在模块顶层直接 import 会触发文件读取的数据模块；必须先做“生成物是否存在”的守门，再用懒加载导入，否则 CI 在未导出事实源时会在测试收集阶段直接失败。
+- 2026-03-23: monorepo 里当同仓同时存在 Astro(Vite 7) 和独立 Vite 8 应用时，`@tailwindcss/vite` 这类插件很容易在类型层解析到另一份 Vite 定义；如果运行时构建已正常，就不要急着重排整棵依赖图，先在 Astro config 侧把插件结果收口到 Astro 自己的 `vite.plugins` 类型面上，再验证 `astro check` 和真实 build。
+- 2026-03-23: 像 duplicate hint 这种带判断色彩的提示，默认必须偏向高精度而不是高召回；只要规则还停留在“有点像”，就不能直接贴上 duplicate 标签，否则用户只会把整块提示当噪音。
+- 2026-03-23: 对外表现成 SPA 的后台，不能只把页面内容搬进 React；只要 section 切换还在走原生 `<a href>` 整页导航，闪动和状态丢失就迟早会露出来。至少要补 client-side history 导航，并用回归测试显式防住 `beforeunload`。
+- 2026-03-23: 只修顶层导航还不够；像 `Overview` 里的 Quick Actions、列表尾链这种页内入口同样会泄漏回原生整页跳转。只要后台已经有 client-side 导航能力，所有站内 admin 链接都该复用同一套跳转约束，并至少留一条从具体页面入口点击的回归测试。
+- 2026-03-23: 只要某个 Turbo 任务除了源码还依赖远端数据（比如 `apps/web` build 先导出 D1/R2 事实源再跑 Astro），就不能只按源码/锁文件命中缓存；必须额外引入显式的远端数据版本戳（如 `WEB_BUILD_CACHE_TOKEN`），否则 `admin-data-changed` 这类重建会静默回放旧产物。
+- 2026-03-23: Turbo 处于 `envMode: "strict"` 时，外层 workflow 已经设置的凭证不会自动进入任务进程；像 `wrangler` / 远端导出这类链路如果要在 Turbo 任务里访问 Cloudflare，必须显式加到 `passThroughEnv`，否则会出现“部署步骤有 token，实际 build 子进程没 token”的假象。
+- 2026-03-23: 像 `dev:admin` 这种多进程联调入口，不能只把 worker 和 frontend 一起拉起就算完；只要 frontend 首屏依赖 worker 远端数据，就应该等待一个真实的 binding-backed API 成功响应后再放行，否则用户只会看到“本地起了，但像没连上远端”的假故障。
+- 2026-03-23: GitHub Actions 里只要多个 workflow 会在同一分支上共享同一个 `actions/cache` key，就不能让它们由同一个 push 并发触发并各自 save；`deploy` 应该等 `CI` 成功后再跑，发布类 workflow 还要收口到独立的 release cache namespace 并共用一个 concurrency group，否则 `.turbo` 这类共享缓存会因为 reserve 冲突反复报 `another job may be creating this cache`。

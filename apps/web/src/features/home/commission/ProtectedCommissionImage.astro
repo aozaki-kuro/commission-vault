@@ -1,0 +1,38 @@
+---
+import type { ImageMetadata } from 'astro'
+import { Image } from 'astro:assets'
+
+interface ProtectedCommissionImageProps {
+  altText: string
+  sourceImage: ImageMetadata
+}
+
+const { altText, sourceImage } = Astro.props as ProtectedCommissionImageProps
+
+const COMMISSION_IMAGE_WIDTH = 1280
+const COMMISSION_IMAGE_SIZES = '(max-width: 768px) 92vw, 640px'
+---
+
+<div
+  data-commission-image="true"
+  data-commission-alt={altText}
+  class="
+    relative
+    before:pointer-events-none before:absolute before:inset-0
+    before:animate-pulse before:bg-gray-200/80 before:content-['']
+    dark:before:bg-gray-700/60
+  "
+>
+  <Image
+    data-commission-image-node="true"
+    src={sourceImage}
+    alt={altText}
+    widths={[768, 960, 1280]}
+    width={COMMISSION_IMAGE_WIDTH}
+    format="webp"
+    sizes={COMMISSION_IMAGE_SIZES}
+    class="pointer-events-none relative z-10 block w-full select-none"
+    loading="lazy"
+    style="height:auto"
+  />
+</div>

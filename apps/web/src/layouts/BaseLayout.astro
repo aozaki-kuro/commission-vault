@@ -1,0 +1,145 @@
+---
+import { SiteMeta } from '#config/siteMeta'
+import AnalyticsScript from '#layouts/AnalyticsScript.astro'
+import { Font } from 'astro:assets'
+import { ClientRouter } from 'astro:transitions'
+
+import '#styles/globals.css'
+
+interface Props {
+  title?: string
+  description?: string
+  canonicalPath?: string
+  lang?: string
+  priorityImage?: {
+    src: string
+    srcSet?: string
+    sizes?: string
+  }
+}
+
+const { title, description = SiteMeta.description, canonicalPath = '/', lang = 'en', priorityImage }
+  = Astro.props as Props
+const pageTitle = title ? `${title} | ${SiteMeta.site}` : SiteMeta.site
+const canonicalUrl = new URL(canonicalPath, SiteMeta.canonicalUrl).toString()
+---
+
+<!doctype html>
+<html lang={lang} class="font-sans">
+  <head>
+    <meta charset="UTF-8" />
+    <Font
+      cssVariable="--font-ibm-plex-sans"
+      preload={[
+        { weight: 400, style: 'normal' },
+        { weight: 600, style: 'normal' },
+        { weight: 700, style: 'normal' },
+      ]}
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <meta name="application-name" content={SiteMeta.site} />
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="light dark" />
+    <!-- Keep the static brand color for crawlers like Discord. -->
+    <meta name="theme-color" content={SiteMeta.themeColor} />
+    <script is:inline>
+      (() => {
+        const themeColorMeta = document.querySelector('meta[name="theme-color"]')
+        if (!(themeColorMeta instanceof HTMLMetaElement)) {
+          return
+        }
+
+        const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+        const lightThemeColor = '#ffffff'
+        const darkThemeColor = '#171717'
+
+        if (darkModeMediaQuery.media === 'not all') {
+          return
+        }
+
+        const syncThemeColor = (prefersDark = darkModeMediaQuery.matches) => {
+          themeColorMeta.content = prefersDark ? darkThemeColor : lightThemeColor
+        }
+
+        syncThemeColor()
+
+        if (typeof darkModeMediaQuery.addEventListener === 'function') {
+          darkModeMediaQuery.addEventListener('change', (event) => {
+            syncThemeColor(event.matches)
+          })
+          return
+        }
+
+        const legacyAddListener = Reflect.get(darkModeMediaQuery, 'addListener')
+        if (typeof legacyAddListener === 'function') {
+          legacyAddListener.call(darkModeMediaQuery, () => {
+            syncThemeColor()
+          })
+        }
+      })()
+    </script>
+    <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={SiteMeta.site} />
+    <meta property="og:site_name" content={SiteMeta.site} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={SiteMeta.socialImage} />
+    <meta property="og:image:width" content="800" />
+    <meta property="og:image:height" content="451" />
+    <meta property="og:image:alt" content={SiteMeta.site} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={SiteMeta.site} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={SiteMeta.socialImage} />
+    <meta name="twitter:site" content={SiteMeta.twitterSite} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/favicon/android-chrome-192x192.png" />
+    <link rel="apple-touch-icon-precomposed" href="/favicon/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/favicon/safari-pinned-tab.svg" color={SiteMeta.themeColor} />
+    <meta name="msapplication-TileColor" content={SiteMeta.themeColor} />
+    <meta name="msapplication-config" content="/favicon/browserconfig.xml" />
+    <link rel="manifest" href="/favicon/site.webmanifest" />
+    {
+      priorityImage
+? (
+        <link
+          rel="preload"
+          as="image"
+          type="image/webp"
+          href={priorityImage.src}
+          imagesrcset={priorityImage.srcSet}
+          imagesizes={priorityImage.sizes}
+          fetchpriority="high"
+        />
+      )
+: null
+    }
+    <ClientRouter />
+    <slot name="head" />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <div class="
+      min-h-dvh antialiased
+      selection:bg-gray-400/25
+      dark:bg-neutral-900
+    "
+    >
+      <main class="
+        mx-4 min-h-dvh max-w-2xl pt-7 pb-16 text-sm/relaxed
+        sm:pt-20 sm:pb-32 sm:text-base
+        md:mx-auto md:min-h-screen
+      "
+      >
+        <slot />
+      </main>
+      <AnalyticsScript />
+    </div>
+  </body>
+</html>

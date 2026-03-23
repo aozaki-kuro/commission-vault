@@ -1,0 +1,53 @@
+{
+  "name": "@commission-index/web",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "fact-source:export": "FACT_SOURCE_WRANGLER_CONFIG=../web/wrangler.jsonc bun run --cwd ../admin-worker web:fact-source:export",
+    "fact-source:sync-images": "FACT_SOURCE_WRANGLER_CONFIG=../web/wrangler.jsonc bun run --cwd ../admin-worker web:fact-source:sync-images",
+    "build:astro": "astro build",
+    "check:astro": "astro check .",
+    "dev": "bun run fact-source:sync-images && NODE_ENV=development astro dev",
+    "build": "bun run fact-source:export && astro build",
+    "check": "bun run fact-source:export && astro check .",
+    "preview": "bun run fact-source:export && astro build --clean && astro preview",
+    "deploy": "wrangler deploy --config wrangler.jsonc",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
+    "test": "bun run --cwd ../.. test",
+    "test:changed": "bun run --cwd ../.. test:changed",
+    "test:watch": "bun run --cwd ../.. test:watch",
+    "test:visual": "bun run --cwd ../.. test:visual",
+    "test:visual:update": "bun run --cwd ../.. test:visual:update"
+  },
+  "dependencies": {
+    "@commission-index/domain": "workspace:*",
+    "@radix-ui/react-alert-dialog": "^1.1.15",
+    "@radix-ui/react-popover": "^1.1.15",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-tabs": "^1.1.13",
+    "@tabler/icons-react": "^3.40.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
+    "fuse.js": "^7.1.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "tailwind-merge": "^3.5.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.8",
+    "@astrojs/react": "^5.0.1",
+    "@tailwindcss/vite": "^4.2.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "astro": "^6.0.8",
+    "jsdom": "^29.0.1",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^4.2.2",
+    "wrangler": "^4.76.0"
+  }
+}

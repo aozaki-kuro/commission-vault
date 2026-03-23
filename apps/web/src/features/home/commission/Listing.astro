@@ -1,0 +1,85 @@
+---
+import type { CharacterCommissions } from '#data/types'
+import CommissionEntries from '#features/home/commission/CommissionEntries.astro'
+import { getHomeLocaleMessages, normalizeHomeLocale } from '#features/home/i18n/homeLocale'
+import { getCharacterSectionHash, getCharacterSectionId, getCharacterTitleId } from '#lib/characters/nav'
+
+interface ListingProps {
+  locale?: string
+  Character: string
+  status: 'active' | 'archived'
+  commissionMap: Map<string, CharacterCommissions>
+  characterAliasesMap: Map<string, string[]> | null
+  creatorAliasesMap: Map<string, string[]> | null
+  keywordAliasesMap: Map<string, string[]> | null
+}
+
+const {
+  locale,
+  Character,
+  status,
+  commissionMap,
+  characterAliasesMap,
+  creatorAliasesMap,
+  keywordAliasesMap,
+} = Astro.props as ListingProps
+const resolvedLocale = normalizeHomeLocale(locale)
+const messages = getHomeLocaleMessages(resolvedLocale)
+const sectionId = getCharacterSectionId(Character)
+const titleId = getCharacterTitleId(Character)
+const sectionHash = getCharacterSectionHash(Character)
+const characterData = commissionMap.get(Character)
+const commissions = characterData?.Commissions ?? []
+---
+
+<div
+  id={sectionId}
+  data-character-section="true"
+  data-character-status={status}
+  data-total-commissions={commissions.length}
+  class="pb-10"
+>
+  <h2
+    id={titleId}
+    class="
+      group relative mb-2 pt-6
+      md:pt-8
+    "
+  >
+    {Character}
+    <a
+      href={sectionHash}
+      class="
+        ml-2 font-bold text-gray-400 no-underline opacity-0 transition-opacity
+        duration-200
+        group-hover:opacity-100
+        focus-visible:opacity-100 focus-visible:outline-none
+        dark:text-gray-600
+      "
+    >
+      #
+    </a>
+  </h2>
+
+  {
+    commissions.length === 0
+? (
+      <p class="my-4">{messages.listing.toBeAnnounced}</p>
+    )
+: (
+      <CommissionEntries
+        locale={resolvedLocale}
+        entries={commissions.map(commission => ({
+          character: Character,
+          commission,
+          sectionId,
+          entryKey: `${Character}:${commission.fileName}`,
+          entryAnchorPrefix: sectionId,
+        }))}
+        characterAliasesMap={characterAliasesMap}
+        creatorAliasesMap={creatorAliasesMap}
+        keywordAliasesMap={keywordAliasesMap}
+      />
+    )
+  }
+</div>

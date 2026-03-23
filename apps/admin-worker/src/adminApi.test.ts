@@ -1,0 +1,1335 @@
+import type {
+  AdminCrudBackend,
+  CharacterOrderPayload,
+  CreateCharacterInput,
+  CreateCommissionInput,
+  UpdateCharacterInput,
+  UpdateCommissionInput,
+} from './adminApi'
+import { describe, expect, it, vi } from 'vitest'
+import {
+  handleAdminApiRequest,
+} from './adminApi'
+
+const baseUrl = 'http://127.0.0.1:8787'
+const noopCtx = { waitUntil: (_p: Promise<unknown>) => {} }
+
+function createJsonResponse(payload: unknown, status = 200) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+    },
+  })
+}
+
+function createCrudBackend(overrides: Partial<AdminCrudBackend> = {}): AdminCrudBackend {
+  return {
+    getCharacterCommissions: vi.fn(async () => createJsonResponse({ commissions: [] })),
+    createCharacter: vi.fn(async () => createJsonResponse({ status: 'success', message: 'ok' })),
+    updateCharacter: vi.fn(async () => createJsonResponse({ status: 'success', message: 'ok' })),
+    updateCharacterOrder: vi.fn(async () => createJsonResponse({ status: 'success', message: 'ok' })),
+    deleteCharacter: vi.fn(async () => createJsonResponse({ status: 'success', message: 'ok' })),
+    createCommission: vi.fn(async () => createJsonResponse({ status: 'success', message: 'ok' })),
+    updateCommission: vi.fn(async () => createJsonResponse({ status: 'success', message: 'ok' })),
+    deleteCommission: vi.fn(async () => createJsonResponse({ status: 'success', message: 'ok' })),
+    replaceCommissionSourceImage: vi.fn(async () => createJsonResponse({ status: 'success', message: 'ok' })),
+    ...overrides,
+  }
+}
+
+interface StatementExecution {
+  query: string
+  values: unknown[]
+}
+
+function createD1Recorder(options: {
+  queryResults?: (query: string, values: unknown[]) => unknown[]
+  runBehavior?: (query: string, values: unknown[]) => { success?: boolean } | void
+} = {}) {
+  const executions: StatementExecution[] = []
+
+  function createStatement(query: string, values: unknown[] = []) {
+    return {
+      bind(...nextValues: unknown[]) {
+        return createStatement(query, nextValues)
+      },
+      async all() {
+        executions.push({ query, values })
+        return { results: options.queryResults?.(query, values) ?? [] }
+      },
+      async run() {
+        executions.push({ query, values })
+        return options.runBehavior?.(query, values) ?? { success: true }
+      },
+    }
+  }
+
+  return {
+    db: {
+      prepare(query: string) {
+        return createStatement(query)
+      },
+    },
+    executions,
+  }
+}
+
+function createImagesBucketRecorder(options: {
+  existingKeys?: string[]
+  existingObjects?: Record<string, { body?: ArrayBuffer, contentType?: string }>
+} = {}) {
+  const existingKeys = new Set(options.existingKeys ?? [])
+  const existingObjects = options.existingObjects ?? {}
+  const put = vi.fn(async (_key: string, _value: ArrayBuffer, _options?: { httpMetadata?: { contentType?: string } }) => ({}))
+  const deleteObject = vi.fn(async (_key: string) => ({}))
+  const get = vi.fn(async (key: string) => {
+    if (key in existingObjects) {
+      const object = existingObjects[key]!
+      return {
+        httpMetadata: object.contentType ? { contentType: object.contentType } : undefined,
+        async arrayBuffer() {
+          return object.body ?? new Uint8Array([1, 2, 3]).buffer
+        },
+      }
+    }
+
+    if (!existingKeys.has(key)) {
+      return null
+    }
+
+    return {
+      async arrayBuffer() {
+        return new Uint8Array([1, 2, 3]).buffer
+      },
+    }
+  })
+
+  return {
+    bucket: {
+      delete: deleteObject,
+      get,
+      put,
+    },
+    deleteObject,
+    get,
+    put,
+  }
+}
+
+function createAdminReadD1Database() {
+  const characters = [
+    { id: 1, name: 'Alice', status: 'active', sortOrder: 1, commissionCount: 1 },
+    { id: 2, name: 'Beta', status: 'archived', sortOrder: 2, commissionCount: 1 },
+  ]
+  const commissions = [
+    {
+      id: 10,
+      characterId: 1,
+      characterName: 'Alice',
+      fileName: '20250301_alice-maker',
+      links: JSON.stringify(['https://alice.example/a', 'https://alice.example/b']),
+      design: 'maid outfit',
+      description: 'soft lighting',
+      keyword: 'maid, cafe',
+      hidden: 0,
+    },
+    {
+      id: 11,
+      characterId: 2,
+      characterName: 'Beta',
+      fileName: '20240105_beta-maker',
+      links: JSON.stringify(['https://beta.example/1']),
+      design: 'armor',
+      description: 'battle scene',
+      keyword: 'armor',
+      hidden: 1,
+    },
+  ]
+
+  function queryResults(query: string, values: unknown[]) {
+    if (query.includes('sqlite_master')) {
+      const tableName = String(values[1] ?? '')
+      return tableName
+        ? [{ name: tableName }]
+        : []
+    }
+
+    if (query.includes('PRAGMA table_info(commissions)')) {
+      return [{ name: 'id' }, { name: 'keyword' }]
+    }
+
+    if (query.includes('COUNT(commissions.id) as commissionCount') && query.includes('characters.status as status')) {
+      return characters
+    }
+
+    if (query.includes('COUNT(commissions.id) as commissionCount') && query.includes('characters.name as characterName')) {
+      return characters.map(item => ({
+        characterName: item.name,
+        commissionCount: item.commissionCount,
+      }))
+    }
+
+    if (query.includes('SELECT file_name as fileName FROM commissions')) {
+      return commissions.map(item => ({ fileName: item.fileName }))
+    }
+
+    if (query.includes('FROM creator_aliases') && query.includes('ORDER BY creator_name ASC')) {
+      return [{ creatorName: 'maker', aliasesJson: JSON.stringify(['mk']) }]
+    }
+
+    if (query.includes('FROM creator_aliases') && !query.includes('ORDER BY creator_name ASC')) {
+      return [{ creatorName: 'maker', aliasesJson: JSON.stringify(['mk']) }]
+    }
+
+    if (query.includes('FROM character_aliases')) {
+      return [
+        { characterName: 'Alice', aliasesJson: JSON.stringify(['Alicia']) },
+        { characterName: 'Beta', aliasesJson: JSON.stringify(['B']) },
+      ]
+    }
+
+    if (query.includes('FROM keyword_aliases')) {
+      return [{ baseKeyword: 'maid', aliasesJson: JSON.stringify(['uniform']) }]
+    }
+
+    if (query.includes('SELECT keyword FROM commissions')) {
+      return commissions.map(item => ({ keyword: item.keyword }))
+    }
+
+    if (
+      query.includes('commissions.id as id')
+      && query.includes('ORDER BY characters.sort_order ASC, commissions.file_name DESC')
+    ) {
+      return commissions.map(item => ({
+        id: item.id,
+        characterId: item.characterId,
+        characterName: item.characterName,
+        fileName: item.fileName,
+        design: item.design,
+        description: item.description,
+        keyword: item.keyword,
+      }))
+    }
+
+    if (query.includes('FROM home_featured_search_keywords')) {
+      return [{ keyword: 'maid' }, { keyword: 'maker' }]
+    }
+
+    if (
+      query.includes('commissions.file_name as fileName')
+      && query.includes('JOIN characters ON characters.id = commissions.character_id')
+      && !query.includes('commissions.id as id')
+    ) {
+      return commissions.map(item => ({
+        characterName: item.characterName,
+        fileName: item.fileName,
+        design: item.design,
+        description: item.description,
+        keyword: item.keyword,
+      }))
+    }
+
+    if (query.includes('WHERE commissions.character_id = ?')) {
+      const characterId = Number(values[0])
+      return commissions
+        .filter(item => item.characterId === characterId)
+        .map(item => ({
+          id: item.id,
+          characterId: item.characterId,
+          characterName: item.characterName,
+          fileName: item.fileName,
+          links: item.links,
+          design: item.design,
+          description: item.description,
+          keyword: item.keyword,
+          hidden: item.hidden,
+        }))
+    }
+
+    return []
+  }
+
+  function createStatement(query: string, values: unknown[] = []) {
+    return {
+      bind(...nextValues: unknown[]) {
+        return createStatement(query, nextValues)
+      },
+      async all<TRow>() {
+        return {
+          results: queryResults(query, values) as TRow[],
+        }
+      },
+      async run() {
+        return { success: true }
+      },
+    }
+  }
+
+  return {
+    db: {
+      prepare(query: string) {
+        return createStatement(query)
+      },
+    },
+  }
+}
+
+describe('admin worker CRUD contract routing', () => {
+  it('normalizes create-character payload before delegating to backend', async () => {
+    const createCharacter = vi.fn(async (_input: CreateCharacterInput) =>
+      createJsonResponse({ status: 'success', message: 'Character "Alice" created.' }))
+    const backend = createCrudBackend({ createCharacter })
+
+    const request = new Request(`${baseUrl}/api/admin/characters`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: '  Alice  ',
+        status: 'archived',
+      }),
+    })
+
+    const response = await handleAdminApiRequest(request, {}, noopCtx, backend)
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Character "Alice" created.',
+    })
+    expect(createCharacter).toHaveBeenCalledWith({
+      name: 'Alice',
+      status: 'archived',
+    })
+  })
+
+  it('rejects empty character names before hitting backend', async () => {
+    const createCharacter = vi.fn(async (_input: CreateCharacterInput) =>
+      createJsonResponse({ status: 'success', message: 'unexpected' }))
+    const backend = createCrudBackend({ createCharacter })
+
+    const request = new Request(`${baseUrl}/api/admin/characters`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: '   ',
+      }),
+    })
+
+    const response = await handleAdminApiRequest(request, {}, noopCtx, backend)
+
+    expect(response.status).toBe(400)
+    expect(await response.json()).toEqual({
+      status: 'error',
+      message: 'Character name is required.',
+    })
+    expect(createCharacter).not.toHaveBeenCalled()
+  })
+
+  it('passes normalized character ordering arrays to backend', async () => {
+    const updateCharacterOrder = vi.fn(async (_payload: CharacterOrderPayload) =>
+      createJsonResponse({ status: 'success', message: 'Character order updated.' }))
+    const backend = createCrudBackend({ updateCharacterOrder })
+
+    const request = new Request(`${baseUrl}/api/admin/characters/order`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        active: ['1', 2],
+        archived: ['3'],
+      }),
+    })
+
+    const response = await handleAdminApiRequest(request, {}, noopCtx, backend)
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Character order updated.',
+    })
+    expect(updateCharacterOrder).toHaveBeenCalledWith({
+      active: [1, 2],
+      archived: [3],
+    })
+  })
+
+  it('normalizes create-commission form data before delegating to backend', async () => {
+    const createCommission = vi.fn(async (_input: CreateCommissionInput) =>
+      createJsonResponse({ status: 'success', message: 'Commission saved.' }))
+    const backend = createCrudBackend({ createCommission })
+
+    const formData = new FormData()
+    formData.set('characterId', '7')
+    formData.set('fileName', '  20250301_sample-piece  ')
+    formData.set('links', ' https://a.example \n\nhttps://b.example ')
+    formData.set('design', '  outfit  ')
+    formData.set('description', '  desc  ')
+    formData.set('keyword', '  tag  ')
+    formData.set('hidden', 'on')
+    formData.set('sourceImage', new File(['png'], 'sample.png', { type: 'image/png' }))
+
+    const request = new Request(`${baseUrl}/api/admin/commissions`, {
+      method: 'POST',
+      body: formData,
+    })
+
+    const response = await handleAdminApiRequest(request, {}, noopCtx, backend)
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Commission saved.',
+    })
+
+    expect(createCommission).toHaveBeenCalledTimes(1)
+    const [payload] = createCommission.mock.calls[0] as [CreateCommissionInput]
+    expect(payload).toMatchObject({
+      characterId: 7,
+      fileName: '20250301_sample-piece',
+      links: ['https://a.example', 'https://b.example'],
+      design: 'outfit',
+      description: 'desc',
+      keyword: 'tag',
+      hidden: true,
+    })
+    expect(payload.sourceImage).toBeInstanceOf(File)
+    expect(payload.sourceImage.name).toBe('sample.png')
+  })
+
+  it('rejects missing source image for create-commission before delegating to backend', async () => {
+    const createCommission = vi.fn(async (_input: CreateCommissionInput) =>
+      createJsonResponse({ status: 'success', message: 'unexpected' }))
+    const backend = createCrudBackend({ createCommission })
+
+    const formData = new FormData()
+    formData.set('characterId', '7')
+    formData.set('fileName', 'sample-piece')
+
+    const request = new Request(`${baseUrl}/api/admin/commissions`, {
+      method: 'POST',
+      body: formData,
+    })
+
+    const response = await handleAdminApiRequest(request, {}, noopCtx, backend)
+
+    expect(response.status).toBe(400)
+    expect(await response.json()).toEqual({
+      status: 'error',
+      message: 'Source image is required for new commission entries.',
+    })
+    expect(createCommission).not.toHaveBeenCalled()
+  })
+
+  it('normalizes update-commission payload before delegating to backend', async () => {
+    const updateCommission = vi.fn(async (_input: UpdateCommissionInput) =>
+      createJsonResponse({ status: 'success', message: 'Commission updated.' }))
+    const backend = createCrudBackend({ updateCommission })
+
+    const request = new Request(`${baseUrl}/api/admin/commissions/19`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        characterId: '3',
+        fileName: '  updated-piece  ',
+        links: ' one \n two ',
+        design: '  new design  ',
+        description: '',
+        keyword: '  glow  ',
+        hidden: true,
+      }),
+    })
+
+    const response = await handleAdminApiRequest(request, {}, noopCtx, backend)
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Commission updated.',
+    })
+    expect(updateCommission).toHaveBeenCalledWith({
+      id: 19,
+      characterId: 3,
+      fileName: 'updated-piece',
+      links: ['one', 'two'],
+      design: 'new design',
+      description: undefined,
+      keyword: 'glow',
+      hidden: true,
+    })
+  })
+
+  it('returns a 404 payload for unknown admin routes', async () => {
+    const backend = createCrudBackend()
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/unknown`, { method: 'GET' }),
+      {},
+      noopCtx,
+      backend,
+    )
+
+    expect(response.status).toBe(404)
+    expect(await response.json()).toEqual({
+      status: 'error',
+      message: 'Not Found',
+    })
+  })
+
+  it('normalizes update-character payload before delegating to backend', async () => {
+    const updateCharacter = vi.fn(async (_input: UpdateCharacterInput) =>
+      createJsonResponse({ status: 'success', message: 'Character updated.' }))
+    const backend = createCrudBackend({ updateCharacter })
+
+    const request = new Request(`${baseUrl}/api/admin/characters/14`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: '  Renamed  ',
+        status: 'active',
+      }),
+    })
+
+    const response = await handleAdminApiRequest(request, {}, noopCtx, backend)
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Character updated.',
+    })
+    expect(updateCharacter).toHaveBeenCalledWith({
+      id: 14,
+      name: 'Renamed',
+      status: 'active',
+    })
+  })
+
+  it('handles create-character natively when DB binding exists', async () => {
+    const { db, executions } = createD1Recorder({
+      queryResults(query) {
+        if (query.includes('MAX(sort_order)')) {
+          return [{ maxOrder: 4 }]
+        }
+
+        return []
+      },
+    })
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/characters`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: '  Alice  ',
+          status: 'archived',
+        }),
+      }),
+      { DB: db },
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Character "Alice" created.',
+    })
+    const insertOps = executions.filter(item => item.query.includes('INSERT INTO characters'))
+    expect(insertOps).toHaveLength(1)
+    expect(insertOps[0]?.values).toEqual(['Alice', 'archived', 5])
+  })
+
+  it('handles update-character natively when DB binding exists', async () => {
+    const { db, executions } = createD1Recorder({
+      queryResults(query, values) {
+        if (query.includes('SELECT id FROM characters WHERE id = ?')) {
+          return [{ id: Number(values[0]) }]
+        }
+
+        return []
+      },
+    })
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/characters/14`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: '  Renamed  ',
+          status: 'active',
+        }),
+      }),
+      { DB: db },
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Character "Renamed" updated.',
+    })
+    const updateOps = executions.filter(item => item.query.includes('UPDATE characters SET name = ?, status = ?'))
+    expect(updateOps).toHaveLength(1)
+    expect(updateOps[0]?.values).toEqual(['Renamed', 'active', 14])
+  })
+
+  it('handles character reordering natively when DB binding exists', async () => {
+    const { db, executions } = createD1Recorder()
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/characters/order`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          active: [1, 2],
+          archived: [3],
+        }),
+      }),
+      { DB: db },
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Character order updated.',
+    })
+    const updateOps = executions.filter(item =>
+      item.query.includes('UPDATE characters SET sort_order = ?, status = ? WHERE id = ?'),
+    )
+    expect(updateOps).toHaveLength(3)
+    expect(updateOps.map(item => item.values)).toEqual([
+      [1, 'active', 1],
+      [2, 'active', 2],
+      [3, 'archived', 3],
+    ])
+  })
+
+  it('handles delete-character natively when DB binding exists', async () => {
+    const { db, executions } = createD1Recorder({
+      queryResults(query) {
+        if (query.includes('SELECT name FROM characters WHERE id = ?')) {
+          return [{ name: 'Alice' }]
+        }
+
+        return []
+      },
+    })
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/characters/7`, {
+        method: 'DELETE',
+      }),
+      { DB: db },
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Character deleted.',
+    })
+    expect(executions.filter(item => item.query.includes('DELETE FROM commissions WHERE character_id = ?')))
+      .toHaveLength(1)
+    expect(executions.filter(item => item.query.includes('DELETE FROM characters WHERE id = ?')))
+      .toHaveLength(1)
+  })
+
+  it('handles create-commission natively when DB and IMAGES bindings exist', async () => {
+    const { db, executions } = createD1Recorder({
+      queryResults(query, values) {
+        if (query.includes('SELECT id, name FROM characters WHERE id = ?')) {
+          return [{ id: Number(values[0]), name: 'Alice' }]
+        }
+
+        return []
+      },
+    })
+    const { bucket, get, put, deleteObject } = createImagesBucketRecorder()
+
+    const formData = new FormData()
+    formData.set('characterId', '7')
+    formData.set('fileName', '  20250301_sample-piece  ')
+    formData.set('links', ' https://a.example \n\nhttps://b.example ')
+    formData.set('design', '  outfit  ')
+    formData.set('description', '  desc  ')
+    formData.set('keyword', '  tag  ')
+    formData.set('hidden', 'on')
+    formData.set('sourceImage', new File(['png'], 'sample.png', { type: 'image/png' }))
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/commissions`, {
+        method: 'POST',
+        body: formData,
+      }),
+      {
+        DB: db,
+        IMAGES: bucket,
+      },
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Commission "20250301_sample-piece" added to Alice.',
+    })
+    expect(get).toHaveBeenCalledTimes(3)
+    expect(get).toHaveBeenNthCalledWith(1, '20250301_sample-piece.jpg')
+    expect(get).toHaveBeenNthCalledWith(2, '20250301_sample-piece.jpeg')
+    expect(get).toHaveBeenNthCalledWith(3, '20250301_sample-piece.png')
+    expect(put).toHaveBeenCalledTimes(1)
+    expect(put.mock.calls[0]?.[0]).toBe('20250301_sample-piece.png')
+    expect(put.mock.calls[0]?.[2]).toEqual({
+      httpMetadata: {
+        contentType: 'image/png',
+      },
+    })
+    expect(deleteObject).not.toHaveBeenCalled()
+
+    const insertOps = executions.filter(item => item.query.includes('INSERT INTO commissions'))
+    expect(insertOps).toHaveLength(1)
+    expect(insertOps[0]?.values).toEqual([
+      7,
+      '20250301_sample-piece',
+      '["https://a.example","https://b.example"]',
+      'outfit',
+      'desc',
+      'tag',
+      1,
+    ])
+  })
+
+  it('rolls back uploaded source image when native create-commission persistence fails', async () => {
+    const { db } = createD1Recorder({
+      queryResults(query, values) {
+        if (query.includes('SELECT id, name FROM characters WHERE id = ?')) {
+          return [{ id: Number(values[0]), name: 'Alice' }]
+        }
+
+        return []
+      },
+      runBehavior(query) {
+        if (query.includes('INSERT INTO commissions')) {
+          return { success: false }
+        }
+
+        return undefined
+      },
+    })
+    const { bucket, put, deleteObject } = createImagesBucketRecorder()
+
+    const formData = new FormData()
+    formData.set('characterId', '7')
+    formData.set('fileName', '20250301_sample-piece')
+    formData.set('sourceImage', new File(['png'], 'sample.png', { type: 'image/png' }))
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/commissions`, {
+        method: 'POST',
+        body: formData,
+      }),
+      {
+        DB: db,
+        IMAGES: bucket,
+      },
+    )
+
+    expect(response.status).toBe(400)
+    expect(await response.json()).toEqual({
+      status: 'error',
+      message: 'D1 write operation failed.',
+    })
+    expect(put).toHaveBeenCalledTimes(1)
+    expect(deleteObject).toHaveBeenCalledTimes(1)
+    expect(deleteObject).toHaveBeenCalledWith('20250301_sample-piece.png')
+  })
+
+  it('handles update-commission natively when DB binding exists', async () => {
+    const { db, executions } = createD1Recorder({
+      queryResults(query, values) {
+        if (query.includes('FROM commissions') && query.includes('WHERE id = ?')) {
+          return [{
+            characterId: 1,
+            fileName: '20250301_sample-piece',
+            links: '["https://a.example"]',
+            design: 'old',
+            description: 'old desc',
+            keyword: 'old',
+            hidden: 0,
+          }]
+        }
+
+        if (query.includes('SELECT id FROM characters WHERE id = ?')) {
+          return [{ id: Number(values[0]) }]
+        }
+
+        return []
+      },
+    })
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/commissions/19`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          characterId: 3,
+          fileName: '20250302_updated-piece',
+          links: ' one \n two ',
+          design: 'new design',
+          description: '',
+          keyword: ' glow ',
+          hidden: true,
+        }),
+      }),
+      { DB: db },
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Commission "20250302_updated-piece" updated.',
+    })
+    const updateOps = executions.filter(item => item.query.includes('UPDATE commissions'))
+    expect(updateOps).toHaveLength(1)
+    expect(updateOps[0]?.values).toEqual([
+      3,
+      '20250302_updated-piece',
+      '["one","two"]',
+      'new design',
+      null,
+      'glow',
+      1,
+      19,
+    ])
+  })
+
+  it('handles delete-commission natively when DB binding exists', async () => {
+    const { db, executions } = createD1Recorder({
+      queryResults(query) {
+        if (query.includes('SELECT file_name as fileName FROM commissions WHERE id = ?')) {
+          return [{ fileName: '20250301_sample-piece' }]
+        }
+
+        return []
+      },
+    })
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/commissions/19`, {
+        method: 'DELETE',
+      }),
+      { DB: db },
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Commission deleted.',
+    })
+    expect(executions.filter(item => item.query.includes('DELETE FROM commissions WHERE id = ?')))
+      .toHaveLength(1)
+  })
+
+  it('handles source-image replacement natively when DB and IMAGES bindings exist', async () => {
+    const { db } = createD1Recorder({
+      queryResults(query) {
+        if (query.includes('SELECT file_name as fileName FROM commissions WHERE id = ?')) {
+          return [{ fileName: '20250301_alice-maker' }]
+        }
+
+        return []
+      },
+    })
+    const { bucket, put, deleteObject, get } = createImagesBucketRecorder()
+
+    const formData = new FormData()
+    formData.set('commissionFileName', 'stale-client-name')
+    formData.set('sourceImage', new File(['jpg'], 'sample.jpg', { type: 'image/jpeg' }))
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/commissions/19/source-image`, {
+        method: 'POST',
+        body: formData,
+      }),
+      {
+        DB: db,
+        IMAGES: bucket,
+      },
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Source image for "20250301_alice-maker" replaced.',
+    })
+    expect(get).not.toHaveBeenCalled()
+    expect(put).toHaveBeenCalledTimes(1)
+    expect(put.mock.calls[0]?.[0]).toBe('20250301_alice-maker.jpg')
+    expect(deleteObject).toHaveBeenCalledTimes(2)
+    expect(deleteObject.mock.calls).toEqual([
+      ['20250301_alice-maker.jpeg'],
+      ['20250301_alice-maker.png'],
+    ])
+  })
+
+  it('loads bootstrap data natively when DB binding exists', async () => {
+    const backend = createCrudBackend()
+    const { db } = createAdminReadD1Database()
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/bootstrap`, { method: 'GET' }),
+      { DB: db },
+      noopCtx,
+      backend,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      characters: [
+        {
+          id: 1,
+          name: 'Alice',
+          status: 'active',
+          sortOrder: 1,
+          commissionCount: 1,
+        },
+        {
+          id: 2,
+          name: 'Beta',
+          status: 'archived',
+          sortOrder: 2,
+          commissionCount: 1,
+        },
+      ],
+      creatorAliases: [
+        {
+          creatorName: 'alice-maker',
+          aliases: [],
+          commissionCount: 1,
+        },
+        {
+          creatorName: 'beta-maker',
+          aliases: [],
+          commissionCount: 1,
+        },
+        {
+          creatorName: 'maker',
+          aliases: ['mk'],
+          commissionCount: 0,
+        },
+      ],
+      commissionSearchRows: [
+        {
+          id: 10,
+          characterId: 1,
+          characterName: 'Alice',
+          fileName: '20250301_alice-maker',
+          design: 'maid outfit',
+          description: 'soft lighting',
+          keyword: 'maid, cafe',
+        },
+        {
+          id: 11,
+          characterId: 2,
+          characterName: 'Beta',
+          fileName: '20240105_beta-maker',
+          design: 'armor',
+          description: 'battle scene',
+          keyword: 'armor',
+        },
+      ],
+    })
+  })
+
+  it('loads aliases bootstrap data natively when DB binding exists', async () => {
+    const backend = createCrudBackend()
+    const { db } = createAdminReadD1Database()
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/aliases/bootstrap`, { method: 'GET' }),
+      { DB: db },
+      noopCtx,
+      backend,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      characterAliases: [
+        {
+          characterName: 'Alice',
+          aliases: ['Alicia'],
+          commissionCount: 1,
+        },
+        {
+          characterName: 'Beta',
+          aliases: ['B'],
+          commissionCount: 1,
+        },
+      ],
+      creatorAliases: [
+        {
+          creatorName: 'alice-maker',
+          aliases: [],
+          commissionCount: 1,
+        },
+        {
+          creatorName: 'beta-maker',
+          aliases: [],
+          commissionCount: 1,
+        },
+        {
+          creatorName: 'maker',
+          aliases: ['mk'],
+          commissionCount: 0,
+        },
+      ],
+      keywordAliases: [
+        {
+          baseKeyword: 'armor',
+          aliases: [],
+          commissionCount: 1,
+        },
+        {
+          baseKeyword: 'cafe',
+          aliases: [],
+          commissionCount: 1,
+        },
+        {
+          baseKeyword: 'maid',
+          aliases: ['uniform'],
+          commissionCount: 1,
+        },
+      ],
+    })
+  })
+
+  it('loads suggestion data natively when DB binding exists', async () => {
+    const backend = createCrudBackend()
+    const { db } = createAdminReadD1Database()
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/suggestion`, { method: 'GET' }),
+      { DB: db },
+      noopCtx,
+      backend,
+    )
+
+    expect(response.status).toBe(200)
+    const payload = await response.json() as {
+      featuredKeywords: string[]
+      keywordOptions: string[]
+    }
+
+    expect(payload.featuredKeywords).toEqual(['maid', 'maker'])
+    expect(payload.keywordOptions.slice(0, 6)).toEqual([
+      'Alice',
+      'alice-maker',
+      'Alicia',
+      'armor',
+      'B',
+      'Beta',
+    ])
+  })
+
+  it('loads character commissions natively when DB binding exists', async () => {
+    const backend = createCrudBackend()
+    const { db } = createAdminReadD1Database()
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/characters/1/commissions`, { method: 'GET' }),
+      { DB: db },
+      noopCtx,
+      backend,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      commissions: [
+        {
+          id: 10,
+          characterId: 1,
+          characterName: 'Alice',
+          fileName: '20250301_alice-maker',
+          links: ['https://alice.example/a', 'https://alice.example/b'],
+          design: 'maid outfit',
+          description: 'soft lighting',
+          keyword: 'maid, cafe',
+          hidden: false,
+        },
+      ],
+    })
+  })
+
+  it('loads source images natively when IMAGES binding exists', async () => {
+    const backend = createCrudBackend()
+    const imageBody = new Uint8Array([137, 80, 78, 71]).buffer
+    const get = vi.fn(async (key: string) => {
+      if (key !== '20250301_alice-maker.png') {
+        return null
+      }
+
+      return {
+        httpMetadata: {
+          contentType: 'image/png',
+        },
+        async arrayBuffer() {
+          return imageBody
+        },
+      }
+    })
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/source-image/20250301_alice-maker`, { method: 'GET' }),
+      { IMAGES: { get } },
+      noopCtx,
+      backend,
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Content-Type')).toBe('image/png')
+    expect(get).toHaveBeenCalledTimes(3)
+    expect(get).toHaveBeenNthCalledWith(1, '20250301_alice-maker.jpg')
+    expect(get).toHaveBeenNthCalledWith(2, '20250301_alice-maker.jpeg')
+    expect(get).toHaveBeenNthCalledWith(3, '20250301_alice-maker.png')
+    expect(await response.arrayBuffer()).toEqual(imageBody)
+  })
+
+  it('loads source images via D1 metadata before probing fallback extensions', async () => {
+    const backend = createCrudBackend()
+    const { db } = createD1Recorder({
+      queryResults(query, values) {
+        if (query.includes('sqlite_master')) {
+          return [{ name: String(values[1] ?? '') }]
+        }
+
+        if (query.includes('FROM source_images')) {
+          return [{ objectKey: '20250301_alice-maker.png' }]
+        }
+
+        return []
+      },
+    })
+    const imageBody = new Uint8Array([137, 80, 78, 71]).buffer
+    const get = vi.fn(async (key: string) => {
+      if (key !== '20250301_alice-maker.png') {
+        return null
+      }
+
+      return {
+        httpMetadata: {
+          contentType: 'image/png',
+        },
+        async arrayBuffer() {
+          return imageBody
+        },
+      }
+    })
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/source-image/20250301_alice-maker`, { method: 'GET' }),
+      { DB: db, IMAGES: { get } },
+      noopCtx,
+      backend,
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Content-Type')).toBe('image/png')
+    expect(get).toHaveBeenCalledTimes(1)
+    expect(get).toHaveBeenCalledWith('20250301_alice-maker.png')
+    expect(await response.arrayBuffer()).toEqual(imageBody)
+  })
+
+  it('handles suggestion writes natively when DB binding exists', async () => {
+    const backend = createCrudBackend()
+    const { db, executions } = createD1Recorder()
+
+    const request = new Request(`${baseUrl}/api/admin/suggestion`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        keywordsJson: JSON.stringify(['  Kanaut Nishe ', 'maid', 'kanaut   nishe']),
+      }),
+    })
+
+    const response = await handleAdminApiRequest(
+      request,
+      { DB: db },
+      noopCtx,
+      backend,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Home featured keywords saved.',
+    })
+    const deleteOps = executions.filter(item =>
+      item.query.includes('DELETE FROM home_featured_search_keywords'),
+    )
+    const insertOps = executions.filter(item =>
+      item.query.includes('INSERT INTO home_featured_search_keywords'),
+    )
+
+    expect(deleteOps).toHaveLength(1)
+    expect(insertOps).toHaveLength(2)
+    expect(insertOps.map(item => item.values)).toEqual([
+      ['Kanaut Nishe', 1],
+      ['maid', 2],
+    ])
+  })
+
+  it('handles creator alias writes natively when DB binding exists', async () => {
+    const backend = createCrudBackend()
+    const { db, executions } = createD1Recorder()
+
+    const request = new Request(`${baseUrl}/api/admin/aliases/batch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        rows: [
+          { creatorName: 'Q (part 1)', aliases: ['Cue'] },
+          { creatorName: 'Q (part 2)', aliases: ['cue'] },
+        ],
+      }),
+    })
+
+    const response = await handleAdminApiRequest(
+      request,
+      { DB: db },
+      noopCtx,
+      backend,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Creator aliases saved.',
+    })
+    const insertOps = executions.filter(item => item.query.includes('INSERT INTO creator_aliases'))
+    expect(insertOps).toHaveLength(1)
+    expect(insertOps[0]?.values[0]).toBe('Q')
+    expect(JSON.parse(String(insertOps[0]?.values[1]))).toEqual(expect.arrayContaining(['Cue', 'cue']))
+  })
+
+  it('keeps creator alias rowsJson compatibility and delete semantics when DB binding exists', async () => {
+    const backend = createCrudBackend()
+    const { db, executions } = createD1Recorder()
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/aliases/batch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rowsJson: JSON.stringify([
+            { creatorName: 'Q (part 1)', alias: '' },
+          ]),
+        }),
+      }),
+      { DB: db },
+      noopCtx,
+      backend,
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      status: 'success',
+      message: 'Creator aliases saved.',
+    })
+
+    const deleteOps = executions.filter(item => item.query.includes('DELETE FROM creator_aliases'))
+    const insertOps = executions.filter(item => item.query.includes('INSERT INTO creator_aliases'))
+
+    expect(deleteOps).toHaveLength(1)
+    expect(deleteOps[0]?.values).toEqual(['Q'])
+    expect(insertOps).toHaveLength(0)
+  })
+
+  it('rejects suggestion writes when DB binding is missing', async () => {
+    const backend = createCrudBackend()
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/suggestion`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          keywords: ['maid'],
+        }),
+      }),
+      {},
+      noopCtx,
+      backend,
+    )
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({
+      status: 'error',
+      message: 'Admin worker DB binding is required for this route.',
+    })
+  })
+
+  it('rejects source-image replacement when IMAGES binding is missing', async () => {
+    const { db } = createD1Recorder()
+
+    const formData = new FormData()
+    formData.set('commissionFileName', '20250301_sample-piece')
+    formData.set('sourceImage', new File(['png'], 'sample.png', { type: 'image/png' }))
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/commissions/19/source-image`, {
+        method: 'POST',
+        body: formData,
+      }),
+      { DB: db },
+    )
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({
+      status: 'error',
+      message: 'Admin worker IMAGES binding is required for this route.',
+    })
+  })
+
+  it('rejects bootstrap reads when DB binding is missing', async () => {
+    const backend = createCrudBackend()
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/bootstrap`, { method: 'GET' }),
+      {},
+      noopCtx,
+      backend,
+    )
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({
+      status: 'error',
+      message: 'Admin worker DB binding is required for this route.',
+    })
+  })
+
+  it('returns 404 for removed assets/refresh endpoint', async () => {
+    const backend = createCrudBackend()
+
+    const response = await handleAdminApiRequest(
+      new Request(`${baseUrl}/api/admin/assets/refresh`, { method: 'POST' }),
+      {},
+      noopCtx,
+      backend,
+    )
+
+    expect(response.status).toBe(404)
+  })
+})

@@ -1,0 +1,137 @@
+---
+import type { Commission } from '#data/types'
+import {
+  COMMISSION_LINK_TEXT_CLASS,
+  hasDisplayableLinks,
+  selectDisplayLinks,
+} from '#features/home/commission/linkDisplay'
+import { getUnpublishedInterestIconMarkup } from '#features/home/commission/unpublishedInterestIcon'
+import { getHomeLocaleMessages, normalizeHomeLocale } from '#features/home/i18n/homeLocale'
+import { parseCommissionFileName } from '#lib/commissions/index'
+import { parseAndFormatDate } from '#lib/date/format'
+
+interface IllustratorInfoProps {
+  locale?: string
+  commission: Commission
+  kebabName: string
+  showLinks?: boolean
+  className?: string
+}
+
+const { locale, commission, kebabName, showLinks = true, className = '' }
+  = Astro.props as IllustratorInfoProps
+const messages = getHomeLocaleMessages(normalizeHomeLocale(locale))
+const { fileName, Description: description = '', Links: links, Design: designLink } = commission
+const { date, creator } = parseCommissionFileName(fileName)
+const linkId = `#${kebabName}-${date}`
+const formattedDate = parseAndFormatDate(date, 'yyyy/MM/dd')
+const interestKey = `${kebabName}-${date}`
+const quotedDescription = `"${description}"`
+
+const hasCreator = Boolean(creator)
+const hasDescription = Boolean(description)
+const hasBoth = hasCreator && hasDescription
+
+const displayLinks = selectDisplayLinks({ links, designLink })
+const hasDisplayLinks = hasDisplayableLinks({ links, designLink })
+const rootClass = `flex w-full flex-wrap items-center gap-y-2 font-mono text-xs text-gray-800 md:text-sm dark:text-gray-300 ${className}`.trim()
+---
+
+<div class={rootClass}>
+  <div class="flex items-center">
+    <a
+      href={linkId}
+      class="
+        mr-6 text-gray-800 no-underline select-none
+        md:mr-10
+        dark:text-gray-300!
+      "
+    >
+      <time>{formattedDate}</time>
+    </a>
+
+    {
+      hasCreator
+? (
+        <span>{creator}</span>
+      )
+: hasDescription
+? (
+        <span>{quotedDescription}</span>
+      )
+: (
+        <span>-</span>
+      )
+    }
+
+    {
+      hasBoth
+? (
+        <>
+          <span class="
+            mx-2 select-none
+            md:mx-4
+          "
+          >|</span>
+          <span>{quotedDescription}</span>
+        </>
+      )
+: null
+    }
+  </div>
+
+  <div class="
+    ml-auto flex grow justify-end gap-2
+    md:gap-3
+  "
+  >
+    {
+      showLinks
+? (
+        hasDisplayLinks
+? (
+          <>
+            {
+              displayLinks.mainLinks.map(link => (
+                <a href={link.url} class={COMMISSION_LINK_TEXT_CLASS} target="_blank">
+                  {link.type}
+                </a>
+              ))
+            }
+            {
+              displayLinks.designLink
+? (
+                <a href={displayLinks.designLink} class={COMMISSION_LINK_TEXT_CLASS} target="_blank">
+                  {messages.listing.designLink}
+                </a>
+              )
+: null
+            }
+          </>
+        )
+: (
+          <button
+            type="button"
+            aria-pressed="false"
+            data-link-style="true"
+            class={`
+              ${COMMISSION_LINK_TEXT_CLASS}
+              inline-flex cursor-pointer appearance-none items-center gap-2
+              border-0 bg-transparent p-0
+              disabled:cursor-default disabled:no-underline
+            `}
+            title={messages.listing.wantThisTitle}
+            data-commission-interest-key={interestKey}
+            data-commission-interest-recorded-label={messages.listing.wantThisRecorded}
+            data-commission-interest-recorded-title={messages.listing.wantThisRecordedTitle}
+          >
+            <Fragment set:html={getUnpublishedInterestIconMarkup({ state: 'default' })} />
+            <Fragment set:html={getUnpublishedInterestIconMarkup({ state: 'recorded', hidden: true })} />
+            <span data-commission-interest-label>{messages.listing.wantThis}</span>
+          </button>
+        )
+      )
+: null
+    }
+  </div>
+</div>

@@ -1,0 +1,77 @@
+---
+import type { Props as CommissionData } from '#data/types'
+import type { HomeUpdateSummary } from '#lib/home/updateSummary'
+import Update from '#features/home/blocks/Update.astro'
+import { getHomeLocaleMessages, normalizeHomeLocale } from '#features/home/i18n/homeLocale'
+import { getCharacterSectionHash, getCharacterTitleId } from '#lib/characters/nav'
+
+interface CommissionDescriptionProps {
+  locale?: string
+  commissionData: CommissionData
+  activeCharacters: string[]
+  updateSummary?: HomeUpdateSummary
+}
+
+const { locale, commissionData, activeCharacters, updateSummary }
+  = Astro.props as CommissionDescriptionProps
+const resolvedLocale = normalizeHomeLocale(locale)
+const messages = getHomeLocaleMessages(resolvedLocale)
+const introductionTitle = messages.description.introductionTitle
+const introductionTitleId = getCharacterTitleId(introductionTitle)
+const introductionSectionHash = getCharacterSectionHash(introductionTitle)
+---
+
+<div id="--------Description--------" style="animation: reveal-up 500ms cubic-bezier(0.22, 1, 0.36, 1) both">
+  <h1 class="
+    pb-0
+    md:pb-2
+  "
+  >{messages.description.heading}</h1>
+  <div id={introductionTitleId} class="mb-2 pt-4">
+    <h2 class="group relative">
+      {introductionTitle}
+      <a
+        href={introductionSectionHash}
+        class="
+          ml-2 font-bold text-gray-400 no-underline opacity-0 transition-opacity
+          duration-200
+          group-hover:opacity-100
+          focus-visible:opacity-100 focus-visible:outline-none
+          dark:text-gray-600
+        "
+      >
+        #
+      </a>
+    </h2>
+  </div>
+
+  <p class="pt-4">
+    {messages.description.previewTextBeforeRss}
+    <a href="/rss.xml" target="_blank">{messages.description.rssLinkLabel}</a>
+    {messages.description.previewTextAfterRss}
+  </p>
+  <p class="
+    pt-4
+    md:pt-6
+  "
+  >{messages.description.supportIllustratorsText}</p>
+  <p class="
+    pt-4
+    md:pt-6
+  "
+  >
+    {messages.description.contactTextBeforeOdaibako}
+    <a href="https://odaibako.net/u/CrystallizeSub">{messages.description.odaibakoLinkLabel}</a>
+    {messages.description.contactTextBetweenLinks}
+    <a href="mailto:contact@crystallize.cc">{messages.description.emailLinkLabel}</a>
+    {messages.description.contactTextAfterEmail}
+  </p>
+  <div style="animation: reveal-up 500ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both">
+    <Update
+      locale={resolvedLocale}
+      commissionData={commissionData}
+      activeCharacters={activeCharacters}
+      summary={updateSummary}
+    />
+  </div>
+</div>

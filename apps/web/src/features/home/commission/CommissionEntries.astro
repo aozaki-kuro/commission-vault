@@ -1,0 +1,167 @@
+---
+import type { Commission } from '#data/types'
+import IllustratorInfo from '#features/home/commission/IllustratorInfo.astro'
+import ProtectedCommissionImage from '#features/home/commission/ProtectedCommissionImage.astro'
+import { getHomeLocaleMessages, normalizeHomeLocale } from '#features/home/i18n/homeLocale'
+import { parseCommissionFileName } from '#lib/commissions'
+import { resolveSourceImageByCommissionFileName } from '#lib/images/sourceImageRegistry'
+import {
+  buildCommissionSearchDomKey,
+  buildCommissionSearchMetadata,
+} from '#lib/search/commissionSearchMetadata'
+import { getBaseFileName } from '#lib/utils/strings'
+
+export interface CommissionRenderEntry {
+  character: string
+  commission: Commission
+  sectionId: string
+  entryKey: string
+  entryAnchorPrefix: string
+}
+
+interface CommissionEntriesProps {
+  locale?: string
+  entries: CommissionRenderEntry[]
+  characterAliasesMap: Map<string, string[]> | null
+  creatorAliasesMap: Map<string, string[]> | null
+  keywordAliasesMap: Map<string, string[]> | null
+  showCharacterLabel?: boolean
+  showImage?: boolean
+  showLinks?: boolean
+  embedSearchMetadata?: boolean
+}
+
+const {
+  locale,
+  entries,
+  characterAliasesMap,
+  creatorAliasesMap,
+  keywordAliasesMap,
+  showCharacterLabel = false,
+  showImage = true,
+  showLinks = true,
+  embedSearchMetadata,
+} = Astro.props as CommissionEntriesProps
+
+const resolvedLocale = normalizeHomeLocale(locale)
+const messages = getHomeLocaleMessages(resolvedLocale)
+const shouldEmbedSearchMetadata = embedSearchMetadata ?? Boolean(import.meta.env?.DEV)
+---
+
+{
+  entries.map(({ character, commission, sectionId, entryAnchorPrefix }) => {
+    const { date, year, creator } = parseCommissionFileName(commission.fileName)
+    const copyrightCreator = creator ? getBaseFileName(creator).trim() || creator : 'Anonymous'
+    const altText = `© ${year} ${copyrightCreator} & Crystallize`
+    const sourceImage = resolveSourceImageByCommissionFileName(commission.fileName)
+    const elementId = `${entryAnchorPrefix}-${date}`
+    const searchKey = buildCommissionSearchDomKey(entryAnchorPrefix, commission.fileName)
+
+    const searchAttributes = shouldEmbedSearchMetadata
+      ? (() => {
+          const metadata = buildCommissionSearchMetadata({
+            characterName: character,
+            fileName: commission.fileName,
+            design: commission.Design,
+            description: commission.Description,
+            keyword: commission.Keyword,
+            characterAliasesMap: characterAliasesMap ?? undefined,
+            creatorAliasesMap: creatorAliasesMap ?? undefined,
+            keywordAliasesMap: keywordAliasesMap ?? undefined,
+            creatorSuggestionMode: 'normalized',
+            creatorSearchTextMode: 'normalized',
+          })
+
+          return {
+            'data-search-text': metadata.searchText,
+            'data-search-suggest': metadata.searchSuggestionText,
+          }
+        })()
+      : {}
+
+    return (
+      <div
+        id={elementId}
+        class="pt-6"
+        data-commission-entry="true"
+        data-character-section-id={sectionId}
+        data-commission-search-key={searchKey}
+        {...searchAttributes}
+      >
+        {
+          showImage
+? (
+            sourceImage
+? (
+              <ProtectedCommissionImage altText={altText} sourceImage={sourceImage} />
+            )
+: (
+              <div
+                data-commission-image="true"
+                data-commission-alt={altText}
+                class="relative"
+              >
+                <div class="
+                  flex aspect-1280/525 items-center justify-center bg-gray-100
+                  text-xs text-gray-500
+                  dark:bg-gray-800 dark:text-gray-300
+                "
+                >
+                  {messages.listing.sourceImageNotFound}
+                </div>
+              </div>
+            )
+          )
+: null
+        }
+        {
+          showCharacterLabel
+? (
+            <div class={showImage
+? `
+  mt-6 mb-2
+  md:mt-8 md:mb-4
+`
+: `
+  my-2
+  md:mb-4
+`}
+            >
+              <div class="
+                mb-2 font-mono text-xs text-gray-600
+                md:text-sm
+                dark:text-gray-400
+              "
+              >
+                {character}
+              </div>
+              <IllustratorInfo
+                locale={resolvedLocale}
+                commission={commission}
+                kebabName={entryAnchorPrefix}
+                showLinks={showLinks}
+              />
+            </div>
+          )
+: (
+            <IllustratorInfo
+              locale={resolvedLocale}
+              commission={commission}
+              kebabName={entryAnchorPrefix}
+              showLinks={showLinks}
+              className={showImage
+? `
+  mt-6 mb-2
+  md:mt-8 md:mb-4
+`
+: `
+  my-2
+  md:mb-4
+`}
+            />
+          )
+        }
+      </div>
+    )
+  })
+}
