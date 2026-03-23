@@ -4,7 +4,7 @@ This directory contains repository-level developer workflow scripts.
 
 ## Tree
 
-- `devAdminRemote.mjs`: starts the standalone admin Vite app plus `apps/admin-worker` in remote-binding mode so local admin development mirrors the Worker deployment topology more closely.
+- `devAdminRemote.ts`: starts `apps/admin-worker`, waits until a binding-backed admin API endpoint is readable, then starts the standalone admin Vite app so local admin development mirrors the Worker deployment topology without a frontend startup race.
 
 ## Responsibilities
 

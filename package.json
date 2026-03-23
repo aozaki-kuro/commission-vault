@@ -23,6 +23,7 @@
     "deploy:web": "bun run --cwd apps/web deploy",
     "dev": "bun run --cwd apps/web dev",
     "dev:admin": "bun run ./scripts/devAdminRemote.ts",
+    "dev:admin:remote": "bun run ./scripts/devAdminRemote.ts",
     "dev:web": "bun run --cwd apps/web dev",
     "dev:worker": "bun run --cwd apps/admin-worker dev",
     "lint": "eslint . --max-warnings=0",
