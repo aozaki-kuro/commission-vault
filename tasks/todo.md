@@ -9,6 +9,12 @@
 - [x] 更新仓库文档，明确 GitHub Actions 与远端事实源缓存的边界
 - [x] 跑针对性验证，确认配置无语法错误且不会引入脏缓存
 
+## 本轮执行切片（2026-03-23 Turbo strict env 透传修复）
+
+- [x] 复盘 `wrangler deploy -> turbo -> apps/web#build` 为什么在 Actions 里丢失 Cloudflare 凭证
+- [x] 给 Turbo `build` 任务补 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` passthrough
+- [x] 跑 dry-run 验证 Turbo 任务环境里已包含 passthrough 声明
+
 ## 本轮执行切片（2026-03-23 admin dev 启动竞态修复）
 
 - [x] 复现 `bun run dev:admin` 首次启动时 worker/front-end 抢跑导致的远端数据加载异常

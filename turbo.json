@@ -2,27 +2,17 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "env": [
-        "WEB_BUILD_CACHE_TOKEN"
-      ],
-      "outputs": [
-        "dist/**",
-        ".astro/**"
-      ]
+      "dependsOn": ["^build"],
+      "env": ["WEB_BUILD_CACHE_TOKEN"],
+      "passThroughEnv": ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"],
+      "outputs": ["dist/**", ".astro/**"]
     },
     "check": {
-      "dependsOn": [
-        "^typecheck"
-      ],
+      "dependsOn": ["^typecheck"],
       "outputs": []
     },
     "typecheck": {
-      "dependsOn": [
-        "^typecheck"
-      ],
+      "dependsOn": ["^typecheck"],
       "outputs": []
     },
     "dev": {

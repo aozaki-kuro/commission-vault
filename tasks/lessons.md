@@ -27,4 +27,5 @@
 - 2026-03-23: 对外表现成 SPA 的后台，不能只把页面内容搬进 React；只要 section 切换还在走原生 `<a href>` 整页导航，闪动和状态丢失就迟早会露出来。至少要补 client-side history 导航，并用回归测试显式防住 `beforeunload`。
 - 2026-03-23: 只修顶层导航还不够；像 `Overview` 里的 Quick Actions、列表尾链这种页内入口同样会泄漏回原生整页跳转。只要后台已经有 client-side 导航能力，所有站内 admin 链接都该复用同一套跳转约束，并至少留一条从具体页面入口点击的回归测试。
 - 2026-03-23: 只要某个 Turbo 任务除了源码还依赖远端数据（比如 `apps/web` build 先导出 D1/R2 事实源再跑 Astro），就不能只按源码/锁文件命中缓存；必须额外引入显式的远端数据版本戳（如 `WEB_BUILD_CACHE_TOKEN`），否则 `admin-data-changed` 这类重建会静默回放旧产物。
+- 2026-03-23: Turbo 处于 `envMode: "strict"` 时，外层 workflow 已经设置的凭证不会自动进入任务进程；像 `wrangler` / 远端导出这类链路如果要在 Turbo 任务里访问 Cloudflare，必须显式加到 `passThroughEnv`，否则会出现“部署步骤有 token，实际 build 子进程没 token”的假象。
 - 2026-03-23: 像 `dev:admin` 这种多进程联调入口，不能只把 worker 和 frontend 一起拉起就算完；只要 frontend 首屏依赖 worker 远端数据，就应该等待一个真实的 binding-backed API 成功响应后再放行，否则用户只会看到“本地起了，但像没连上远端”的假故障。
