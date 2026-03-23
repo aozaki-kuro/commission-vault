@@ -6,6 +6,8 @@
   "scripts": {
     "fact-source:export": "FACT_SOURCE_WRANGLER_CONFIG=../web/wrangler.jsonc bun run --cwd ../admin-worker web:fact-source:export",
     "fact-source:sync-images": "FACT_SOURCE_WRANGLER_CONFIG=../web/wrangler.jsonc bun run --cwd ../admin-worker web:fact-source:sync-images",
+    "build:astro": "astro build",
+    "check:astro": "astro check .",
     "dev": "bun run fact-source:sync-images && NODE_ENV=development astro dev",
     "build": "bun run fact-source:export && astro build",
     "check": "bun run fact-source:export && astro check .",

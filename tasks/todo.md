@@ -349,3 +349,20 @@
 - [x] `bun run build:admin` 通过；确认 root `turbo run build --filter=@commission-index/admin` 能正常驱动现有 Vite 构建。
 - [x] `bun run typecheck` 通过；确认 Turbo 图可执行当前 workspace `typecheck` 任务。
 - [ ] `bun run build:web` 未在本地复跑；该链路仍依赖远端 D1/R2 导出权限，应在 CI 或已配置 Cloudflare 凭证的环境中验证。
+
+## 本轮执行切片（2026-03-23 标准 CI 验证流）
+
+- [x] 梳理现有 GitHub Actions，确认 deploy/rebuild 之外缺少标准 push/PR 验证 workflow
+- [x] 新增 `.github/workflows/ci.yml`，把基础验证收口为 `lint` / `test` / `typecheck` / `build:admin`
+- [x] 把依赖 Cloudflare 密钥的 web 远端验证拆成独立 job，仅在凭证存在时执行
+- [x] 给 `apps/web/package.json` 新增 `check:astro` / `build:astro`，避免 CI 在已导出 generated inputs 的前提下重复导出
+- [x] 更新 README / AGENTS / todo，记录新的 CI 分层与凭证约束
+
+## Review（2026-03-23 标准 CI 验证流）
+
+- [x] `git diff --check` 通过。
+- [x] `bun run lint` 通过。
+- [x] `bun run test` 通过。
+- [x] `bun run typecheck` 通过。
+- [x] `bun run build:admin` 通过。
+- [ ] `.github/workflows/ci.yml` 的 `Web Remote Validate` job 未在本地实跑；它依赖 GitHub Actions secrets 与 Cloudflare 远端资源，应在 Actions 环境验真。

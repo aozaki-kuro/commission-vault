@@ -19,6 +19,7 @@ This repository contains an Astro 6 static site with React 19 islands, written i
 - **Web build bindings:** `apps/web/wrangler.jsonc` must keep read-only `DB` / `IMAGES` bindings aligned with `apps/admin-worker/wrangler.jsonc` so push-triggered web builds can export fresh generated fact-source inputs before Astro runs.
 - **Cloudflare deploy commands:** manual repo-level deploy entrypoints are `bun run deploy:web` and `bun run deploy:admin`, which delegate into each workspace-local `wrangler.jsonc`. Do not restore a repo-root `wrangler.jsonc`; Cloudflare Workers Builds must connect the same repo to two Workers with root directories `apps/web` and `apps/admin-worker`, because push-triggered builds are resolved from Dashboard root/build/deploy settings, not from a shared repo-root config.
 - **GitHub Actions cache:** CI restores `.turbo/` plus `apps/web/generated/source-images` so Turbo can reuse local task outputs while the existing generated-image reuse path stays intact.
+- **CI layering:** `.github/workflows/ci.yml` is the default verification workflow. Keep base repo validation (`lint` / `test` / `typecheck` / `build:admin`) independent from Cloudflare secrets, and keep web `check/build` behind an explicit fact-source export step that only runs when remote credentials are available.
 - **Admin auth boundary:** `apps/admin-worker` no longer implements worker-side Basic Auth; production access to `admin.crystallize.cc` is expected to be enforced by Cloudflare Zero Trust in front of the worker.
 - **Monorepo migration scaffold (in progress):**
   - New app scaffolds now exist under `apps/admin`, `apps/admin-worker`, and `apps/web`.
@@ -189,6 +190,7 @@ Additional guidance:
 ## Change Log
 
 - Added a minimal `turbo.json`, switched root `build:web` / `build:admin` / `check` / `typecheck` entrypoints to `turbo run`, and taught GitHub Actions to restore `.turbo/` before the existing deploy flow.
+- Added `.github/workflows/ci.yml` for standard push/PR verification, and added `apps/web` `check:astro` / `build:astro` scripts so CI can reuse already-exported generated inputs without triggering duplicate fact-source exports.
 - Removed the repo-root `wrangler.jsonc`, localized deploy/build intent to `apps/web/wrangler.jsonc` and `apps/admin-worker/wrangler.jsonc`, added `apps/admin-worker` `build:assets`, and documented the required Cloudflare Workers Builds root/build/deploy settings for push-triggered monorepo deploys.
 - Added `apps/admin-worker/src/adminSourceImages.ts`, moved worker-native commission CRUD plus `POST /api/admin/commissions/:id/source-image` onto D1/R2-backed execution when bindings exist, and extended admin worker contract tests to cover native create/update/delete/replace behavior.
 - Added root `scripts/devAdminRemote.ts`, root `dev:admin:remote`, repo-level Cloudflare Builds/deploy helper scripts, and worker `dev:remote` so standalone admin development and Cloudflare deployment can run from the workspace root without depending on `apps/web`.

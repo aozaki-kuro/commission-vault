@@ -89,6 +89,13 @@ Monorepo migration is in progress:
 - `bun run test:watch` — watch tests during local development.
 - `bun run test:changed` — run changed tests only.
 
+## CI
+
+- `.github/workflows/ci.yml` is the standard verification workflow for pushes and pull requests.
+- The `Validate` job always runs `lint`, `test`, `typecheck`, and `build:admin` from the repo root.
+- The `Web Remote Validate` job runs only when Cloudflare credentials are available in GitHub Actions, because public web `check/build` still require exporting the remote fact source first.
+- `apps/web/package.json` now exposes `check:astro` and `build:astro` for cases where generated inputs are already present and you want to avoid re-running the export wrapper.
+
 Asset generation is shared by Astro:
 
 - Home update summary is computed during page rendering.
