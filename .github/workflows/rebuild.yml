@@ -18,6 +18,14 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Restore source images cache
+        uses: actions/cache@v4
+        with:
+          path: apps/web/generated/source-images
+          key: source-images-${{ github.sha }}
+          restore-keys: |
+            source-images-
+
       - name: Export fact source from D1/R2
         run: bun run web:fact-source:export
         env:
