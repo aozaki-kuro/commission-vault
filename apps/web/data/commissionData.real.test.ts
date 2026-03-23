@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { getCommissionData, getCommissionDataMap } from './commissionData'
-import { getCharacterRecords } from './commissionRecords'
+import { hasGeneratedFactSourceContent } from './generatedFactSource'
 
-describe('commission data pipeline (real sqlite snapshot)', () => {
-  it('keeps records and page data structurally consistent', () => {
+const describeRealData = hasGeneratedFactSourceContent() ? describe : describe.skip
+
+describeRealData('commission data pipeline (real sqlite snapshot)', () => {
+  it('keeps records and page data structurally consistent', async () => {
+    const [{ getCommissionData, getCommissionDataMap }, { getCharacterRecords }] = await Promise.all([
+      import('./commissionData'),
+      import('./commissionRecords'),
+    ])
     const records = getCharacterRecords()
     const data = getCommissionData()
     const dataMap = getCommissionDataMap()
@@ -23,7 +28,11 @@ describe('commission data pipeline (real sqlite snapshot)', () => {
     }
   })
 
-  it('filters hidden commissions from source records while preserving real-data edge cases', () => {
+  it('filters hidden commissions from source records while preserving real-data edge cases', async () => {
+    const [{ getCommissionData }, { getCharacterRecords }] = await Promise.all([
+      import('./commissionData'),
+      import('./commissionRecords'),
+    ])
     const records = getCharacterRecords()
     const data = getCommissionData()
 

@@ -5,6 +5,9 @@ on:
     types: [admin-data-changed]
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   rebuild:
     runs-on: ubuntu-latest

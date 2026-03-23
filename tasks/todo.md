@@ -1,5 +1,16 @@
 # 统一迁移状态板（2026-03-18）
 
+## 本轮执行切片（2026-03-23 CI generated fact-source 测试守门）
+
+- [x] 给 generated fact-source 读取层补充“生成物是否存在”的显式检测入口
+- [x] 把依赖真实 generated fact-source 的测试改成懒加载，并在生成物缺失时自动跳过
+- [x] 跑通受影响的 Vitest 用例，并确认 CI 报错链路已解除
+
+## 本轮执行切片（2026-03-23 GitHub Actions Node 24 收口）
+
+- [x] 给 CI / Deploy / Rebuild workflow 显式开启 `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`
+- [x] 验证 workflow YAML 结构正常，并补充本轮结论
+
 ## 北极星目标
 
 - [ ] `apps/web` 继续作为 Astro 静态公开站，部署到 `crystallize.cc`

@@ -1,8 +1,9 @@
+import type { Props } from '#data/types'
 import type { SearchEntryLike, SearchIndexLike, SuggestionEntryLike } from './index'
-import { getCommissionData } from '#data/commissionData'
+import { hasGeneratedFactSourceContent } from '#data/generatedFactSource'
 import { flattenCommissions, parseCommissionFileName } from '#lib/commissions/index'
 import Fuse from 'fuse.js'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import {
   applySuggestionToQuery,
   buildStrictTermIndex,
@@ -34,12 +35,25 @@ function buildIndex(entries: Entry[]): SearchIndexLike<Entry> {
 }
 
 const normalizeTerm = (term: string) => term.trim().toLowerCase()
+const hasRealGeneratedFactSource = hasGeneratedFactSourceContent()
+const describeRealData = hasRealGeneratedFactSource ? describe : describe.skip
+
+let commissionData: Props = []
+
+beforeAll(async () => {
+  if (!hasRealGeneratedFactSource) {
+    return
+  }
+
+  const { getCommissionData } = await import('#data/commissionData')
+  commissionData = getCommissionData()
+})
 
 function buildRealFixtures() {
   const suggestionEntries: SuggestionEntryLike[] = []
   const creatorToIds = new Map<string, number[]>()
   const searchEntries: Entry[] = []
-  const commissions = flattenCommissions(getCommissionData())
+  const commissions = flattenCommissions(commissionData)
 
   commissions.forEach((commission, index) => {
     const id = index + 1
@@ -99,7 +113,7 @@ function buildRealFixtures() {
   }
 }
 
-describe('search utils (trimmed + real db sample)', () => {
+describeRealData('search utils (trimmed + real db sample)', () => {
   it('matches normalized date queries against real index tokens', () => {
     const { searchIndex } = buildRealFixtures()
     const target = searchIndex.entries.find(entry => /date_ym_\d{4}_\d{2}/.test(entry.searchText))
@@ -166,7 +180,9 @@ describe('search utils (trimmed + real db sample)', () => {
     expect(includeResult?.matchedCount).toBe(1)
     expect(excludeResult?.matchedCount).toBe(0)
   })
+})
 
+describe('search utils', () => {
   it('parses suggestion rows and removes duplicate normalized terms', () => {
     const rows = parseSuggestionRows('Character\tL*cia\nCharacter\tLucia\nCharacter\tL*cia')
 

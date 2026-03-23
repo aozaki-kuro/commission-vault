@@ -34,9 +34,17 @@ function resolveGeneratedFactSourcePath(fileName: string) {
   return cwdPath
 }
 
+export function hasGeneratedFactSourceFile(fileName: string) {
+  return fs.existsSync(resolveGeneratedFactSourcePath(fileName))
+}
+
+export function hasGeneratedFactSourceContent() {
+  return hasGeneratedFactSourceFile('content.json')
+}
+
 function readGeneratedJsonFile<T>(fileName: string): T {
   const filePath = resolveGeneratedFactSourcePath(fileName)
-  if (!fs.existsSync(filePath)) {
+  if (!hasGeneratedFactSourceFile(fileName)) {
     throw new Error(
       `Generated fact source file not found at ${filePath}. Run \`bun run web:fact-source:export\` or \`bun run build:web\` first.`,
     )
