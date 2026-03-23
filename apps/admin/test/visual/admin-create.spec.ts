@@ -53,3 +53,24 @@ test('admin nav switches sections without a full reload', async ({ page }, testI
   await expect(page).toHaveURL(/\/edit$/)
   await expect.poll(async () => page.evaluate(() => sessionStorage.getItem('__admin-beforeunload'))).toBeNull()
 })
+
+test('overview quick actions stay inside the client shell', async ({ page }, testInfo) => {
+  skipUnlessProject(testInfo, ADMIN_PROJECT_NAME)
+  await page.goto('/')
+  await page.getByRole('heading', { level: 1, name: 'Admin Overview' }).waitFor()
+  await page.getByRole('heading', { name: 'Quick actions' }).waitFor()
+
+  await page.evaluate(() => {
+    sessionStorage.removeItem('__admin-beforeunload')
+    window.addEventListener('beforeunload', () => {
+      sessionStorage.setItem('__admin-beforeunload', '1')
+    }, { once: true })
+  })
+
+  await page.getByRole('link', { name: 'Edit existing' }).click()
+  await page.getByRole('heading', { level: 1, name: 'Edit' }).waitFor()
+  await page.getByRole('heading', { name: 'Existing commissions' }).waitFor()
+
+  await expect(page).toHaveURL(/\/edit$/)
+  await expect.poll(async () => page.evaluate(() => sessionStorage.getItem('__admin-beforeunload'))).toBeNull()
+})

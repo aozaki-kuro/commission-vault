@@ -1,4 +1,5 @@
 import type { AdminCommissionSearchRow } from '@commission-index/domain'
+import type { MouseEvent } from 'react'
 import type { StatusTone } from '../app/ui'
 import type { AdminOverviewPayload } from '../lib/adminApi'
 import { useCallback, useEffect, useEffectEvent, useReducer, useRef, useState } from 'react'
@@ -7,7 +8,6 @@ import {
   adminInsetCardStyles,
   adminSurfaceStyles,
   getStatusBadgeStyles,
-
 } from '../app/ui'
 import {
   fetchAdminOverviewPayload,
@@ -150,7 +150,19 @@ function getStatusDescription(
 
 type RebuildState = 'idle' | 'pending' | 'success' | 'error'
 
-export function AdminOverviewPage() {
+interface AdminOverviewPageProps {
+  onNavigate: (path: string) => void
+}
+
+function shouldHandleInternalNavigation(event: MouseEvent<HTMLAnchorElement>) {
+  return !event.defaultPrevented
+    && !event.metaKey
+    && !event.ctrlKey
+    && !event.shiftKey
+    && !event.altKey
+}
+
+export function AdminOverviewPage({ onNavigate }: AdminOverviewPageProps) {
   const [state, dispatch] = useReducer(overviewReducer, undefined, createInitialOverviewState)
   const [reloadToken, setReloadToken] = useState(0)
   const apiBaseUrl = getAdminApiBaseUrl() || 'same-origin'
@@ -390,19 +402,63 @@ export function AdminOverviewPage() {
           sm:grid-cols-2
         "
         >
-          <a href="/create" className={adminActionLinkStyles}>
+          <a
+            href="/create"
+            className={adminActionLinkStyles}
+            onClick={(event) => {
+              if (!shouldHandleInternalNavigation(event)) {
+                return
+              }
+
+              event.preventDefault()
+              onNavigate('/create')
+            }}
+          >
             Create entries
             <span aria-hidden="true">→</span>
           </a>
-          <a href="/edit" className={adminActionLinkStyles}>
+          <a
+            href="/edit"
+            className={adminActionLinkStyles}
+            onClick={(event) => {
+              if (!shouldHandleInternalNavigation(event)) {
+                return
+              }
+
+              event.preventDefault()
+              onNavigate('/edit')
+            }}
+          >
             Edit existing
             <span aria-hidden="true">→</span>
           </a>
-          <a href="/aliases" className={adminActionLinkStyles}>
+          <a
+            href="/aliases"
+            className={adminActionLinkStyles}
+            onClick={(event) => {
+              if (!shouldHandleInternalNavigation(event)) {
+                return
+              }
+
+              event.preventDefault()
+              onNavigate('/aliases')
+            }}
+          >
             Manage aliases
             <span aria-hidden="true">→</span>
           </a>
-          <a href="/suggestion" className={adminActionLinkStyles}>
+          <a
+            href="/suggestion"
+            className={adminActionLinkStyles}
+            onClick={(event) => {
+              if (!shouldHandleInternalNavigation(event)) {
+                return
+              }
+
+              event.preventDefault()
+              onNavigate('/suggestion')
+            }}
+          >
             Curate suggestions
             <span aria-hidden="true">→</span>
           </a>
@@ -438,30 +494,48 @@ export function AdminOverviewPage() {
               onClick={handleRebuild}
               disabled={rebuildState === 'pending'}
               className={`
-                shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium
-                transition
+                shrink-0 rounded-lg border px-4 py-2 text-xs font-semibold
+                shadow-sm transition
+                focus-visible:ring-2 focus-visible:ring-offset-2
+                focus-visible:ring-offset-white focus-visible:outline-none
                 disabled:cursor-not-allowed disabled:opacity-50
                 ${rebuildState === 'error'
       ? `
-        border-red-300 text-red-700
-        hover:border-red-400
-        dark:border-red-700 dark:text-red-400
+        border-red-300 bg-red-50 text-red-700
+        hover:border-red-400 hover:bg-red-100
+        focus-visible:ring-red-400
+        dark:border-red-700 dark:bg-red-500/15 dark:text-red-200
+        dark:hover:border-red-600 dark:hover:bg-red-500/25
+        dark:focus-visible:ring-red-500 dark:focus-visible:ring-offset-gray-900
       `
       : rebuildState === 'success'
         ? `
-          border-green-300 text-green-700
-          hover:border-green-400
-          dark:border-green-700 dark:text-green-400
+          border-emerald-300 bg-emerald-50 text-emerald-700
+          hover:border-emerald-400 hover:bg-emerald-100
+          focus-visible:ring-emerald-400
+          dark:border-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200
+          dark:hover:border-emerald-600 dark:hover:bg-emerald-500/25
+          dark:focus-visible:ring-emerald-500
+          dark:focus-visible:ring-offset-gray-900
         `
         : `
-          border-gray-300/80 text-gray-700
-          hover:border-gray-400 hover:text-gray-900
-          dark:border-gray-700 dark:text-gray-200
-          dark:hover:border-gray-600
+          border-amber-500 bg-amber-500 text-white
+          hover:border-amber-400 hover:bg-amber-400
+          focus-visible:ring-amber-400
+          dark:border-amber-400 dark:bg-amber-400 dark:text-amber-950
+          dark:hover:border-amber-300 dark:hover:bg-amber-300
+          dark:focus-visible:ring-amber-300
+          dark:focus-visible:ring-offset-gray-900
         `}
               `}
             >
-              {rebuildState === 'pending' ? 'Dispatching…' : rebuildState === 'success' ? 'Dispatched ✓' : rebuildState === 'error' ? 'Retry' : 'Rebuild'}
+              {rebuildState === 'pending'
+                ? 'Dispatching…'
+                : rebuildState === 'success'
+                  ? 'Dispatched ✓'
+                  : rebuildState === 'error'
+                    ? 'Retry'
+                    : 'Rebuild'}
             </button>
           </div>
         </div>
@@ -584,6 +658,14 @@ export function AdminOverviewPage() {
               dark:hover:text-gray-100
             "
             href="/edit"
+            onClick={(event) => {
+              if (!shouldHandleInternalNavigation(event)) {
+                return
+              }
+
+              event.preventDefault()
+              onNavigate('/edit')
+            }}
           >
             Open edit view
           </a>

@@ -195,7 +195,7 @@ export function App() {
   }
 
   const page = currentSection.key === 'overview'
-    ? <AdminOverviewPage />
+    ? <AdminOverviewPage onNavigate={navigateTo} />
     : currentSection.key === 'create'
       ? <AdminCreatePage />
       : currentSection.key === 'edit'

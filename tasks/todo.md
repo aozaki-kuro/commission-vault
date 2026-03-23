@@ -16,6 +16,13 @@
 - [x] 补回根级 `dev:admin:remote` 兼容 alias，并同步 README / `scripts/AGENTS.md`
 - [x] 跑通本轮针对性验证，并记录结论
 
+## 本轮执行切片（2026-03-23 admin overview 导航补漏）
+
+- [x] 梳理 `Overview` 页内所有内部跳转入口，补齐仍在走原生 `<a href>` 的位置
+- [x] 让 `Quick actions` 与 `Open edit view` 走 client-side 导航，避免整页闪动
+- [x] 把 `Rebuild` 提升为显眼主操作按钮，同时保留成功/失败状态色
+- [x] 补针对性浏览器回归，确认 `Overview` 内跳转不会触发 `beforeunload`
+
 ## 本轮执行切片（2026-03-23 duplicate hints 降噪）
 
 - [x] 梳理 `apps/admin` commission duplicate hint 的评分规则与触发条件，确认误报根因
