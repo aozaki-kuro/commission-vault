@@ -9,7 +9,7 @@ import type {
   KeywordAliasEntry,
 } from '@commission-index/domain'
 import type { SpawnSyncReturns } from 'node:child_process'
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
@@ -102,6 +102,16 @@ interface ExportSourceImagesResult {
   reusedCount: number
 }
 
+interface ExportSourceImageTaskResult {
+  downloadedCount: number
+  file: GeneratedSourceImageManifestFile | null
+  hardFailure: boolean
+  metadataUpserts: SourceImageRow[]
+  missing: GeneratedSourceImageManifestMissing | null
+  removedObjectKeys: string[]
+  reusedCount: number
+}
+
 const invocationCwd = process.cwd()
 const scriptDir = path.dirname(fileURLToPath(import.meta.url))
 const adminWorkerRoot = path.resolve(scriptDir, '..')
@@ -131,6 +141,8 @@ const missingObjectPattern = /NoSuchKey|The specified key does not exist|not fou
 const maxDownloadAttempts = 3
 const downloadFileWaitAttempts = 5
 const downloadFileWaitMilliseconds = 50
+const defaultDownloadConcurrency = 8
+const maxDownloadConcurrency = 16
 
 function printHelp() {
   console.log(`
@@ -177,14 +189,41 @@ function parseArgs(argv: string[]): ParsedArgs {
   return { outputRoot, usePreview }
 }
 
-function runWrangler(args: string[]): SpawnSyncReturns<string> {
-  const wranglerCommand = existsSync(localWranglerBinPath)
+function getWranglerCommand() {
+  return existsSync(localWranglerBinPath)
     ? localWranglerBinPath
     : (existsSync(localWranglerCmdBinPath) ? localWranglerCmdBinPath : 'wrangler')
+}
 
-  return spawnSync(wranglerCommand, args, {
+function runWrangler(args: string[]): SpawnSyncReturns<string> {
+  return spawnSync(getWranglerCommand(), args, {
     cwd: adminWorkerRoot,
     encoding: 'utf8',
+  })
+}
+
+function runWranglerAsync(args: string[]) {
+  return new Promise<{ status: number | null, stdout: string, stderr: string }>((resolve, reject) => {
+    const child = spawn(getWranglerCommand(), args, {
+      cwd: adminWorkerRoot,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+
+    let stdout = ''
+    let stderr = ''
+
+    child.stdout?.setEncoding('utf8')
+    child.stderr?.setEncoding('utf8')
+    child.stdout?.on('data', (chunk) => {
+      stdout += chunk
+    })
+    child.stderr?.on('data', (chunk) => {
+      stderr += chunk
+    })
+    child.on('error', reject)
+    child.on('close', (status) => {
+      resolve({ status, stdout, stderr })
+    })
   })
 }
 
@@ -397,20 +436,57 @@ function hashFile(filePath: string) {
   return createHash('sha256').update(readFileSync(filePath)).digest('hex')
 }
 
-function sleepSync(milliseconds: number) {
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds)
+function sleep(milliseconds: number) {
+  return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
-function waitForFile(filePath: string) {
+async function waitForFile(filePath: string) {
   for (let attempt = 0; attempt < downloadFileWaitAttempts; attempt += 1) {
     if (existsSync(filePath)) {
       return true
     }
 
-    sleepSync(downloadFileWaitMilliseconds)
+    await sleep(downloadFileWaitMilliseconds)
   }
 
   return false
+}
+
+function resolveDownloadConcurrency() {
+  const rawValue = process.env.FACT_SOURCE_DOWNLOAD_CONCURRENCY?.trim()
+  const parsedValue = rawValue ? Number.parseInt(rawValue, 10) : Number.NaN
+
+  if (!Number.isInteger(parsedValue) || parsedValue < 1) {
+    return defaultDownloadConcurrency
+  }
+
+  return Math.min(parsedValue, maxDownloadConcurrency)
+}
+
+async function mapWithConcurrency<TItem, TResult>(
+  items: readonly TItem[],
+  concurrency: number,
+  worker: (item: TItem, index: number) => Promise<TResult>,
+) {
+  const results: TResult[] = []
+  let nextIndex = 0
+
+  async function runWorker() {
+    while (true) {
+      const currentIndex = nextIndex
+      if (currentIndex >= items.length) {
+        return
+      }
+
+      nextIndex += 1
+      results[currentIndex] = await worker(items[currentIndex], currentIndex)
+    }
+  }
+
+  const workerCount = Math.min(Math.max(1, concurrency), items.length)
+  const workerSlots = Array.from({ length: workerCount }, (_, index) => index)
+  await Promise.all(workerSlots.map(() => runWorker()))
+  return results
 }
 
 function writeJsonFile(filePath: string, payload: unknown) {
@@ -595,16 +671,16 @@ function listExpectedSourceImages(characters: CharacterRecord[]): string[] {
   return [...fileNames].toSorted((left, right) => left.localeCompare(right))
 }
 
-function downloadSourceImageObject(
+async function downloadSourceImageObject(
   bucketName: string,
   objectKey: string,
   outputPath: string,
 ) {
-  let result: SpawnSyncReturns<string> | null = null
+  let result: { status: number | null, stdout: string, stderr: string } | null = null
   let hardFailureMessage = ''
 
   for (let attempt = 1; attempt <= maxDownloadAttempts; attempt += 1) {
-    result = runWrangler([
+    result = await runWranglerAsync([
       'r2',
       'object',
       'get',
@@ -616,7 +692,7 @@ function downloadSourceImageObject(
       '--remote',
     ])
 
-    if (result.status === 0 && waitForFile(outputPath)) {
+    if (result.status === 0 && await waitForFile(outputPath)) {
       return { message: '', ok: true }
     }
 
@@ -641,101 +717,167 @@ function downloadSourceImageObject(
   }
 }
 
-function exportSourceImages(
+async function exportSourceImages(
   fileNames: string[],
   { bucketName, outputImagesDir, sourceImageRows }: ExportSourceImagesOptions,
-): ExportSourceImagesResult {
+): Promise<ExportSourceImagesResult> {
   const files: GeneratedSourceImageManifestFile[] = []
   const missing: GeneratedSourceImageManifestMissing[] = []
   const metadataUpserts: SourceImageRow[] = []
   const retainedObjectKeys = new Set<string>()
   const sourceImageRowMap = buildSourceImageRowMap(sourceImageRows)
-  let hasHardFailure = false
   let downloadedCount = 0
   let reusedCount = 0
 
   mkdirSync(outputImagesDir, { recursive: true })
+  const downloadConcurrency = resolveDownloadConcurrency()
+  const resolvedDownloadConcurrency = fileNames.length === 0
+    ? 0
+    : Math.min(downloadConcurrency, fileNames.length)
+  console.log(`Materializing ${fileNames.length} source image(s) (concurrency=${resolvedDownloadConcurrency})...`)
 
-  for (const commissionFileName of fileNames) {
-    const candidateObjectKeys = buildSourceImageCandidateKeys(commissionFileName)
-    const sourceImageRow = sourceImageRowMap.get(commissionFileName)
-    const reusableRecord = resolveReusableSourceImageRecord(outputImagesDir, sourceImageRow)
-    if (reusableRecord) {
-      files.push(reusableRecord)
-      retainedObjectKeys.add(reusableRecord.objectKey)
-      reusedCount += 1
-      continue
-    }
+  const taskResults = await mapWithConcurrency(
+    fileNames,
+    downloadConcurrency,
+    async (commissionFileName, index): Promise<ExportSourceImageTaskResult> => {
+      const progressLabel = `[${index + 1}/${fileNames.length}] ${commissionFileName}`
+      const candidateObjectKeys = buildSourceImageCandidateKeys(commissionFileName)
+      const sourceImageRow = sourceImageRowMap.get(commissionFileName)
+      const reusableRecord = resolveReusableSourceImageRecord(outputImagesDir, sourceImageRow)
+      if (reusableRecord) {
+        return {
+          downloadedCount: 0,
+          file: reusableRecord,
+          hardFailure: false,
+          metadataUpserts: [],
+          missing: null,
+          removedObjectKeys: [],
+          reusedCount: 1,
+        }
+      }
 
-    const orderedCandidateObjectKeys = sourceImageRow
-      ? [sourceImageRow.objectKey, ...candidateObjectKeys.filter(key => key !== sourceImageRow.objectKey)]
-      : candidateObjectKeys
-    let exported = false
-    let hardFailureMessage = ''
+      const orderedCandidateObjectKeys = sourceImageRow
+        ? [sourceImageRow.objectKey, ...candidateObjectKeys.filter(key => key !== sourceImageRow.objectKey)]
+        : candidateObjectKeys
+      console.log(`  ↓ ${progressLabel}`)
+      let exportedRecord: GeneratedSourceImageManifestFile | null = null
+      const metadataRows: SourceImageRow[] = []
+      const removedObjectKeys: string[] = []
+      let hardFailureMessage = ''
 
-    for (const objectKey of orderedCandidateObjectKeys) {
-      const outputPath = ensureOutputImagePath(outputImagesDir, objectKey)
-      const tempOutputPath = `${outputPath}.download`
-      rmSync(tempOutputPath, { force: true })
-
-      const downloadResult = downloadSourceImageObject(bucketName, objectKey, tempOutputPath)
-      if (downloadResult.ok) {
-        const record = buildSourceImageFileRecord(commissionFileName, objectKey, tempOutputPath)
-        rmSync(outputPath, { force: true })
-        writeFileSync(outputPath, readFileSync(tempOutputPath))
+      for (const objectKey of orderedCandidateObjectKeys) {
+        const outputPath = ensureOutputImagePath(outputImagesDir, objectKey)
+        const tempOutputPath = `${outputPath}.${process.pid}.${index}.download`
         rmSync(tempOutputPath, { force: true })
 
-        files.push(record)
-        retainedObjectKeys.add(record.objectKey)
-        downloadedCount += 1
+        const downloadResult = await downloadSourceImageObject(bucketName, objectKey, tempOutputPath)
+        if (downloadResult.ok) {
+          const record = buildSourceImageFileRecord(commissionFileName, objectKey, tempOutputPath)
+          rmSync(outputPath, { force: true })
+          writeFileSync(outputPath, readFileSync(tempOutputPath))
+          rmSync(tempOutputPath, { force: true })
+          console.log(`  ✓ ${progressLabel} -> ${objectKey}`)
+          exportedRecord = record
 
-        if (
-          !sourceImageRow
-          || sourceImageRow.objectKey !== record.objectKey
-          || sourceImageRow.byteSize !== record.byteSize
-          || sourceImageRow.sha256 !== record.sha256
-          || sourceImageRow.mimeType !== record.mimeType
-        ) {
-          metadataUpserts.push(buildSourceImageMetadataRow(record))
+          if (
+            !sourceImageRow
+            || sourceImageRow.objectKey !== record.objectKey
+            || sourceImageRow.byteSize !== record.byteSize
+            || sourceImageRow.sha256 !== record.sha256
+            || sourceImageRow.mimeType !== record.mimeType
+          ) {
+            metadataRows.push(buildSourceImageMetadataRow(record))
+          }
+
+          if (sourceImageRow && sourceImageRow.objectKey !== record.objectKey) {
+            removedObjectKeys.push(sourceImageRow.objectKey)
+          }
+
+          break
         }
 
-        if (sourceImageRow && sourceImageRow.objectKey !== record.objectKey) {
-          rmSync(ensureOutputImagePath(outputImagesDir, sourceImageRow.objectKey), { force: true })
+        rmSync(tempOutputPath, { force: true })
+
+        const message = downloadResult.message
+        if (!looksLikeMissingObject(message)) {
+          hardFailureMessage = message
+          break
         }
-
-        exported = true
-        break
       }
 
-      rmSync(tempOutputPath, { force: true })
+      if (exportedRecord) {
+        return {
+          downloadedCount: 1,
+          file: exportedRecord,
+          hardFailure: false,
+          metadataUpserts: metadataRows,
+          missing: null,
+          removedObjectKeys,
+          reusedCount: 0,
+        }
+      }
 
-      const message = downloadResult.message
-      if (!looksLikeMissingObject(message)) {
-        hardFailureMessage = message
-        break
+      if (hardFailureMessage) {
+        console.error(`  ✗ ${progressLabel}: ${hardFailureMessage}`)
+        return {
+          downloadedCount: 0,
+          file: null,
+          hardFailure: true,
+          metadataUpserts: [],
+          missing: {
+            commissionFileName,
+            candidateObjectKeys: orderedCandidateObjectKeys,
+            reason: 'download_failed',
+            message: hardFailureMessage || undefined,
+          },
+          removedObjectKeys: [],
+          reusedCount: 0,
+        }
+      }
+
+      console.error(`  ✗ ${progressLabel}: no candidate found in R2`)
+      return {
+        downloadedCount: 0,
+        file: null,
+        hardFailure: false,
+        metadataUpserts: [],
+        missing: {
+          commissionFileName,
+          candidateObjectKeys: orderedCandidateObjectKeys,
+          reason: 'not_found',
+        },
+        removedObjectKeys: [],
+        reusedCount: 0,
+      }
+    },
+  )
+
+  let hasHardFailure = false
+  for (const result of taskResults) {
+    if (result.file) {
+      files.push(result.file)
+      retainedObjectKeys.add(result.file.objectKey)
+    }
+
+    if (result.missing) {
+      missing.push(result.missing)
+    }
+
+    for (const row of result.metadataUpserts) {
+      metadataUpserts.push(row)
+    }
+
+    downloadedCount += result.downloadedCount
+    reusedCount += result.reusedCount
+    hasHardFailure = hasHardFailure || result.hardFailure
+  }
+
+  for (const result of taskResults) {
+    for (const objectKey of result.removedObjectKeys) {
+      if (!retainedObjectKeys.has(objectKey)) {
+        rmSync(ensureOutputImagePath(outputImagesDir, objectKey), { force: true })
       }
     }
-
-    if (exported) {
-      continue
-    }
-
-    if (hardFailureMessage) {
-      hasHardFailure = true
-      missing.push({
-        commissionFileName,
-        candidateObjectKeys: orderedCandidateObjectKeys,
-        reason: 'download_failed',
-        message: hardFailureMessage || undefined,
-      })
-      continue
-    }
-
-    missing.push({
-      commissionFileName,
-      candidateObjectKeys: orderedCandidateObjectKeys,
-      reason: 'not_found',
-    })
   }
 
   cleanupStaleSourceImages(outputImagesDir, retainedObjectKeys)
@@ -801,7 +943,7 @@ function loadRemoteFactSource({
   }
 }
 
-function main() {
+async function main() {
   const { outputRoot, usePreview } = parseArgs(process.argv.slice(2))
   const factSourceDir = path.join(outputRoot, factSourceDirectoryName)
   const outputImagesDir = path.join(outputRoot, imageOutputDirectoryName)
@@ -828,7 +970,7 @@ function main() {
 
   // ==================== 导出 source images 到 generated 目录 ====================
   const expectedSourceImages = listExpectedSourceImages(factSource.characters)
-  const imageExport = exportSourceImages(expectedSourceImages, {
+  const imageExport = await exportSourceImages(expectedSourceImages, {
     bucketName: defaultBucketName,
     outputImagesDir,
     sourceImageRows: factSource.sourceImages,
@@ -866,4 +1008,7 @@ function main() {
   }
 }
 
-main()
+void main().catch((error) => {
+  console.error(error instanceof Error ? error.message : String(error))
+  process.exit(1)
+})
