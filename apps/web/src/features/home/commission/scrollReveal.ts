@@ -3,8 +3,11 @@
  *
  * Only animates entries that enter the viewport by scrolling — entries already
  * visible on initial load (or scroll-restored) are left alone to avoid flicker.
- * A MutationObserver watches for dynamically batch-loaded entries.
+ * A MutationObserver watches for dynamically batch-loaded entries and panel
+ * visibility changes.
  */
+
+import { COMMISSION_VIEW_MODE_CHANGE_EVENT } from '#features/home/events'
 
 const REVEAL_ATTR = 'data-commission-entry'
 const REVEALED_ATTR = 'data-revealed'
@@ -25,6 +28,10 @@ function prefersReducedMotion(): boolean {
 function isInOrAboveViewport(el: HTMLElement): boolean {
   const rect = el.getBoundingClientRect()
   return rect.top < window.innerHeight
+}
+
+function isRenderable(el: HTMLElement): boolean {
+  return el.isConnected && el.getClientRects().length > 0
 }
 
 export function mountScrollReveal(): () => void {
@@ -87,6 +94,8 @@ export function mountScrollReveal(): () => void {
     for (const el of elements) {
       if (el.hasAttribute(REVEALED_ATTR))
         continue
+      if (!isRenderable(el))
+        continue
       if (isInOrAboveViewport(el)) {
         el.setAttribute(REVEALED_ATTR, '')
         continue
@@ -100,10 +109,20 @@ export function mountScrollReveal(): () => void {
 
   const mo = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
+      if (mutation.type === 'attributes') {
+        const target = mutation.target
+        if (target instanceof HTMLElement) {
+          observeAll(target)
+        }
+        continue
+      }
+
       for (const node of mutation.addedNodes) {
         if (!(node instanceof HTMLElement))
           continue
         if (node.hasAttribute(REVEAL_ATTR)) {
+          if (!isRenderable(node))
+            continue
           if (isInOrAboveViewport(node)) {
             node.setAttribute(REVEALED_ATTR, '')
           }
@@ -117,11 +136,27 @@ export function mountScrollReveal(): () => void {
     }
   })
 
-  mo.observe(document.body, { childList: true, subtree: true })
+  mo.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class', 'style', 'data-commission-view-active'],
+  })
+
+  const rescan = () => {
+    requestAnimationFrame(() => {
+      observeAll()
+    })
+  }
+
+  window.addEventListener(COMMISSION_VIEW_MODE_CHANGE_EVENT, rescan)
+  window.addEventListener('popstate', rescan)
 
   return () => {
     io.disconnect()
     mo.disconnect()
+    window.removeEventListener(COMMISSION_VIEW_MODE_CHANGE_EVENT, rescan)
+    window.removeEventListener('popstate', rescan)
     if (rafId !== null) {
       cancelAnimationFrame(rafId)
     }
