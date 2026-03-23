@@ -23,7 +23,6 @@ interface FindDuplicateCommissionHintsInput {
   limit?: number
 }
 
-const MIN_DUPLICATE_SCORE = 40
 const VALID_DATE_PATTERN = /^\d{8}$/
 
 function normalizeFileName(value: string) {
@@ -75,11 +74,11 @@ export function findDuplicateCommissionHints({
   limit = 4,
 }: FindDuplicateCommissionHintsInput): DuplicateCommissionHint[] {
   const normalizedFileName = normalizeFileName(fileName)
+  const parsedQuery = getParsedFileName(normalizedFileName)
   const hasCharacterSelection = typeof characterId === 'number' && characterId > 0
   const queryKeywords = getKeywordSet(keyword)
-  const parsedQuery = getParsedFileName(normalizedFileName)
 
-  if (!normalizedFileName && !hasCharacterSelection && queryKeywords.size === 0) {
+  if (!normalizedFileName) {
     return []
   }
 
@@ -88,36 +87,37 @@ export function findDuplicateCommissionHints({
     .map((candidate) => {
       const reasons: string[] = []
       let score = 0
+      let isLikelyDuplicate = false
 
       if (normalizedFileName && candidate.fileName === normalizedFileName) {
-        score += 120
+        score += 200
         reasons.push('Same file name')
+        isLikelyDuplicate = true
       }
 
       const parsedCandidate = getParsedFileName(candidate.fileName)
-      if (parsedQuery.date && parsedCandidate.date === parsedQuery.date) {
-        score += 25
-        reasons.push(`Same date ${parsedQuery.date}`)
-      }
-
-      if (hasCharacterSelection && candidate.characterId === characterId) {
-        score += 25
-        reasons.push('Same character')
-      }
-
-      if (
+      const sameDate = parsedQuery.date && parsedCandidate.date === parsedQuery.date
+      const sameCharacter = hasCharacterSelection && candidate.characterId === characterId
+      const sameCreator = Boolean(
         parsedQuery.creatorName
         && parsedCandidate.creatorName
-        && parsedQuery.creatorName === parsedCandidate.creatorName
-      ) {
-        score += 20
+        && parsedQuery.creatorName === parsedCandidate.creatorName,
+      )
+
+      if (!isLikelyDuplicate && sameCharacter && sameDate && sameCreator) {
+        score += 150
+        reasons.push('Same character')
+        reasons.push(`Same date ${parsedQuery.date}`)
         reasons.push('Same creator')
+        isLikelyDuplicate = true
       }
 
-      const sharedKeywords = getSharedKeywords(queryKeywords, getKeywordSet(candidate.keyword))
-      if (sharedKeywords.length > 0) {
-        score += Math.min(20, sharedKeywords.length * 10)
-        reasons.push(`Shared keyword: ${sharedKeywords.slice(0, 2).join(', ')}`)
+      if (isLikelyDuplicate) {
+        const sharedKeywords = getSharedKeywords(queryKeywords, getKeywordSet(candidate.keyword))
+        if (sharedKeywords.length > 0) {
+          score += Math.min(20, sharedKeywords.length * 10)
+          reasons.push(`Shared keyword: ${sharedKeywords.slice(0, 2).join(', ')}`)
+        }
       }
 
       return {
@@ -129,7 +129,7 @@ export function findDuplicateCommissionHints({
         score,
       } satisfies DuplicateCommissionHint
     })
-    .filter(candidate => candidate.score >= MIN_DUPLICATE_SCORE)
+    .filter(candidate => candidate.reasons.length > 0)
     .toSorted((left, right) => {
       if (right.score !== left.score) {
         return right.score - left.score

@@ -24,14 +24,15 @@ export function DuplicateCommissionNotice({
           dark:text-amber-100
         "
         >
-          Potential duplicates
+          Likely duplicate entries
         </h3>
         <p className="
           text-xs text-amber-800/80
           dark:text-amber-100/80
         "
         >
-          Non-blocking warning based on file name, character, creator, date, and keywords.
+          Non-blocking warning shown only for exact file-name matches, or when character, date,
+          and creator all line up.
         </p>
       </div>
 
