@@ -21,6 +21,14 @@
 - [x] 给 Turbo `build` 任务补 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` passthrough
 - [x] 跑 dry-run 验证 Turbo 任务环境里已包含 passthrough 声明
 
+## 本轮执行切片（2026-03-23 GitHub Actions deploy/cache 并发收口）
+
+- [x] 复盘 `ci.yml` 与 `deploy.yml` 为什么会同时抢 `.turbo` cache key
+- [x] 把 `deploy.yml` 改成等待 `CI` 成功后再触发，避免 push 后验证/部署并行抢跑
+- [x] 给 `deploy.yml` / `rebuild.yml` 加共享 release concurrency，避免发布链互相重叠
+- [x] 同步更新仓库文档与 lessons，写清 workflow trigger 与 turbo cache 锁约束
+- [x] 跑 YAML 级校验，确认 workflow 语法与关键表达式成立
+
 ## 本轮执行切片（2026-03-23 admin dev 启动竞态修复）
 
 - [x] 复现 `bun run dev:admin` 首次启动时 worker/front-end 抢跑导致的远端数据加载异常

@@ -5,6 +5,10 @@ on:
     types: [admin-data-changed]
   workflow_dispatch:
 
+concurrency:
+  group: release-master
+  cancel-in-progress: false
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
   TURBO_TELEMETRY_DISABLED: '1'
@@ -36,8 +40,9 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: .turbo
-          key: turbo-${{ runner.os }}-master-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
+          key: turbo-${{ runner.os }}-release-master-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
           restore-keys: |
+            turbo-${{ runner.os }}-release-master-
             turbo-${{ runner.os }}-master-
             turbo-${{ runner.os }}-
 
@@ -68,7 +73,7 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: .turbo
-          key: turbo-${{ runner.os }}-master-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
+          key: turbo-${{ runner.os }}-release-master-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
 
       - name: Save generated web inputs
         if: success()

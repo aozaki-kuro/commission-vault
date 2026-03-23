@@ -29,3 +29,4 @@
 - 2026-03-23: 只要某个 Turbo 任务除了源码还依赖远端数据（比如 `apps/web` build 先导出 D1/R2 事实源再跑 Astro），就不能只按源码/锁文件命中缓存；必须额外引入显式的远端数据版本戳（如 `WEB_BUILD_CACHE_TOKEN`），否则 `admin-data-changed` 这类重建会静默回放旧产物。
 - 2026-03-23: Turbo 处于 `envMode: "strict"` 时，外层 workflow 已经设置的凭证不会自动进入任务进程；像 `wrangler` / 远端导出这类链路如果要在 Turbo 任务里访问 Cloudflare，必须显式加到 `passThroughEnv`，否则会出现“部署步骤有 token，实际 build 子进程没 token”的假象。
 - 2026-03-23: 像 `dev:admin` 这种多进程联调入口，不能只把 worker 和 frontend 一起拉起就算完；只要 frontend 首屏依赖 worker 远端数据，就应该等待一个真实的 binding-backed API 成功响应后再放行，否则用户只会看到“本地起了，但像没连上远端”的假故障。
+- 2026-03-23: GitHub Actions 里只要多个 workflow 会在同一分支上共享同一个 `actions/cache` key，就不能让它们由同一个 push 并发触发并各自 save；`deploy` 应该等 `CI` 成功后再跑，发布类 workflow 还要收口到独立的 release cache namespace 并共用一个 concurrency group，否则 `.turbo` 这类共享缓存会因为 reserve 冲突反复报 `another job may be creating this cache`。
