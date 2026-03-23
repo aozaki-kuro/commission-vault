@@ -366,3 +366,29 @@
 - [x] `bun run typecheck` 通过。
 - [x] `bun run build:admin` 通过。
 - [ ] `.github/workflows/ci.yml` 的 `Web Remote Validate` job 未在本地实跑；它依赖 GitHub Actions secrets 与 Cloudflare 远端资源，应在 Actions 环境验真。
+
+## 本轮执行切片（2026-03-23 deploy/rebuild 流程去重）
+
+- [x] 审计 `deploy.yml` / `rebuild.yml`，确认 `web:fact-source:export`、`build:web`、`build:admin` 与 `wrangler deploy` custom build 存在重复执行
+- [x] 删除 deploy/rebuild workflow 里的重复 pre-build / pre-export 步骤
+- [x] 删除 deploy/rebuild workflow 中对 `.turbo/` 的无效缓存恢复，保留 `apps/web/generated/source-images` 缓存
+- [x] 更新 README / AGENTS / todo，记录 deploy/rebuild 现以 workspace-local Wrangler custom build 为唯一构建真值
+
+## Review（2026-03-23 deploy/rebuild 流程去重）
+
+- [x] `git diff --check` 通过。
+- [x] 已人工复核：`apps/web/wrangler.jsonc` 的 build command 仍为 `bun run build`，`apps/admin-worker/wrangler.jsonc` 的 build command 仍为 `bun run build:assets`，workflow 删除 pre-build 后不会失去构建步骤。
+- [ ] deploy/rebuild workflow 未在 GitHub Actions 上实跑；需要等待下一次 Actions 执行验证 wrangler deploy 路径。
+
+## 本轮执行切片（2026-03-23 Actions cache 观测）
+
+- [x] 给 `ci.yml` 的主要验证步骤补 `duration_seconds` 输出
+- [x] 给 `ci.yml` 的 Turbo / source-images cache 补 `cache-hit` 可见性
+- [x] 给 `deploy.yml` / `rebuild.yml` 补 step summary，记录 install、deploy 耗时与 source-images cache 命中
+- [x] 更新 README / AGENTS / todo，明确当前 cache 决策应先看 Actions summary 数据
+
+## Review（2026-03-23 Actions cache 观测）
+
+- [x] `git diff --check` 通过。
+- [x] 已人工复核三个 workflow：每个 summary step 都使用 `if: always()`，前置步骤失败时仍会尽量输出观测信息。
+- [ ] 新增 `GITHUB_STEP_SUMMARY` 观测尚未在 Actions 环境实看；需要等下一轮 CI / deploy / rebuild 运行后读取 summary 数据。

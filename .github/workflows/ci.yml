@@ -27,9 +27,15 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        id: install
+        run: |
+          started_at=$(date +%s)
+          bun install --frozen-lockfile
+          ended_at=$(date +%s)
+          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
 
       - name: Restore turbo cache
+        id: turbo_cache
         uses: actions/cache@v4
         with:
           path: .turbo
@@ -39,16 +45,53 @@ jobs:
             turbo-${{ runner.os }}-
 
       - name: Lint
-        run: bun run lint
+        id: lint
+        run: |
+          started_at=$(date +%s)
+          bun run lint
+          ended_at=$(date +%s)
+          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
 
       - name: Test
-        run: bun run test
+        id: test
+        run: |
+          started_at=$(date +%s)
+          bun run test
+          ended_at=$(date +%s)
+          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
 
       - name: Typecheck
-        run: bun run typecheck
+        id: typecheck
+        run: |
+          started_at=$(date +%s)
+          bun run typecheck
+          ended_at=$(date +%s)
+          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
 
       - name: Build admin
-        run: bun run build:admin
+        id: build_admin
+        run: |
+          started_at=$(date +%s)
+          bun run build:admin
+          ended_at=$(date +%s)
+          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
+
+      - name: Validation summary
+        if: always()
+        run: |
+          {
+            echo "## Validate Job"
+            echo
+            echo "| Step | Seconds |"
+            echo "| --- | ---: |"
+            echo "| install | ${{ steps.install.outputs.duration_seconds || 'n/a' }} |"
+            echo "| lint | ${{ steps.lint.outputs.duration_seconds || 'n/a' }} |"
+            echo "| test | ${{ steps.test.outputs.duration_seconds || 'n/a' }} |"
+            echo "| typecheck | ${{ steps.typecheck.outputs.duration_seconds || 'n/a' }} |"
+            echo "| build:admin | ${{ steps.build_admin.outputs.duration_seconds || 'n/a' }} |"
+            echo
+            echo "- turbo cache hit: ${{ steps.turbo_cache.outputs.cache-hit || 'false' }}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   web-remote-validate:
     name: Web Remote Validate
@@ -66,7 +109,12 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        id: install
+        run: |
+          started_at=$(date +%s)
+          bun install --frozen-lockfile
+          ended_at=$(date +%s)
+          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
 
       - name: Detect Cloudflare credentials
         id: cloudflare
@@ -82,6 +130,7 @@ jobs:
 
       - name: Restore turbo cache
         if: steps.cloudflare.outputs.enabled == 'true'
+        id: turbo_cache
         uses: actions/cache@v4
         with:
           path: .turbo
@@ -92,6 +141,7 @@ jobs:
 
       - name: Restore source images cache
         if: steps.cloudflare.outputs.enabled == 'true'
+        id: source_images_cache
         uses: actions/cache@v5
         with:
           path: apps/web/generated/source-images
@@ -102,19 +152,52 @@ jobs:
 
       - name: Export fact source from D1/R2
         if: steps.cloudflare.outputs.enabled == 'true'
-        run: bun run web:fact-source:export
+        id: export_fact_source
+        run: |
+          started_at=$(date +%s)
+          bun run web:fact-source:export
+          ended_at=$(date +%s)
+          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Astro check web workspace
         if: steps.cloudflare.outputs.enabled == 'true'
-        run: bun run --cwd apps/web check:astro
+        id: check_web
+        run: |
+          started_at=$(date +%s)
+          bun run --cwd apps/web check:astro
+          ended_at=$(date +%s)
+          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
 
       - name: Build web workspace
         if: steps.cloudflare.outputs.enabled == 'true'
-        run: bun run --cwd apps/web build:astro
+        id: build_web
+        run: |
+          started_at=$(date +%s)
+          bun run --cwd apps/web build:astro
+          ended_at=$(date +%s)
+          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
 
       - name: Skip web remote validation without Cloudflare credentials
         if: steps.cloudflare.outputs.enabled != 'true'
         run: echo "Cloudflare credentials are unavailable; skipping remote web validation."
+
+      - name: Web remote validation summary
+        if: always()
+        run: |
+          {
+            echo "## Web Remote Validate Job"
+            echo
+            echo "- cloudflare credentials enabled: ${{ steps.cloudflare.outputs.enabled }}"
+            echo "- turbo cache hit: ${{ steps.turbo_cache.outputs.cache-hit || 'n/a' }}"
+            echo "- source-images cache hit: ${{ steps.source_images_cache.outputs.cache-hit || 'n/a' }}"
+            echo
+            echo "| Step | Seconds |"
+            echo "| --- | ---: |"
+            echo "| install | ${{ steps.install.outputs.duration_seconds || 'n/a' }} |"
+            echo "| export fact source | ${{ steps.export_fact_source.outputs.duration_seconds || 'n/a' }} |"
+            echo "| astro check | ${{ steps.check_web.outputs.duration_seconds || 'n/a' }} |"
+            echo "| astro build | ${{ steps.build_web.outputs.duration_seconds || 'n/a' }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

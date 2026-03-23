@@ -82,6 +82,7 @@ Monorepo migration is in progress:
 - GitHub Actions now restores `.turbo/` and warms the Turbo graph with `bun run build:web` / `bun run build:admin` before the deploy steps. This keeps CI compatible with Bun workspaces while avoiding a heavier Nx-style setup.
 - Workers Builds does not infer monorepo intent from the repo root. Push-triggered builds are recognized from the Worker's Dashboard settings plus the `wrangler.jsonc` that lives under that worker's root directory.
 - `apps/web` build does not talk to D1/R2 directly at runtime. It shells into `apps/admin-worker/scripts/exportWebFactSource.ts`, but that export is now explicitly driven by `apps/web/wrangler.jsonc` during web builds so the web Worker project owns the bindings needed for push-triggered exports.
+- GitHub Actions deploy/rebuild workflows intentionally do not pre-run `web:fact-source:export` or `build:web` anymore. `wrangler deploy` already executes each workspace-local custom build command, so pre-running those steps only duplicated export/build work.
 
 ## Tests
 
@@ -95,6 +96,8 @@ Monorepo migration is in progress:
 - The `Validate` job always runs `lint`, `test`, `typecheck`, and `build:admin` from the repo root.
 - The `Web Remote Validate` job runs only when Cloudflare credentials are available in GitHub Actions, because public web `check/build` still require exporting the remote fact source first.
 - `apps/web/package.json` now exposes `check:astro` and `build:astro` for cases where generated inputs are already present and you want to avoid re-running the export wrapper.
+- `.github/workflows/deploy.yml` and `.github/workflows/rebuild.yml` keep only the source-image cache plus the final `wrangler deploy` call, because that deploy already triggers the web/admin custom build commands.
+- CI/deploy/rebuild workflows now write per-step durations and cache-hit status into `GITHUB_STEP_SUMMARY`, so cache decisions can be made from Actions data instead of guesswork.
 
 Asset generation is shared by Astro:
 
