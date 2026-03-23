@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "fact-source:export": "FACT_SOURCE_WRANGLER_CONFIG=../web/wrangler.jsonc bun run --cwd ../admin-worker web:fact-source:export",
-    "dev": "bun run fact-source:export && NODE_ENV=development astro dev",
+    "fact-source:sync-images": "FACT_SOURCE_WRANGLER_CONFIG=../web/wrangler.jsonc bun run --cwd ../admin-worker web:fact-source:sync-images",
+    "dev": "bun run fact-source:sync-images && NODE_ENV=development astro dev",
     "build": "bun run fact-source:export && astro build",
     "check": "bun run fact-source:export && astro check .",
     "preview": "bun run fact-source:export && astro build --clean && astro preview",

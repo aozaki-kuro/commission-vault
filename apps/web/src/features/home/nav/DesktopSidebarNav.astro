@@ -7,7 +7,6 @@ import {
   IconChevronRight,
   IconChevronUp,
   IconFlare,
-  IconLayoutDashboard,
   IconZoom,
 } from '@tabler/icons-react'
 
@@ -206,32 +205,6 @@ const sidebarNavLinkClass
         </button>
       </div>
 
-      {
-        import.meta.env.DEV
-? (
-          <div class="
-            flex min-h-5 items-center gap-2 text-gray-700
-            hover:text-gray-900
-            dark:text-gray-200
-            dark:hover:text-white
-          "
-          >
-            <span class={sidebarLeadSlotClass} aria-hidden="true">
-              <IconLayoutDashboard
-                className={`
-                  ${sidebarIconClass}
-                  text-gray-400 transition-all duration-300
-                `}
-                stroke={1.9}
-              />
-            </span>
-            <a href="/admin" class={sidebarLabelClass}>
-              Admin
-            </a>
-          </div>
-        )
-: null
-      }
     </div>
 
   </div>

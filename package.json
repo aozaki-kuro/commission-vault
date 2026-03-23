@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "web:fact-source:export": "bun run --cwd apps/admin-worker web:fact-source:export",
+    "web:fact-source:sync-images": "bun run --cwd apps/web fact-source:sync-images",
     "build": "bun run build:web",
     "build:admin": "bun run --cwd apps/admin build",
     "build:web": "bun run --cwd apps/web build",
