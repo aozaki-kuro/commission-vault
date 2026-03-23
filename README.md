@@ -8,7 +8,7 @@ Personal use only
 
 ### Fresh machine setup
 
-This repo uses Bun workspaces. Install dependencies once from the repository root; do not `bun install` inside each app separately.
+This repo uses Bun workspaces with a lightweight Turborepo task graph. Install dependencies once from the repository root; do not `bun install` inside each app separately.
 
 1. Install runtime tools:
    - `mise install`
@@ -24,6 +24,8 @@ Workspace notes:
 
 - `apps/web`, `apps/admin`, `apps/admin-worker`, and `packages/domain` all resolve dependencies through the root workspace install.
 - Root-only tooling such as ESLint, Prettier, Playwright, Vitest, and the root `better-tailwindcss` rule also comes from that same root install.
+- `turbo.json` is intentionally minimal and currently only orchestrates cacheable workspace tasks such as `build`, `check`, and `typecheck`.
+- Local Turborepo cache lives in `.turbo/`; GitHub Actions now restores that directory between runs alongside the generated source-image cache.
 - If you add a dependency that is used by a root config file (for example `eslint.config.ts`), declare it in the root `package.json` even if app workspaces also use it.
 
 - `bun run dev` — run the public `apps/web` Astro app in development mode.
@@ -32,6 +34,8 @@ Workspace notes:
 - `apps/web` no longer mounts the legacy `/admin` pages in local dev; use `bun run dev:admin` for admin work.
 - Admin route shells are Astro pages; interactive admin state is mounted via React islands.
 - `bun run build` — run Astro static build output to `apps/web/dist/`.
+- `bun run build:all` — run every workspace `build` task that currently participates in the Turbo graph.
+- `bun run typecheck` — run workspace `typecheck` tasks through Turbo.
 - `bun run preview` — preview static output locally.
 
 Monorepo migration is in progress:
@@ -75,6 +79,7 @@ Monorepo migration is in progress:
 - Recommended watch paths:
   - Web: `apps/web/**`, `packages/**`, `apps/admin-worker/scripts/exportWebFactSource.ts`
   - Admin: `apps/admin-worker/**`, `apps/admin/**`, `packages/**`
+- GitHub Actions now restores `.turbo/` and warms the Turbo graph with `bun run build:web` / `bun run build:admin` before the deploy steps. This keeps CI compatible with Bun workspaces while avoiding a heavier Nx-style setup.
 - Workers Builds does not infer monorepo intent from the repo root. Push-triggered builds are recognized from the Worker's Dashboard settings plus the `wrangler.jsonc` that lives under that worker's root directory.
 - `apps/web` build does not talk to D1/R2 directly at runtime. It shells into `apps/admin-worker/scripts/exportWebFactSource.ts`, but that export is now explicitly driven by `apps/web/wrangler.jsonc` during web builds so the web Worker project owns the bindings needed for push-triggered exports.
 

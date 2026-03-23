@@ -334,3 +334,18 @@
 - [x] `bun run --cwd apps/web fact-source:export` 通过；命令行明确显示 `FACT_SOURCE_WRANGLER_CONFIG=../web/wrangler.jsonc`，并成功导出远端事实源到 `apps/web/generated`。
 - [x] `bun run --cwd apps/web deploy -- --dry-run` 通过；custom build 链路继续可用，且 dry-run 已显示 web Worker 持有 `env.DB` 与 `env.IMAGES` 两个远端绑定。
 - [x] `bun run --cwd apps/admin-worker typecheck` 通过；`exportWebFactSource.ts` 的新路径解析与环境变量收口未引入类型错误。
+
+## 本轮执行切片（2026-03-23 Turborepo 最小接入）
+
+- [x] 评估当前 monorepo 复杂度，确认先引入轻量任务编排而不是直接上 Nx
+- [x] 在仓库根新增最小 `turbo.json`，只接管 `build` / `check` / `typecheck` 与可选 `dev` 元数据
+- [x] 把根脚本 `build:web` / `build:admin` / `check` / `typecheck` 收口到 `turbo run`
+- [x] 给 GitHub Actions 增加 `.turbo/` 缓存，并在 deploy 前预热 Turbo 构建链
+- [x] 更新 README / AGENTS / todo，记录当前 Turbo 边界与 CI 使用方式
+
+## Review（2026-03-23 Turborepo 最小接入）
+
+- [x] `bun install` 通过，并更新 lockfile 以纳入 `turbo`。
+- [x] `bun run build:admin` 通过；确认 root `turbo run build --filter=@commission-index/admin` 能正常驱动现有 Vite 构建。
+- [x] `bun run typecheck` 通过；确认 Turbo 图可执行当前 workspace `typecheck` 任务。
+- [ ] `bun run build:web` 未在本地复跑；该链路仍依赖远端 D1/R2 导出权限，应在 CI 或已配置 Cloudflare 凭证的环境中验证。

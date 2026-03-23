@@ -3,6 +3,7 @@
   "type": "module",
   "version": "1.3.0",
   "private": true,
+  "packageManager": "bun@1.3.11",
   "author": "Crystallize",
   "workspaces": [
     "apps/*",
@@ -12,9 +13,10 @@
     "web:fact-source:export": "bun run --cwd apps/admin-worker web:fact-source:export",
     "web:fact-source:sync-images": "bun run --cwd apps/web fact-source:sync-images",
     "build": "bun run build:web",
-    "build:admin": "bun run --cwd apps/admin build",
-    "build:web": "bun run --cwd apps/web build",
-    "check": "bun run --cwd apps/web check",
+    "build:all": "TURBO_TELEMETRY_DISABLED=1 turbo run build",
+    "build:admin": "TURBO_TELEMETRY_DISABLED=1 turbo run build --filter=@commission-index/admin",
+    "build:web": "TURBO_TELEMETRY_DISABLED=1 turbo run build --filter=@commission-index/web",
+    "check": "TURBO_TELEMETRY_DISABLED=1 turbo run check --filter=@commission-index/web",
     "clean": "rm -rf node_modules .wrangler apps/web/.astro apps/web/dist coverage playwright-report test-results && bun i",
     "deploy": "bun run deploy:web",
     "deploy:admin": "bun run --cwd apps/admin-worker deploy",
@@ -31,7 +33,8 @@
     "test:changed": "vitest run -c vitest.config.ts --changed",
     "test:visual": "playwright test -c playwright.config.ts",
     "test:visual:update": "playwright test -c playwright.config.ts --update-snapshots",
-    "test:watch": "vitest -c vitest.config.ts"
+    "test:watch": "vitest -c vitest.config.ts",
+    "typecheck": "TURBO_TELEMETRY_DISABLED=1 turbo run typecheck"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^7.7.3",
@@ -48,6 +51,7 @@
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
     "tailwindcss": "^4.2.2",
+    "turbo": "^2.5.6",
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.0"

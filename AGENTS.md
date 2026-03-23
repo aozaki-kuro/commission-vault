@@ -5,6 +5,7 @@ This repository contains an Astro 6 static site with React 19 islands, written i
 ## Development Notes
 
 - **Runtime & package manager:** Node 24 via [mise](https://mise.jdx.dev) and `bun` for all commands.
+- **Task graph & cache:** root workspace task orchestration now uses `turbo.json` for cacheable `build` / `check` / `typecheck` tasks; keep the graph lightweight and do not move deploy/runtime ownership into Turbo.
 - **Framework:** Astro + Tailwind CSS + selective React islands (`@astrojs/react`).
 - **Repo-level testing:** `vitest.config.ts` and `playwright.config.ts` live at the repository root so `bun run test*` exercises the workspace from one entrypoint; keep app-owned test suites under each workspace, keep committed Playwright baselines under root `test/visual/apps/<workspace>/`, and keep generated outputs under root `coverage/`, `test-results/`, and `playwright-report/`.
 - **Astro 6 guardrails:**
@@ -17,6 +18,7 @@ This repository contains an Astro 6 static site with React 19 islands, written i
   - Admin-managed search configuration tables live in remote D1 (`character_aliases`, `creator_aliases`, `keyword_aliases`, `home_featured_search_keywords`), and source-image metadata lives in remote D1 `source_images`.
 - **Web build bindings:** `apps/web/wrangler.jsonc` must keep read-only `DB` / `IMAGES` bindings aligned with `apps/admin-worker/wrangler.jsonc` so push-triggered web builds can export fresh generated fact-source inputs before Astro runs.
 - **Cloudflare deploy commands:** manual repo-level deploy entrypoints are `bun run deploy:web` and `bun run deploy:admin`, which delegate into each workspace-local `wrangler.jsonc`. Do not restore a repo-root `wrangler.jsonc`; Cloudflare Workers Builds must connect the same repo to two Workers with root directories `apps/web` and `apps/admin-worker`, because push-triggered builds are resolved from Dashboard root/build/deploy settings, not from a shared repo-root config.
+- **GitHub Actions cache:** CI restores `.turbo/` plus `apps/web/generated/source-images` so Turbo can reuse local task outputs while the existing generated-image reuse path stays intact.
 - **Admin auth boundary:** `apps/admin-worker` no longer implements worker-side Basic Auth; production access to `admin.crystallize.cc` is expected to be enforced by Cloudflare Zero Trust in front of the worker.
 - **Monorepo migration scaffold (in progress):**
   - New app scaffolds now exist under `apps/admin`, `apps/admin-worker`, and `apps/web`.
@@ -186,6 +188,7 @@ Additional guidance:
 
 ## Change Log
 
+- Added a minimal `turbo.json`, switched root `build:web` / `build:admin` / `check` / `typecheck` entrypoints to `turbo run`, and taught GitHub Actions to restore `.turbo/` before the existing deploy flow.
 - Removed the repo-root `wrangler.jsonc`, localized deploy/build intent to `apps/web/wrangler.jsonc` and `apps/admin-worker/wrangler.jsonc`, added `apps/admin-worker` `build:assets`, and documented the required Cloudflare Workers Builds root/build/deploy settings for push-triggered monorepo deploys.
 - Added `apps/admin-worker/src/adminSourceImages.ts`, moved worker-native commission CRUD plus `POST /api/admin/commissions/:id/source-image` onto D1/R2-backed execution when bindings exist, and extended admin worker contract tests to cover native create/update/delete/replace behavior.
 - Added root `scripts/devAdminRemote.ts`, root `dev:admin:remote`, repo-level Cloudflare Builds/deploy helper scripts, and worker `dev:remote` so standalone admin development and Cloudflare deployment can run from the workspace root without depending on `apps/web`.
