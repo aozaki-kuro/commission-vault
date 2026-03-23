@@ -22,3 +22,4 @@
 - 2026-03-18: 在 Bun 脚本里包装 Wrangler 时，不要默认再套一层 `bunx wrangler`。Cloudflare Builds 环境下这会干扰 `wrangler d1 execute --command <SQL>` 的参数解析，导致整段 SQL 被拆成未知参数；应优先直接调用仓库内 `node_modules/.bin/wrangler`，再回退到 PATH 里的 `wrangler`。
 - 2026-03-18: monorepo 里只要某个 app 的构建阶段需要远端 Cloudflare 资源，就不要再隐式借用另一个 app 的默认 `wrangler.jsonc`；必须把“由谁的 Worker 项目持有绑定、构建时用哪份 config 拉数据”写成显式配置，否则 push build 很容易在 Dashboard 上失去资源上下文。
 - 2026-03-23: 任何依赖 `apps/web/generated/*` 这类构建产物的真实样本测试，都不能在模块顶层直接 import 会触发文件读取的数据模块；必须先做“生成物是否存在”的守门，再用懒加载导入，否则 CI 在未导出事实源时会在测试收集阶段直接失败。
+- 2026-03-23: monorepo 里当同仓同时存在 Astro(Vite 7) 和独立 Vite 8 应用时，`@tailwindcss/vite` 这类插件很容易在类型层解析到另一份 Vite 定义；如果运行时构建已正常，就不要急着重排整棵依赖图，先在 Astro config 侧把插件结果收口到 Astro 自己的 `vite.plugins` 类型面上，再验证 `astro check` 和真实 build。

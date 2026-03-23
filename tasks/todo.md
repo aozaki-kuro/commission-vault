@@ -11,6 +11,11 @@
 - [x] 给 CI / Deploy / Rebuild workflow 显式开启 `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`
 - [x] 验证 workflow YAML 结构正常，并补充本轮结论
 
+## 本轮执行切片（2026-03-23 Astro check Vite 类型错配）
+
+- [x] 修复 `apps/web/astro.config.ts` 里 Tailwind Vite 插件与 Astro 内置 Vite 类型版本错配
+- [x] 跑通 `bun run --cwd apps/web check:astro` 与 `bun run --cwd apps/web build:astro`
+
 ## 北极星目标
 
 - [ ] `apps/web` 继续作为 Astro 静态公开站，部署到 `crystallize.cc`
