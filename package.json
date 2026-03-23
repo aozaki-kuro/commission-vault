@@ -39,7 +39,7 @@
     "@j178/prek": "^0.3.6",
     "@playwright/test": "^1.58.2",
     "@types/node": "^25.5.0",
-    "eslint": "^10.0.3",
+    "eslint": "^10.1.0",
     "eslint-plugin-astro": "^1.6.0",
     "eslint-plugin-better-tailwindcss": "^4.3.2",
     "eslint-plugin-format": "^2.0.1",
@@ -47,7 +47,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
-    "tailwindcss": "^4.2.1",
+    "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.0"
