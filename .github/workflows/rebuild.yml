@@ -32,7 +32,7 @@ jobs:
 
       - name: Restore generated web inputs
         id: generated_cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: apps/web/generated
           key: generated-${{ runner.os }}-master-rebuild-${{ github.run_id }}
@@ -53,7 +53,7 @@ jobs:
 
       - name: Save generated web inputs
         if: success()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: apps/web/generated
           key: generated-${{ runner.os }}-master-rebuild-${{ github.run_id }}
