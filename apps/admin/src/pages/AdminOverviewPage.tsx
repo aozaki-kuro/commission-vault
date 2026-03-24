@@ -498,6 +498,7 @@ export function AdminOverviewPage({ onNavigate }: AdminOverviewPageProps) {
                 shadow-sm transition
                 focus-visible:ring-2 focus-visible:ring-offset-2
                 focus-visible:ring-offset-white focus-visible:outline-none
+                active:scale-[0.97]
                 disabled:cursor-not-allowed disabled:opacity-50
                 ${rebuildState === 'error'
       ? `
@@ -573,6 +574,7 @@ export function AdminOverviewPage({ onNavigate }: AdminOverviewPageProps) {
                 rounded-lg border border-gray-300/80 px-3 py-1.5 text-xs
                 font-medium text-gray-700 transition
                 hover:border-gray-400 hover:text-gray-900
+                active:scale-[0.97]
                 dark:border-gray-700 dark:text-gray-200
                 dark:hover:border-gray-600 dark:hover:text-gray-100
               "

@@ -45,7 +45,8 @@ export function AdminPageShell({
 }: AdminPageShellProps) {
   return (
     <div className="
-      mx-auto max-w-5xl space-y-6 px-4 pt-6 pb-10
+      mx-auto max-w-5xl space-y-6 pt-6 pb-10
+      md:px-4
       lg:px-0
     "
     >
@@ -68,7 +69,15 @@ export function AdminPageShell({
 
       <AdminSectionNav current={current} onNavigate={onNavigate} publicSiteUrl={publicSiteUrl} />
 
-      {children}
+      <div
+        key={current}
+        className="
+          space-y-6
+          motion-safe:animate-[tabFade_240ms_ease-out]
+        "
+      >
+        {children}
+      </div>
     </div>
   )
 }

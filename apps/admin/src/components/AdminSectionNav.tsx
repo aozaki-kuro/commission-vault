@@ -30,7 +30,7 @@ export function AdminSectionNav({ current, onNavigate, publicSiteUrl }: AdminSec
                   key={item.key}
                   aria-current="page"
                   className="
-                    cursor-default text-gray-500
+                    cursor-default py-1.5 text-gray-500
                     dark:text-gray-400
                   "
                 >
@@ -41,6 +41,7 @@ export function AdminSectionNav({ current, onNavigate, publicSiteUrl }: AdminSec
                 <a
                   key={item.key}
                   href={item.path}
+                  className="py-1.5"
                   onClick={(event) => {
                     if (!shouldHandleInternalNavigation(event)) {
                       return
@@ -57,7 +58,7 @@ export function AdminSectionNav({ current, onNavigate, publicSiteUrl }: AdminSec
       </div>
 
       <div className="flex items-center gap-4">
-        <a href={publicSiteUrl}>Public Site</a>
+        <a href={publicSiteUrl} className="py-1.5">Public Site</a>
       </div>
     </nav>
   )

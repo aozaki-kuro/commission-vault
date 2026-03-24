@@ -54,6 +54,7 @@ function SaveButton({ label }: { label: string }) {
         focus-visible:ring-2 focus-visible:ring-gray-400
         focus-visible:ring-offset-2 focus-visible:ring-offset-white
         focus-visible:outline-none
+        active:scale-[0.97]
         disabled:pointer-events-none disabled:opacity-50
         dark:bg-gray-100 dark:text-gray-900
         dark:hover:bg-gray-200
@@ -66,13 +67,13 @@ function SaveButton({ label }: { label: string }) {
 }
 
 const tabListStyles
-  = 'grid w-full gap-2 rounded-2xl border border-gray-200 bg-white/90 p-1.5 shadow-sm ring-1 ring-gray-900/5 backdrop-blur-sm sm:grid-cols-3 dark:border-gray-700 dark:bg-gray-900/40 dark:ring-white/10'
+  = 'grid w-full grid-cols-3 gap-2 rounded-2xl border border-gray-200 bg-white/90 p-1.5 shadow-sm ring-1 ring-gray-900/5 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/40 dark:ring-white/10'
 const tabTriggerStyles
   = 'inline-flex items-center justify-between gap-2 rounded-xl border border-transparent px-3 py-2.5 text-sm text-gray-700 transition focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none hover:border-gray-300/80 hover:bg-white dark:text-gray-300 dark:hover:border-gray-600 dark:hover:bg-gray-800/70 dark:focus-visible:ring-offset-gray-900'
 const activeTabTriggerStyles
   = 'border-gray-900/15 bg-white text-gray-900 shadow-sm dark:border-gray-100/20 dark:bg-gray-100 dark:text-gray-900'
 const tabCountStyles
-  = 'inline-flex min-w-7 items-center justify-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200'
+  = 'hidden min-w-7 items-center justify-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700 sm:inline-flex dark:bg-gray-800 dark:text-gray-200'
 const panelHeaderTitleStyles = 'text-base font-semibold text-gray-900 dark:text-gray-100'
 const panelHeaderDescriptionStyles = 'text-sm text-gray-600 dark:text-gray-300'
 const tableShellStyles = 'space-y-0'
@@ -505,9 +506,11 @@ export function AdminAliasesDashboard({
       <div className="mt-5 space-y-6">
         {activeTab === 'character' && (
           <div
+            key="character"
             id="aliases-panel-character"
             role="tabpanel"
             aria-labelledby="aliases-tab-character"
+            className="motion-safe:animate-[tabFade_200ms_ease-out]"
           >
             <CharacterAliasesPanel characters={characters} />
           </div>
@@ -515,9 +518,11 @@ export function AdminAliasesDashboard({
 
         {activeTab === 'creator' && (
           <div
+            key="creator"
             id="aliases-panel-creator"
             role="tabpanel"
             aria-labelledby="aliases-tab-creator"
+            className="motion-safe:animate-[tabFade_200ms_ease-out]"
           >
             <CreatorAliasesPanel creators={creators} />
           </div>
@@ -525,9 +530,11 @@ export function AdminAliasesDashboard({
 
         {activeTab === 'keyword' && (
           <div
+            key="keyword"
             id="aliases-panel-keyword"
             role="tabpanel"
             aria-labelledby="aliases-tab-keyword"
+            className="motion-safe:animate-[tabFade_200ms_ease-out]"
           >
             <KeywordAliasesPanel keywords={keywords} />
           </div>

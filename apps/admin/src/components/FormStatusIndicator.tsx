@@ -53,7 +53,13 @@ export function FormStatusIndicator({
 
   if (isError) {
     return (
-      <span className="text-sm text-red-500" aria-live="polite">
+      <span
+        className="
+          text-sm text-red-500
+          motion-safe:animate-[slideInUp_180ms_ease-out]
+        "
+        aria-live="polite"
+      >
         {text}
       </span>
     )
@@ -63,6 +69,7 @@ export function FormStatusIndicator({
     <span
       className="
         inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600
+        motion-safe:animate-[slideInUp_180ms_ease-out]
         dark:text-emerald-400
       "
       aria-live="polite"
