@@ -127,7 +127,8 @@ export function SortableCharacterCard({
       "
       >
         <div className="
-          flex items-center gap-3 bg-white/90 px-5 py-3
+          flex items-center gap-2 bg-white/90 px-3 py-2.5
+          sm:gap-3 sm:px-5 sm:py-3
           dark:bg-gray-900/40
         "
         >
@@ -190,13 +191,19 @@ export function SortableCharacterCard({
                     className={inlineEditStyles}
                   />
                   <span className="
-                    w-24 text-right font-mono text-xs font-normal text-gray-500
+                    text-right font-mono text-xs font-normal text-gray-500
                     dark:text-gray-300
                   "
                   >
                     {totalCommissions}
-                    {' '}
-                    entries
+                    <span className="
+                      hidden
+                      sm:inline
+                    "
+                    >
+                      {' '}
+                      entries
+                    </span>
                   </span>
                 </div>
               )
@@ -237,66 +244,76 @@ export function SortableCharacterCard({
                     </div>
 
                     <span className="
-                      w-24 shrink-0 text-right font-mono text-xs font-normal
+                      shrink-0 text-right font-mono text-xs font-normal
                       text-gray-500
                       dark:text-gray-300
                     "
                     >
                       {totalCommissions}
-                      {' '}
-                      entries
+                      <span className="
+                        hidden
+                        sm:inline
+                      "
+                      >
+                        {' '}
+                        entries
+                      </span>
                     </span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      onStartEdit()
-                    }}
-                    disabled={isDeleting}
-                    aria-label={`Rename ${character.name}`}
-                    className="
-                      inline-flex size-7 shrink-0 items-center justify-center
-                      rounded-lg border border-transparent text-gray-400
-                      transition
-                      hover:text-gray-600
-                      focus-visible:ring-2 focus-visible:ring-gray-400
-                      focus-visible:ring-offset-2
-                      focus-visible:ring-offset-white focus-visible:outline-none
-                      disabled:cursor-not-allowed disabled:text-gray-300
-                      dark:hover:text-gray-200
-                      dark:focus-visible:ring-offset-gray-900
-                      dark:disabled:text-gray-600
-                    "
-                  >
-                    <IconPencil className="size-4" stroke={2} aria-hidden="true" />
-                  </button>
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onStartEdit()
+                      }}
+                      disabled={isDeleting}
+                      aria-label={`Rename ${character.name}`}
+                      className="
+                        inline-flex size-7 shrink-0 items-center justify-center
+                        rounded-lg border border-transparent text-gray-400
+                        transition
+                        hover:text-gray-600
+                        focus-visible:ring-2 focus-visible:ring-gray-400
+                        focus-visible:ring-offset-2
+                        focus-visible:ring-offset-white
+                        focus-visible:outline-none
+                        disabled:cursor-not-allowed disabled:text-gray-300
+                        dark:hover:text-gray-200
+                        dark:focus-visible:ring-offset-gray-900
+                        dark:disabled:text-gray-600
+                      "
+                    >
+                      <IconPencil className="size-4" stroke={2} aria-hidden="true" />
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      onRequestDelete()
-                    }}
-                    disabled={isDeleting}
-                    aria-label={`Remove ${character.name}`}
-                    className="
-                      inline-flex size-8 shrink-0 items-center justify-center
-                      rounded-lg border border-transparent text-gray-400
-                      transition
-                      hover:text-red-500
-                      focus-visible:ring-2 focus-visible:ring-red-400
-                      focus-visible:ring-offset-2
-                      focus-visible:ring-offset-white focus-visible:outline-none
-                      disabled:cursor-not-allowed disabled:text-gray-300
-                      dark:hover:text-red-300
-                      dark:focus-visible:ring-offset-gray-900
-                      dark:disabled:text-gray-600
-                    "
-                  >
-                    <IconX className="size-4" stroke={2} aria-hidden="true" />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onRequestDelete()
+                      }}
+                      disabled={isDeleting}
+                      aria-label={`Remove ${character.name}`}
+                      className="
+                        inline-flex size-8 shrink-0 items-center justify-center
+                        rounded-lg border border-transparent text-gray-400
+                        transition
+                        hover:text-red-500
+                        focus-visible:ring-2 focus-visible:ring-red-400
+                        focus-visible:ring-offset-2
+                        focus-visible:ring-offset-white
+                        focus-visible:outline-none
+                        disabled:cursor-not-allowed disabled:text-gray-300
+                        dark:hover:text-red-300
+                        dark:focus-visible:ring-offset-gray-900
+                        dark:disabled:text-gray-600
+                      "
+                    >
+                      <IconX className="size-4" stroke={2} aria-hidden="true" />
+                    </button>
+                  </div>
                 </>
               )}
         </div>

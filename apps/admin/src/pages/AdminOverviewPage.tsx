@@ -494,8 +494,8 @@ export function AdminOverviewPage({ onNavigate }: AdminOverviewPageProps) {
               onClick={handleRebuild}
               disabled={rebuildState === 'pending'}
               className={`
-                shrink-0 rounded-lg border px-4 py-2 text-xs font-semibold
-                shadow-sm transition
+                w-28 shrink-0 rounded-lg border px-4 py-2 text-center text-xs
+                font-semibold shadow-sm transition
                 focus-visible:ring-2 focus-visible:ring-offset-2
                 focus-visible:ring-offset-white focus-visible:outline-none
                 active:scale-[0.97]

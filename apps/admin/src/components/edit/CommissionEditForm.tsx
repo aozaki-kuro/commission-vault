@@ -321,7 +321,11 @@ export function CommissionEditForm({
 
       <DuplicateCommissionNotice hints={duplicateHints} />
 
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="
+        flex flex-col gap-3
+        sm:flex-row sm:flex-wrap sm:items-center sm:gap-4
+      "
+      >
         <div className="flex items-center gap-3">
           <SubmitButton>Save changes</SubmitButton>
           <FormStatusIndicator
@@ -331,7 +335,11 @@ export function CommissionEditForm({
           />
         </div>
 
-        <div className="ml-auto flex flex-wrap items-center gap-4">
+        <div className="
+          flex flex-wrap items-center gap-2
+          sm:ml-auto sm:gap-4
+        "
+        >
           <CommissionHiddenSwitch isHidden={isHidden} onChange={setIsHidden} />
 
           {isDeleteArmed && !isDeleting
@@ -340,13 +348,14 @@ export function CommissionEditForm({
                   type="button"
                   onClick={() => setIsDeleteArmed(false)}
                   className="
-                    inline-flex h-10 items-center justify-center rounded-md
-                    border border-gray-300/80 px-4 text-sm font-medium
+                    inline-flex h-9 items-center justify-center rounded-md
+                    border border-gray-300/80 px-3 text-sm font-medium
                     text-gray-600 transition
                     hover:bg-gray-50
                     focus-visible:ring-2 focus-visible:ring-gray-400
                     focus-visible:ring-offset-2 focus-visible:ring-offset-white
                     focus-visible:outline-none
+                    sm:h-10 sm:px-4
                     dark:border-gray-700 dark:text-gray-300
                     dark:hover:bg-gray-900/40
                     dark:focus-visible:ring-offset-gray-900
@@ -362,13 +371,14 @@ export function CommissionEditForm({
             onClick={handleDelete}
             disabled={isDeleting}
             className="
-              inline-flex h-10 items-center justify-center rounded-md border
-              border-red-200/70 px-4 text-sm font-medium text-red-600 transition
+              inline-flex h-9 items-center justify-center rounded-md border
+              border-red-200/70 px-3 text-sm font-medium text-red-600 transition
               hover:bg-red-50
               focus-visible:ring-2 focus-visible:ring-red-400
               focus-visible:ring-offset-2 focus-visible:ring-offset-white
               focus-visible:outline-none
               disabled:cursor-not-allowed disabled:opacity-60
+              sm:h-10 sm:px-4
               dark:border-red-500/40 dark:text-red-300
               dark:hover:bg-red-500/10
               dark:focus-visible:ring-offset-gray-900
