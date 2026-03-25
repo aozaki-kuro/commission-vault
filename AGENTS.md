@@ -193,6 +193,7 @@ Additional guidance:
 
 ## Change Log
 
+- Split `apps/web` fact-source export into its own Turbo task, made web `build` / `check` scripts pure Astro again, and documented the cache boundary so local Turbo hits can distinguish remote-input prep from Astro compilation.
 - Added a minimal `turbo.json`, switched root `build:web` / `build:admin` / `check` / `typecheck` entrypoints to `turbo run`, and taught GitHub Actions to restore `.turbo/` before the existing deploy flow.
 - Added `.github/workflows/ci.yml` for standard push/PR verification, and added `apps/web` `check:astro` / `build:astro` scripts so CI can reuse already-exported generated inputs without triggering duplicate fact-source exports.
 - Removed duplicate pre-build/pre-export steps from deploy/rebuild GitHub Actions workflows so those jobs now rely on workspace-local Wrangler custom builds instead of running the same web/admin build chain twice.

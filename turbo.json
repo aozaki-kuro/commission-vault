@@ -15,6 +15,21 @@
       "dependsOn": ["^typecheck"],
       "outputs": []
     },
+    "@commission-index/web#fact-source:export": {
+      "env": ["WEB_BUILD_CACHE_TOKEN"],
+      "passThroughEnv": ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"],
+      "outputs": ["generated/**"]
+    },
+    "@commission-index/web#build": {
+      "dependsOn": ["^build", "fact-source:export"],
+      "env": ["WEB_BUILD_CACHE_TOKEN"],
+      "passThroughEnv": ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"],
+      "outputs": ["dist/**", ".astro/**"]
+    },
+    "@commission-index/web#check": {
+      "dependsOn": ["^typecheck", "fact-source:export"],
+      "outputs": []
+    },
     "dev": {
       "cache": false,
       "persistent": true

@@ -1,5 +1,11 @@
 # 统一迁移状态板（2026-03-18）
 
+## 本轮执行切片（2026-03-25 本地 Turbo Astro 构建缓存拆链）
+
+- [x] 复盘 `apps/web` 当前 `build/check` 为什么把事实源导出和 Astro 构建绑在同一个 Turbo task 里
+- [x] 把 `fact-source:export` 提升为 Turbo 独立任务，并让 `build/check` 只保留 Astro 自身职责
+- [x] 跑两轮本地验证，确认 `fact-source:export` 与 `build` 都能稳定命中本地 Turbo cache
+
 ## 本轮执行切片（2026-03-23 timeline 切换后滚动 reveal 动画修复）
 
 - [x] 复盘 `character -> timeline` 与“刷新直进 timeline”两条初始化路径的 reveal 时序差异
@@ -500,3 +506,9 @@
 - [x] `bun run --cwd apps/web typecheck` 通过。
 - [x] `bun run typecheck` 通过，确认 root Turbo 现在会实际执行 web workspace 的 `typecheck`。
 - [ ] 新的 `actions/cache/restore` / `actions/cache/save` 路径与 cached `astro check` 尚未在 GitHub Actions 环境验真；需要等下一轮 CI / deploy / rebuild 执行结果。
+
+## Review（2026-03-25 本地 Turbo Astro 构建缓存拆链）
+
+- [x] `bun x turbo run build --filter=@commission-index/web --dry=json` 已确认只有 `@commission-index/web` 会依赖 `fact-source:export`，未误伤其他 workspace。
+- [x] 连跑两次 `bun run build:web`：第一次 `fact-source:export` / `build` 双 miss，第二次 `Cached: 2 cached, 2 total`。
+- [x] `bun run check` 通过，确认拆链后 `astro check` 仍会先复用 `fact-source:export`。
