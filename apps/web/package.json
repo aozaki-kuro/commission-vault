@@ -49,5 +49,8 @@
     "sharp": "^0.34.5",
     "tailwindcss": "^4.2.2",
     "wrangler": "^4.77.0"
+  },
+  "overrides": {
+    "vite": "8.0.2"
   }
 }

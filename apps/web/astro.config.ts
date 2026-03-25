@@ -39,6 +39,7 @@ export default defineConfig({
   vite: {
     plugins: vitePlugins,
     resolve: {
+      // @ts-expect-error Vite 6+ native option; Astro's bundled Vite types lag behind
       tsconfigPaths: true,
       alias: {
         '@astrojs/react/server.js': fileURLToPath(new URL('./src/config/astroReactServerShim.ts', import.meta.url)),
