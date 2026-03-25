@@ -254,6 +254,15 @@ export function CommissionManager({
     })
   }, [loadCharacterCommissions, openIds])
 
+  // Update a single commission in-place after a successful save — no network
+  // round-trip needed, and the updated characterId is handled automatically
+  // because commissionMap is derived from loadedCommissions.
+  const handleCommissionSaved = useCallback((updated: CommissionRow) => {
+    setLoadedCommissions(previous =>
+      previous.map(commission => commission.id === updated.id ? updated : commission),
+    )
+  }, [])
+
   return (
     <section className="space-y-5">
       <header className="space-y-1">
@@ -420,6 +429,7 @@ export function CommissionManager({
                   isDeleting={deletingId === character.id || isDeletePending}
                   disableDrag={hasAppliedSearchQuery}
                   reduceMotion={hasAppliedSearchQuery}
+                  onSaveSuccess={handleCommissionSaved}
                 />
               )
             })}

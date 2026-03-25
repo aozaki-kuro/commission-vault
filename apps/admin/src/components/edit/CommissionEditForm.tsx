@@ -33,6 +33,7 @@ interface CommissionEditFormProps {
   commission: CommissionRow
   commissionSearchRows: AdminCommissionSearchRow[]
   onDelete?: () => void
+  onSaveSuccess?: (updated: CommissionRow) => void
 }
 
 interface OperationStatus {
@@ -49,6 +50,7 @@ export function CommissionEditForm({
   commission,
   commissionSearchRows,
   onDelete,
+  onSaveSuccess,
 }: CommissionEditFormProps) {
   const [state, formAction] = useActionState(updateCommissionAction, INITIAL_FORM_STATE)
   const [isDeleting, startDelete] = useTransition()
@@ -103,10 +105,54 @@ export function CommissionEditForm({
     [commission.id, commissionSearchRows, fileName, keywordValue, selectedCharacterId],
   )
 
+  // Capture latest form values so the save-success effect can read them without
+  // making every field a dependency (which would cause spurious re-fires).
+  const savedFormRef = useRef({
+    descriptionValue,
+    designValue,
+    fileName,
+    isHidden,
+    keywordValue,
+    linksValue,
+    selectedCharacterId,
+    sortedCharacters,
+  })
+  savedFormRef.current = {
+    descriptionValue,
+    designValue,
+    fileName,
+    isHidden,
+    keywordValue,
+    linksValue,
+    selectedCharacterId,
+    sortedCharacters,
+  }
+
   useEffect(() => {
-    if (state.status === 'success') {
-      notifyDataUpdate()
+    if (state.status !== 'success') {
+      return
     }
+
+    // Notify other tabs a change occurred; the session-ID filter in
+    // dataUpdateSignal prevents the current tab from re-fetching bootstrap.
+    notifyDataUpdate()
+
+    // Update the commission in-place locally — no round-trip needed.
+    const vals = savedFormRef.current
+    onSaveSuccess?.({
+      id: commission.id,
+      characterId: vals.selectedCharacterId,
+      characterName:
+        vals.sortedCharacters.find(c => c.id === vals.selectedCharacterId)?.name
+        ?? commission.characterName,
+      description: vals.descriptionValue.trim() || null,
+      design: vals.designValue.trim() || null,
+      fileName: vals.fileName.trim(),
+      hidden: vals.isHidden,
+      keyword: vals.keywordValue.trim() || null,
+      links: vals.linksValue.split('\n').map(s => s.trim()).filter(Boolean),
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status])
 
   useEffect(() => {

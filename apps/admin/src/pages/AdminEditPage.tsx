@@ -260,7 +260,6 @@ export function AdminEditPage() {
         characters={state.payload.characters}
         commissionSearchRows={state.payload.commissionSearchRows}
         creatorAliases={state.payload.creatorAliases}
-        dataVersion={reloadToken}
       />
     )
   }

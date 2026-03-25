@@ -1,5 +1,9 @@
 const channelName = 'commission-updates'
 const storageKey = 'commission-updated-at'
+// Unique per-tab ID so each tab can ignore its own broadcasts.
+const tabSessionId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+  ? crypto.randomUUID()
+  : Math.random().toString(36).slice(2)
 
 function sendStoragePing() {
   try {
@@ -18,7 +22,7 @@ export function notifyDataUpdate() {
   try {
     if (typeof BroadcastChannel !== 'undefined') {
       const channel = new BroadcastChannel(channelName)
-      channel.postMessage({ at: Date.now(), type: 'updated' })
+      channel.postMessage({ at: Date.now(), sessionId: tabSessionId, type: 'updated' })
       channel.close()
       return
     }
@@ -36,7 +40,12 @@ export function subscribeToDataUpdates(onUpdate: () => void) {
   try {
     if (typeof BroadcastChannel !== 'undefined') {
       channel = new BroadcastChannel(channelName)
-      channel.onmessage = () => onUpdate()
+      channel.onmessage = (event) => {
+        // Ignore our own broadcasts — local state is updated in-place instead.
+        if (event.data?.sessionId !== tabSessionId) {
+          onUpdate()
+        }
+      }
     }
   }
   catch {

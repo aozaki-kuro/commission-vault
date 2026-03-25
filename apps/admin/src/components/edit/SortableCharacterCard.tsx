@@ -68,6 +68,7 @@ interface SortableCharacterCardProps {
   onDeleteCommission: (commissionId: number) => void
   onRenameChange: (value: string) => void
   onRequestDelete: () => void
+  onSaveSuccess: (updated: CommissionRow) => void
   onStartEdit: () => void
   onSubmitRename: () => void
   onToggle: () => void
@@ -93,6 +94,7 @@ export function SortableCharacterCard({
   onDeleteCommission,
   onRenameChange,
   onRequestDelete,
+  onSaveSuccess,
   onStartEdit,
   onSubmitRename,
   onToggle,
@@ -340,41 +342,44 @@ export function SortableCharacterCard({
       : `-translate-y-1 opacity-0`}
               `}
             >
-              {isOpen
+              {/* Show skeleton only while the card is open and loading */}
+              {isOpen && (isCommissionsLoading || !isCommissionsLoaded)
                 ? (
-                    isCommissionsLoading || !isCommissionsLoaded
-                      ? (
-                          <div className="space-y-4">
-                            <CommissionEditFormSkeleton />
-                            <p className="
-                              text-sm text-gray-500
-                              dark:text-gray-300
-                            "
-                            >
-                              Loading commissions…
-                            </p>
-                          </div>
-                        )
-                      : commissionList.length === 0
-                        ? (
-                            <p className="
-                              text-sm text-gray-500
-                              dark:text-gray-300
-                            "
-                            >
-                              No commissions recorded yet.
-                            </p>
-                          )
-                        : commissionList.map(commission => (
-                            <CommissionEditForm
-                              key={commission.id}
-                              commission={commission}
-                              characters={charactersForSelect}
-                              commissionSearchRows={commissionSearchRows}
-                              onDelete={() => onDeleteCommission(commission.id)}
-                            />
-                          ))
+                    <div className="space-y-4">
+                      <CommissionEditFormSkeleton />
+                      <p className="
+                        text-sm text-gray-500
+                        dark:text-gray-300
+                      "
+                      >
+                        Loading commissions…
+                      </p>
+                    </div>
                   )
+                : null}
+
+              {/* Keep forms mounted once loaded so images stay cached through open/close cycles */}
+              {isCommissionsLoaded && !isCommissionsLoading
+                ? commissionList.length === 0
+                  ? (
+                      <p className="
+                        text-sm text-gray-500
+                        dark:text-gray-300
+                      "
+                      >
+                        No commissions recorded yet.
+                      </p>
+                    )
+                  : commissionList.map(commission => (
+                      <CommissionEditForm
+                        key={commission.id}
+                        commission={commission}
+                        characters={charactersForSelect}
+                        commissionSearchRows={commissionSearchRows}
+                        onDelete={() => onDeleteCommission(commission.id)}
+                        onSaveSuccess={onSaveSuccess}
+                      />
+                    ))
                 : null}
             </div>
           </div>
