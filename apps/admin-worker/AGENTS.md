@@ -13,13 +13,15 @@ This directory contains the standalone admin worker.
 - `migrations/0001_admin_fact_source.sql`: worker-owned D1 schema baseline for characters, commissions, aliases, and featured keyword state.
 - `migrations/0002_source_image_metadata.sql`: D1 source-image metadata table for extension/hash/size-based export reuse.
 - `scripts/exportWebFactSource.ts`: remote D1/R2 -> `apps/web/generated/*` export for the public-site build inputs.
-- `wrangler.jsonc`: app-local Worker config for `admin.crystallize.cc`, including asset binding, D1/R2 declarations, route metadata, and the workspace-local build hook used by both manual deploys and Dashboard builds rooted at `apps/admin-worker`.
+- `wrangler.jsonc`: app-local Worker config for `admin.crystallize.cc`, including asset binding, D1/R2 declarations, route metadata, and the workspace-local build hook used by manual deploys and Dashboard builds rooted at `apps/admin-worker`.
+- `wrangler.ci.jsonc`: CI-only Worker config that reuses the same bindings/routes but intentionally omits the custom admin build hook so GitHub Actions can deploy the already-validated `apps/admin/dist` artifact without rebuilding it.
 
 ## Responsibilities
 
 - Serve `admin.crystallize.cc` directly and treat Cloudflare Zero Trust as the production auth boundary.
 - Serve admin API (`/api/admin/*`).
 - Serve admin frontend assets from `apps/admin/dist`.
+- Let CI deploy the already-validated `apps/admin/dist` artifact without re-triggering the admin frontend build hook.
 - Use the worker + D1/R2 surface as the only active admin runtime for standalone development.
 - Own read-side bootstrap/aliases/suggestion/character-commission/source-image GET routes directly on D1/R2.
 - Own character CRUD, commission CRUD, source-image replacement, alias writes, and suggestion writes directly on D1/R2.
@@ -39,6 +41,7 @@ This directory contains the standalone admin worker.
 
 ## Change Log
 
+- 2026-03-25: Added `wrangler.ci.jsonc` plus `deploy:ci`, and changed GitHub Actions admin deploy to consume the validated `apps/admin/dist` artifact instead of triggering `build:admin` a second time through Wrangler.
 - 2026-03-18: Removed the repo-root Wrangler entrypoint from the monorepo deploy path, added workspace-local `build:assets`, and aligned worker docs/config with Cloudflare Workers Builds rooted at `apps/admin-worker`.
 - 2026-03-17: Switched the default admin dev entrypoint to `bun run dev:admin`, removed worker-side runtime fallback to the legacy admin API, and made known admin routes fail fast when `DB` / `IMAGES` bindings are missing.
 - 2026-03-17: Added `src/adminSourceImages.ts`, moved commission create/update/delete plus `POST /api/admin/commissions/:id/source-image` onto worker-native D1/R2 execution when bindings exist, and extended CRUD contract tests to cover rollback and source-image replacement semantics.

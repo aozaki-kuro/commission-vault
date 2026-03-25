@@ -117,6 +117,15 @@ jobs:
           ended_at=$(date +%s)
           echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
 
+      - name: Upload validated admin dist
+        if: success() && github.ref == 'refs/heads/master'
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-dist-${{ github.sha }}
+          path: apps/admin/dist
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Astro check (cached generated inputs)
         if: steps.generated_inputs.outputs.available == 'true'
         id: check_web_cached
@@ -283,8 +292,8 @@ jobs:
   # ────────────────────────────────────────────────────────────────────────────
   # ADMIN — master only, runs after validate (in parallel with web)
   #
-  # Restores the turbo cache saved by validate so deploy:admin can skip
-  # rebuilding the admin app entirely.
+  # Reuses the validated admin dist artifact from validate so deploy can ship
+  # the exact already-built frontend without re-running the Wrangler build hook.
   # ────────────────────────────────────────────────────────────────────────────
   admin:
     name: Admin — Deploy
@@ -310,21 +319,22 @@ jobs:
           ended_at=$(date +%s)
           echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
 
-      - name: Restore turbo cache
-        id: turbo_cache
-        uses: actions/cache/restore@v5
+      - name: Download validated admin dist
+        uses: actions/download-artifact@v5
         with:
-          path: .turbo
-          key: turbo-${{ runner.os }}-master-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
-          restore-keys: |
-            turbo-${{ runner.os }}-master-
-            turbo-${{ runner.os }}-
+          name: admin-dist-${{ github.sha }}
+          path: apps/admin
+
+      - name: Verify validated admin dist
+        run: |
+          test -f apps/admin/dist/index.html
+          test -d apps/admin/dist/assets
 
       - name: Deploy admin
         id: deploy
         run: |
           started_at=$(date +%s)
-          bun run deploy:admin
+          bun run --cwd apps/admin-worker deploy:ci
           ended_at=$(date +%s)
           echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
         env:
@@ -341,6 +351,4 @@ jobs:
             echo "| --- | ---: |"
             echo "| install | ${{ steps.install.outputs.duration_seconds || 'n/a' }} |"
             echo "| deploy:admin | ${{ steps.deploy.outputs.duration_seconds || 'n/a' }} |"
-            echo
-            echo "- turbo cache hit: ${{ steps.turbo_cache.outputs.cache-hit || 'false' }}"
           } >> "$GITHUB_STEP_SUMMARY"

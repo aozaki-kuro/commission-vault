@@ -1,0 +1,37 @@
+{
+  // CI deploy entrypoint:
+  // expects apps/admin/dist to already exist from the validate job artifact.
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "commission-index-admin",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-03-17",
+  "assets": {
+    "directory": "../admin/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "preview_urls": false,
+  "workers_dev": false,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "commission-index-admin-data",
+      "database_id": "c448328b-830b-455a-ab90-06a9cf95d8aa",
+      "migrations_dir": "./migrations",
+      "remote": true
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "IMAGES",
+      "bucket_name": "commission-index-images",
+      "remote": true
+    }
+  ],
+  "routes": [
+    {
+      "pattern": "admin.crystallize.cc",
+      "custom_domain": true
+    }
+  ]
+}

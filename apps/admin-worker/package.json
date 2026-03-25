@@ -7,6 +7,7 @@
     "build:assets": "bun run --cwd ../admin build",
     "dev": "wrangler dev --config wrangler.jsonc",
     "dev:remote": "wrangler dev --config wrangler.jsonc",
+    "deploy:ci": "wrangler deploy --config wrangler.ci.jsonc",
     "d1:migrate": "wrangler d1 migrations apply DB --config wrangler.jsonc --remote",
     "web:fact-source:export": "bun run ./scripts/exportWebFactSource.ts",
     "web:fact-source:sync-images": "bun run ./scripts/syncMissingSourceImages.ts",

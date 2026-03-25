@@ -1,5 +1,12 @@
 # 统一迁移状态板（2026-03-18）
 
+## 本轮执行切片（2026-03-25 CI admin 重复构建消重）
+
+- [x] 复盘 admin validate/deploy 链路，确认重复构建发生点与可替代交付物
+- [x] 让 validate 产出可复用的 admin dist，并让 deploy job 直接消费已验证产物
+- [x] 拆出 admin CI 专用 Wrangler 配置，避免 deploy 阶段再次触发 build hook
+- [x] 跑 admin build 与 deploy dry-run，确认 CI 路径不再重复构建
+
 ## 本轮执行切片（2026-03-25 web typecheck 配置减脂）
 
 - [x] 复盘 `apps/web/tsconfig.typecheck.json` 是否仍有存在必要，并确认当前 `tsconfig.json` 可直接用于 `tsc --noEmit`
@@ -525,3 +532,9 @@
 - [x] `apps/web/tsconfig.typecheck.json` 已删除，`apps/web/package.json` 的 `typecheck` 已直接改为 `tsc --noEmit -p tsconfig.json`。
 - [x] `bun run typecheck` 通过，确认 root Turbo 仍会覆盖 `@commission-index/web`，且 web workspace 已直接使用主 `tsconfig.json` 完成类型检查。
 - [x] 本轮未调整 `wrangler.jsonc` 所有权与 deploy 入口，保持 workspace-local deploy 边界不变。
+
+## Review（2026-03-25 CI admin 重复构建消重）
+
+- [x] 已确认旧链路存在两次 `build:admin` 调用：一次在 `validate`，一次在 admin deploy 的 Wrangler `build.command`。
+- [x] `bun run build:admin` 通过，确认 validate 侧仍能单独产出可部署的 `apps/admin/dist`。
+- [x] `bun run --cwd apps/admin-worker deploy:ci --dry-run --outdir /tmp/commission-admin-ci` 通过，且日志中已不再出现 `[custom build] Running: bun run --cwd ../.. build:admin`。
