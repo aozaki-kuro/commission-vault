@@ -184,6 +184,7 @@ function syncArchivedDividerVisibility({
 interface UseCommissionSearchDomSyncOptions {
   disableDomFiltering: boolean
   hasDeferredQuery: boolean
+  hiddenArchivedMatchedCount: number
   matchedIds: Set<number>
   resolvedIndex: SearchIndex
   archivedBatchCount: number
@@ -195,6 +196,7 @@ interface UseCommissionSearchDomSyncOptions {
 export function useCommissionSearchDomSync({
   disableDomFiltering,
   hasDeferredQuery,
+  hiddenArchivedMatchedCount,
   matchedIds,
   resolvedIndex,
   archivedBatchCount,
@@ -251,6 +253,16 @@ export function useCommissionSearchDomSync({
     previousMatchedIdsRef.current = matchedIds
     previousFilterIndexRef.current = resolvedIndex
 
+    // Hide the archived placeholder when searching with no archived matches —
+    // keeping it visible would let users click into a section with zero results.
+    const { archivedPlaceholder } = resolvedIndex
+    if (archivedPlaceholder) {
+      const shouldHidePlaceholder = hasDeferredQuery && hiddenArchivedMatchedCount === 0
+      if (toggleHiddenClass(archivedPlaceholder, shouldHidePlaceholder)) {
+        didLayoutChange = true
+      }
+    }
+
     if (visibleEntriesCount === 0) {
       return
     }
@@ -283,6 +295,7 @@ export function useCommissionSearchDomSync({
   }, [
     disableDomFiltering,
     hasDeferredQuery,
+    hiddenArchivedMatchedCount,
     matchedIds,
     resolvedIndex,
     archivedBatchCount,

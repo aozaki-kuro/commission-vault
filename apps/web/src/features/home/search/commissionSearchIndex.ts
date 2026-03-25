@@ -29,6 +29,7 @@ export type SearchIndex = SearchIndexLike<Entry> & {
   hiddenEntryIds: Set<number>
   sections: Section[]
   archivedDivider: HTMLElement | null
+  archivedPlaceholder: HTMLElement | null
   suggestions: Suggestion[]
   visibleEntriesCount: number
   visibleEntryIds: Set<number>
@@ -118,6 +119,7 @@ export function createEmptySearchIndex(): SearchIndex {
     hiddenEntryIds: new Set<number>(),
     sections: [],
     archivedDivider: null,
+    archivedPlaceholder: null,
     allIds: new Set<number>(),
     suggestions: [],
     fuse: null,
@@ -147,9 +149,11 @@ function collectVisibilityMetrics(entries: Entry[]) {
 function finalizeSearchIndex(entries: Entry[], {
   sections = [],
   archivedDivider = null,
+  archivedPlaceholder = null,
 }: {
   sections?: Section[]
   archivedDivider?: HTMLElement | null
+  archivedPlaceholder?: HTMLElement | null
 } = {}): SearchIndex {
   const { entryById, suggestions } = getStableEntryDerivedState(entries)
 
@@ -159,6 +163,7 @@ function finalizeSearchIndex(entries: Entry[], {
     entryById,
     sections,
     archivedDivider,
+    archivedPlaceholder,
     suggestions,
   }
 }
@@ -255,8 +260,9 @@ function getDomSearchContext(viewMode: 'character' | 'timeline') {
   }))
 
   const archivedDivider = root.querySelector<HTMLElement>('[data-archived-divider="true"]')
+  const archivedPlaceholder = root.querySelector<HTMLElement>('[data-archived-sections-placeholder="true"]')
 
-  return { domEntries, sections, archivedDivider }
+  return { domEntries, sections, archivedDivider, archivedPlaceholder }
 }
 
 export function buildSearchIndex(viewMode: 'character' | 'timeline', externalEntries?: CommissionSearchEntrySource[], options?: {
@@ -273,9 +279,10 @@ export function buildSearchIndex(viewMode: 'character' | 'timeline', externalEnt
         domEntries: [] as Array<{ element: HTMLElement, sectionId?: string, domKey?: string }>,
         sections: [] as Section[],
         archivedDivider: null as HTMLElement | null,
+        archivedPlaceholder: null as HTMLElement | null,
       }
     : getDomSearchContext(viewMode)
-  const { domEntries, sections, archivedDivider } = domContext
+  const { domEntries, sections, archivedDivider, archivedPlaceholder } = domContext
 
   if (externalEntries) {
     const domEntryByKey = new Map(
@@ -291,7 +298,7 @@ export function buildSearchIndex(viewMode: 'character' | 'timeline', externalEnt
       entry.sectionId = domEntry?.sectionId
     }
 
-    return finalizeSearchIndex(entries, { sections, archivedDivider })
+    return finalizeSearchIndex(entries, { sections, archivedDivider, archivedPlaceholder })
   }
 
   const entries = domEntries.map(({ element, sectionId, domKey }, id) => {
@@ -307,7 +314,7 @@ export function buildSearchIndex(viewMode: 'character' | 'timeline', externalEnt
     }
   })
 
-  return finalizeSearchIndex(entries, { sections, archivedDivider })
+  return finalizeSearchIndex(entries, { sections, archivedDivider, archivedPlaceholder })
 }
 
 function addRelatedTerms(related: Map<string, Set<string>>, terms: string[]) {

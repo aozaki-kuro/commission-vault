@@ -425,6 +425,7 @@ export function useCommissionSearchModel({
   const { liveRef } = useCommissionSearchDomSync({
     disableDomFiltering,
     hasDeferredQuery,
+    hiddenArchivedMatchedCount,
     matchedIds,
     resolvedIndex,
     archivedBatchCount,
