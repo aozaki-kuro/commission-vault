@@ -123,7 +123,7 @@ jobs:
         run: bun run --cwd apps/web check:astro
 
       - name: Save turbo cache
-        if: always()
+        if: always() && steps.turbo_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v5
         with:
           path: .turbo
@@ -179,6 +179,17 @@ jobs:
           ended_at=$(date +%s)
           echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
 
+      - name: Restore turbo cache
+        id: turbo_cache
+        uses: actions/cache/restore@v5
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-web-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
+          restore-keys: |
+            turbo-${{ runner.os }}-web-
+            turbo-${{ runner.os }}-master-
+            turbo-${{ runner.os }}-
+
       - name: Restore generated web inputs
         id: generated_cache
         uses: actions/cache/restore@v5
@@ -200,6 +211,17 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+      # Derive a stable token from the exported data so turbo can reuse its
+      # cached Astro build when the fact source hasn't changed between pushes.
+      # (apps/web/generated/ is gitignored, so turbo can't hash it directly.)
+      - name: Derive WEB_BUILD_CACHE_TOKEN from exported data
+        run: |
+          hash=$(sha256sum \
+            apps/web/generated/fact-source/content.json \
+            apps/web/generated/fact-source/source-images-manifest.json \
+            | sha256sum | cut -c1-16)
+          echo "WEB_BUILD_CACHE_TOKEN=data-${hash}" >> "$GITHUB_ENV"
+
       - name: Astro check
         id: check
         run: |
@@ -218,15 +240,28 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          WEB_BUILD_CACHE_TOKEN: deploy-${{ github.sha }}
 
       # Save after a successful deploy so PRs and rebuild.yml can restore it.
+      # Skip when the exact key already exists (immutable cache) to avoid the
+      # "another job may be creating this cache" warning.
       - name: Save generated web inputs
-        if: success()
+        if: success() && steps.generated_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v5
         with:
           path: apps/web/generated
           key: generated-${{ runner.os }}-master-${{ hashFiles('apps/web/wrangler.jsonc', 'apps/admin-worker/scripts/exportWebFactSource.ts', 'packages/domain/src/factSource.ts') }}
+
+      # Key includes the data hash so one entry is created per unique
+      # (source × data) combination — not per push.
+      # continue-on-error suppresses the harmless warning on the rare case
+      # where the same combo is deployed twice.
+      - name: Save turbo cache
+        if: success()
+        continue-on-error: true
+        uses: actions/cache/save@v5
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-web-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}-${{ env.WEB_BUILD_CACHE_TOKEN }}
 
       - name: Summary
         if: always()
@@ -241,6 +276,7 @@ jobs:
             echo "| astro check | ${{ steps.check.outputs.duration_seconds || 'n/a' }} |"
             echo "| deploy:web | ${{ steps.deploy.outputs.duration_seconds || 'n/a' }} |"
             echo
+            echo "- turbo cache hit: ${{ steps.turbo_cache.outputs.cache-hit || 'false' }}"
             echo "- generated cache hit: ${{ steps.generated_cache.outputs.cache-hit || 'false' }}"
           } >> "$GITHUB_STEP_SUMMARY"
 
