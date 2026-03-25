@@ -3,7 +3,6 @@ import { fileURLToPath } from 'node:url'
 import react from '@astrojs/react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, fontProviders } from 'astro/config'
-import tsconfigPaths from 'vite-tsconfig-paths'
 import { assetsPipelineIntegration } from './server/assetsPipelineAstro'
 
 type AstroVitePlugins = NonNullable<NonNullable<AstroUserConfig['vite']>['plugins']>
@@ -13,7 +12,6 @@ type AstroVitePlugins = NonNullable<NonNullable<AstroUserConfig['vite']>['plugin
 // the plugin list coerced back onto Astro's config surface.
 const vitePlugins: AstroVitePlugins = [
   tailwindcss() as unknown as AstroVitePlugins[number],
-  tsconfigPaths(),
 ]
 
 export default defineConfig({
@@ -41,6 +39,7 @@ export default defineConfig({
   vite: {
     plugins: vitePlugins,
     resolve: {
+      tsconfigPaths: true,
       alias: {
         '@astrojs/react/server.js': fileURLToPath(new URL('./src/config/astroReactServerShim.ts', import.meta.url)),
       },
