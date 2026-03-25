@@ -1,11 +1,11 @@
-import type { HomeCharacterBatchPayload } from '#features/home/commission/batch/homeCharacterBatchPayload'
-import type { HomeCharacterBatchStatus } from '#features/home/server/homeCharacterBatches'
-import { readHomeCharacterBatchManifest } from '#features/home/commission/batch/homeCharacterBatchManifest'
-import { renderHomeCharacterBatchPayload } from '#features/home/commission/batch/homeCharacterBatchRender'
+import type { HomeCharacterBatchPayload } from '@features/home/commission/batch/homeCharacterBatchPayload'
+import type { HomeCharacterBatchStatus } from '@features/home/server/homeCharacterBatches'
+import { readHomeCharacterBatchManifest } from '@features/home/commission/batch/homeCharacterBatchManifest'
+import { renderHomeCharacterBatchPayload } from '@features/home/commission/batch/homeCharacterBatchRender'
 import {
   buildHomeCharacterBatchUrl,
 
-} from '#features/home/server/homeCharacterBatches'
+} from '@features/home/server/homeCharacterBatches'
 
 const batchRequestCache = new Map<string, Promise<HomeCharacterBatchPayload>>()
 const ACTIVE_TEMPLATE_SELECTOR = 'template[data-active-sections-template="true"]'

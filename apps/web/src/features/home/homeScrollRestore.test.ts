@@ -1,7 +1,7 @@
-import { ACTIVE_CHARACTERS_LOADED_EVENT } from '#features/home/commission/loader/activeCharactersEvent'
-import { ARCHIVED_CHARACTERS_LOADED_EVENT } from '#features/home/commission/loader/archivedCharactersEvent'
-import { TIMELINE_VIEW_LOADED_EVENT } from '#features/home/commission/loader/timelineViewLoader'
-import { HOME_SCROLL_RESTORE_ABORT_EVENT } from '#features/home/events'
+import { ACTIVE_CHARACTERS_LOADED_EVENT } from '@features/home/commission/loader/activeCharactersEvent'
+import { ARCHIVED_CHARACTERS_LOADED_EVENT } from '@features/home/commission/loader/archivedCharactersEvent'
+import { TIMELINE_VIEW_LOADED_EVENT } from '@features/home/commission/loader/timelineViewLoader'
+import { HOME_SCROLL_RESTORE_ABORT_EVENT } from '@features/home/events'
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountHomeScrollRestore } from './homeScrollRestore'

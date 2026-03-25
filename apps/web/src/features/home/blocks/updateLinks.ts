@@ -1,15 +1,15 @@
-import type { RequestActiveCharactersLoadOptions } from '#features/home/commission/loader/activeCharactersEvent'
+import type { RequestActiveCharactersLoadOptions } from '@features/home/commission/loader/activeCharactersEvent'
 import {
   ACTIVE_CHARACTERS_LOADED_EVENT,
   hasDeferredActiveCharacterTarget,
   requestActiveCharactersLoad,
-} from '#features/home/commission/loader/activeCharactersEvent'
-import { loadDeferredHomeNavTarget } from '#features/home/nav/homeNavTargetClient'
+} from '@features/home/commission/loader/activeCharactersEvent'
+import { loadDeferredHomeNavTarget } from '@features/home/nav/homeNavTargetClient'
 import {
   getHashFromHref,
   getHashTarget,
   scrollToHashTargetFromHrefWithoutHash,
-} from '#lib/navigation/hashAnchor'
+} from '@lib/navigation/hashAnchor'
 
 const UPDATE_ROOT_SELECTOR = '[data-home-update-links="true"]'
 const UPDATE_LINK_SELECTOR = '[data-home-update-link="true"]'

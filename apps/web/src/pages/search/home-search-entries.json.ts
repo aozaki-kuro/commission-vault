@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro'
-import { buildHomeSearchEntries } from '#lib/pipeline/homeSearchEntries'
+import { buildHomeSearchEntries } from '@lib/pipeline/homeSearchEntries'
 
 export const GET: APIRoute = async () => {
   const entries = buildHomeSearchEntries()

@@ -1,7 +1,7 @@
 import type {
   HomeCharacterBatchManifest,
   HomeCharacterBatchStatus,
-} from '#features/home/server/homeCharacterBatches'
+} from '@features/home/server/homeCharacterBatches'
 import { normalizeBatchTargetId } from './batchManifest'
 
 const MANIFEST_SELECTOR = 'script[data-home-character-batch-manifest="true"]'

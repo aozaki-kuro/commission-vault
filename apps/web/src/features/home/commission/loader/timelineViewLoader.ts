@@ -1,20 +1,20 @@
-import type { RequestTimelineViewLoadOptions } from '#features/home/commission/loader/timelineViewEvent'
+import type { RequestTimelineViewLoadOptions } from '@features/home/commission/loader/timelineViewEvent'
 import {
   fetchHomeTimelineBatch,
   mountHomeTimelineBatch,
   mountLegacyHomeTimelineBatch,
-} from '#features/home/commission/batch/homeTimelineBatchClient'
+} from '@features/home/commission/batch/homeTimelineBatchClient'
 import {
   getHomeTimelineBatchTotalCount,
   resolveDeferredTimelineBatch,
   TIMELINE_VIEW_LOAD_REQUEST_EVENT,
   writeTimelineLoadedBatchCount,
   writeTimelineLoadedState,
-} from '#features/home/commission/loader/timelineViewEvent'
-import { readCommissionViewMode } from '#features/home/commission/viewModeState'
-import { COMMISSION_VIEW_MODE_CHANGE_EVENT } from '#features/home/events'
-import { getHashTarget, scrollToHashTargetFromHrefWithoutHash } from '#lib/navigation/hashAnchor'
-import { dispatchSidebarSearchState } from '#lib/navigation/sidebarSearchState'
+} from '@features/home/commission/loader/timelineViewEvent'
+import { readCommissionViewMode } from '@features/home/commission/viewModeState'
+import { COMMISSION_VIEW_MODE_CHANGE_EVENT } from '@features/home/events'
+import { getHashTarget, scrollToHashTargetFromHrefWithoutHash } from '@lib/navigation/hashAnchor'
+import { dispatchSidebarSearchState } from '@lib/navigation/sidebarSearchState'
 
 export const TIMELINE_VIEW_LOADED_EVENT = 'home:timeline-view-loaded'
 

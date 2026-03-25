@@ -6,7 +6,7 @@ const { mockCommissionSearch } = vi.hoisted(() => ({
   mockCommissionSearch: vi.fn(),
 }))
 
-vi.mock('#features/home/search/CommissionSearch', () => ({
+vi.mock('@features/home/search/CommissionSearch', () => ({
   default: (props: Record<string, unknown>) => {
     mockCommissionSearch(props)
     const popularKeywords = (props.popularKeywords as string[] | undefined) ?? []

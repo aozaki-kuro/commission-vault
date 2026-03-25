@@ -1,4 +1,4 @@
-import { getHomeLocaleMessages } from '#features/home/i18n/homeLocale'
+import { getHomeLocaleMessages } from '@features/home/i18n/homeLocale'
 import { describe, expect, it } from 'vitest'
 
 describe('homeLocale archived summary formatter', () => {

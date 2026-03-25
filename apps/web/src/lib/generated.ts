@@ -1,4 +1,4 @@
-import type { HomeUpdateSummary } from '#lib/home/updateSummary'
+import type { HomeUpdateSummary } from '@lib/home/updateSummary'
 
 export const homeUpdateSummary: HomeUpdateSummary = {
   totalCommissions: 115,

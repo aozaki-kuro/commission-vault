@@ -1,11 +1,11 @@
-import type { Props } from '#data/types'
+import type { Props } from '@data/types'
 import {
   collectUniqueCommissions,
   flattenCommissions,
   parseCommissionFileName,
-} from '#lib/commissions'
-import { parseAndFormatDate } from '#lib/date/format'
-import { getBaseFileName, kebabCase } from '#lib/utils/strings'
+} from '@lib/commissions'
+import { parseAndFormatDate } from '@lib/date/format'
+import { getBaseFileName, kebabCase } from '@lib/utils/strings'
 
 export interface HomeUpdateEntry {
   key: string

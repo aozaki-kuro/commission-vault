@@ -1,12 +1,12 @@
 ---
-import type { Props as CommissionData } from '#data/types'
-import type { HomeUpdateSummary } from '#lib/home/updateSummary'
-import { getHomeLocaleMessages, normalizeHomeLocale } from '#features/home/i18n/homeLocale'
+import type { Props as CommissionData } from '@data/types'
+import type { HomeUpdateSummary } from '@lib/home/updateSummary'
+import { getHomeLocaleMessages, normalizeHomeLocale } from '@features/home/i18n/homeLocale'
 import {
   buildHomeUpdateSummary,
 
   isMilestoneCommissionCount,
-} from '#lib/home/updateSummary'
+} from '@lib/home/updateSummary'
 
 interface Props {
   locale?: string

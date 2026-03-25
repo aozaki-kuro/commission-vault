@@ -4,8 +4,8 @@ import {
   normalizeHomeCharacterTargetId,
   readHomeCharacterBatchManifest,
   resolveHomeCharacterTargetBatch,
-} from '#features/home/commission/batch/homeCharacterBatchManifest'
-import { templateContentContainsElementId } from '#features/home/commission/batch/templateContentLookup'
+} from '@features/home/commission/batch/homeCharacterBatchManifest'
+import { templateContentContainsElementId } from '@features/home/commission/batch/templateContentLookup'
 
 export const ACTIVE_CHARACTERS_LOAD_REQUEST_EVENT = 'home:active-characters-load-request'
 export const ACTIVE_CHARACTERS_LOADED_EVENT = 'home:active-characters-loaded'

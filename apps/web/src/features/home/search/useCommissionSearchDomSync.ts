@@ -1,5 +1,5 @@
-import type { SearchIndex } from '#features/home/search/commissionSearchIndex'
-import { dispatchSidebarSearchState } from '#lib/navigation/sidebarSearchState'
+import type { SearchIndex } from '@features/home/search/commissionSearchIndex'
+import { dispatchSidebarSearchState } from '@lib/navigation/sidebarSearchState'
 import { useEffect, useRef } from 'react'
 
 function areSetsEqual<T>(left: Set<T>, right: Set<T>) {

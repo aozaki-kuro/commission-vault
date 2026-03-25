@@ -1,9 +1,9 @@
 import type {
   ArchivedCharactersVisibility,
-} from '#features/home/commission/loader/archivedCharactersEvent'
-import type { RequestTimelineViewLoadOptions } from '#features/home/commission/loader/timelineViewEvent'
-import { ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT } from '#features/home/commission/loader/archivedCharactersEvent'
-import { dispatchHomeScrollRestoreAbort } from '#features/home/events'
+} from '@features/home/commission/loader/archivedCharactersEvent'
+import type { RequestTimelineViewLoadOptions } from '@features/home/commission/loader/timelineViewEvent'
+import { ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT } from '@features/home/commission/loader/archivedCharactersEvent'
+import { dispatchHomeScrollRestoreAbort } from '@features/home/events'
 
 type CharacterStatus = 'active' | 'archived'
 const HOME_NAV_TARGET_WAIT_TIMEOUT_MS = 10000

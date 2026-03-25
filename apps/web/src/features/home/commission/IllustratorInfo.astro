@@ -1,14 +1,14 @@
 ---
-import type { Commission } from '#data/types'
+import type { Commission } from '@data/types'
 import {
   COMMISSION_LINK_TEXT_CLASS,
   hasDisplayableLinks,
   selectDisplayLinks,
-} from '#features/home/commission/linkDisplay'
-import { getUnpublishedInterestIconMarkup } from '#features/home/commission/unpublishedInterestIcon'
-import { getHomeLocaleMessages, normalizeHomeLocale } from '#features/home/i18n/homeLocale'
-import { parseCommissionFileName } from '#lib/commissions/index'
-import { parseAndFormatDate } from '#lib/date/format'
+} from '@features/home/commission/linkDisplay'
+import { getUnpublishedInterestIconMarkup } from '@features/home/commission/unpublishedInterestIcon'
+import { getHomeLocaleMessages, normalizeHomeLocale } from '@features/home/i18n/homeLocale'
+import { parseCommissionFileName } from '@lib/commissions/index'
+import { parseAndFormatDate } from '@lib/date/format'
 
 interface IllustratorInfoProps {
   locale?: string

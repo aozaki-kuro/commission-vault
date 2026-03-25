@@ -26,7 +26,7 @@ function buildModuleSource(summary: HomeUpdateSummary) {
     },`,
   )
 
-  return `import type { HomeUpdateSummary } from '#lib/home/updateSummary'
+  return `import type { HomeUpdateSummary } from '@lib/home/updateSummary'
 
 export const homeUpdateSummary: HomeUpdateSummary = {
   totalCommissions: ${summary.totalCommissions},

@@ -6,9 +6,9 @@ import {
   ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT,
   persistArchivedCharactersVisibility,
   readSavedArchivedCharactersVisibility,
-} from '#features/home/commission/loader/archivedCharactersEvent'
-import { mountArchivedCharactersLoader } from '#features/home/commission/loader/archivedCharactersLoader'
-import { SIDEBAR_SEARCH_STATE_EVENT } from '#lib/navigation/sidebarSearchState'
+} from '@features/home/commission/loader/archivedCharactersEvent'
+import { mountArchivedCharactersLoader } from '@features/home/commission/loader/archivedCharactersLoader'
+import { SIDEBAR_SEARCH_STATE_EVENT } from '@lib/navigation/sidebarSearchState'
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

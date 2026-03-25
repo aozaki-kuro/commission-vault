@@ -3,8 +3,8 @@ import {
   hasDeferredHomeTimelineTarget,
   normalizeHomeTimelineTargetId,
   resolveHomeTimelineTargetBatch,
-} from '#features/home/commission/batch/homeTimelineBatchManifest'
-import { templateContentContainsElementId } from '#features/home/commission/batch/templateContentLookup'
+} from '@features/home/commission/batch/homeTimelineBatchManifest'
+import { templateContentContainsElementId } from '@features/home/commission/batch/templateContentLookup'
 import { readHomeTimelineBatchManifest } from '../batch/homeTimelineBatchManifest'
 
 export const TIMELINE_VIEW_LOAD_REQUEST_EVENT = 'home:timeline-load-request'

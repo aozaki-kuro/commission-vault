@@ -1,5 +1,5 @@
 import type { CommissionViewMode } from './CommissionViewModeSearch'
-import { COMMISSION_VIEW_MODE_CHANGE_EVENT } from '#features/home/events'
+import { COMMISSION_VIEW_MODE_CHANGE_EVENT } from '@features/home/events'
 import {
 
   parseCommissionViewModeFromSearch,

@@ -1,5 +1,5 @@
 import type { BatchEntryPayload } from './batchPayload'
-import { createUnpublishedInterestIconElement } from '#features/home/commission/unpublishedInterestIcon'
+import { createUnpublishedInterestIconElement } from '@features/home/commission/unpublishedInterestIcon'
 
 export const SECTION_CLASS = 'pb-6'
 export const TITLE_LINK_CLASS

@@ -1,12 +1,12 @@
-import { hasGeneratedFactSourceContent } from '#data/generatedFactSource'
-import { getBaseFileName } from '#lib/utils/strings'
+import { hasGeneratedFactSourceContent } from '@data/generatedFactSource'
+import { getBaseFileName } from '@lib/utils/strings'
 import { describe, expect, it } from 'vitest'
 import { collectUniqueCommissions, flattenCommissions, parseCommissionFileName } from './index'
 
 const describeRealData = hasGeneratedFactSourceContent() ? describe : describe.skip
 
 async function loadRealCommissionFixtures() {
-  const { getCommissionData } = await import('#data/commissionData')
+  const { getCommissionData } = await import('@data/commissionData')
   const data = getCommissionData()
 
   return {

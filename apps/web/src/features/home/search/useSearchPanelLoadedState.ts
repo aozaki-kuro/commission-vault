@@ -2,15 +2,15 @@ import {
   ACTIVE_CHARACTERS_LOADED_EVENT,
   readActiveCharactersLoadedBatchCount,
   readActiveCharactersLoadedState,
-} from '#features/home/commission/loader/activeCharactersEvent'
+} from '@features/home/commission/loader/activeCharactersEvent'
 import {
   ARCHIVED_CHARACTERS_COLLAPSED_EVENT,
   ARCHIVED_CHARACTERS_LOADED_EVENT,
   ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT,
   readArchivedCharactersLoadedBatchCount,
   readArchivedCharactersState,
-} from '#features/home/commission/loader/archivedCharactersEvent'
-import { TIMELINE_VIEW_LOADED_EVENT } from '#features/home/commission/loader/timelineViewLoader'
+} from '@features/home/commission/loader/archivedCharactersEvent'
+import { TIMELINE_VIEW_LOADED_EVENT } from '@features/home/commission/loader/timelineViewLoader'
 import { useCallback, useEffect, useLayoutEffect, useReducer } from 'react'
 
 const useSafeLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect

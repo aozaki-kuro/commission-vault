@@ -1,4 +1,4 @@
-import { kebabCase } from '#lib/utils/strings'
+import { kebabCase } from '@lib/utils/strings'
 
 interface CharacterEntry {
   DisplayName: string

@@ -1,4 +1,4 @@
-import { cn } from '#lib/utils/cn'
+import { cn } from '@lib/utils/cn'
 import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog'
 import * as React from 'react'
 

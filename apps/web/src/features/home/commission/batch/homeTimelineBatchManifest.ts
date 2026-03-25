@@ -1,4 +1,4 @@
-import type { HomeTimelineBatchManifest } from '#features/home/server/homeTimelineBatches'
+import type { HomeTimelineBatchManifest } from '@features/home/server/homeTimelineBatches'
 import { normalizeBatchTargetId } from './batchManifest'
 
 const MANIFEST_SELECTOR = 'script[data-home-timeline-batch-manifest="true"]'

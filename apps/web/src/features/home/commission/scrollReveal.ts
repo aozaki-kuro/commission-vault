@@ -7,7 +7,7 @@
  * visibility changes.
  */
 
-import { COMMISSION_VIEW_MODE_CHANGE_EVENT } from '#features/home/events'
+import { COMMISSION_VIEW_MODE_CHANGE_EVENT } from '@features/home/events'
 
 const REVEAL_ATTR = 'data-commission-entry'
 const REVEALED_ATTR = 'data-revealed'

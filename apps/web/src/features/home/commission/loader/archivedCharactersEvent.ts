@@ -4,9 +4,9 @@ import {
   normalizeHomeCharacterTargetId,
   readHomeCharacterBatchManifest,
   resolveHomeCharacterTargetBatch,
-} from '#features/home/commission/batch/homeCharacterBatchManifest'
-import { templateContentContainsElementId } from '#features/home/commission/batch/templateContentLookup'
-import { readCommissionViewMode } from '#features/home/commission/viewModeState'
+} from '@features/home/commission/batch/homeCharacterBatchManifest'
+import { templateContentContainsElementId } from '@features/home/commission/batch/templateContentLookup'
+import { readCommissionViewMode } from '@features/home/commission/viewModeState'
 
 export const ARCHIVED_CHARACTERS_SHOW_REQUEST_EVENT = 'home:archived-show-request'
 export const ARCHIVED_CHARACTERS_LOAD_REQUEST_EVENT = 'home:archived-load-request'

@@ -1,15 +1,15 @@
 ---
-import type { Commission } from '#data/types'
-import IllustratorInfo from '#features/home/commission/IllustratorInfo.astro'
-import ProtectedCommissionImage from '#features/home/commission/ProtectedCommissionImage.astro'
-import { getHomeLocaleMessages, normalizeHomeLocale } from '#features/home/i18n/homeLocale'
-import { parseCommissionFileName } from '#lib/commissions'
-import { resolveSourceImageByCommissionFileName } from '#lib/images/sourceImageRegistry'
+import type { Commission } from '@data/types'
+import IllustratorInfo from '@features/home/commission/IllustratorInfo.astro'
+import ProtectedCommissionImage from '@features/home/commission/ProtectedCommissionImage.astro'
+import { getHomeLocaleMessages, normalizeHomeLocale } from '@features/home/i18n/homeLocale'
+import { parseCommissionFileName } from '@lib/commissions'
+import { resolveSourceImageByCommissionFileName } from '@lib/images/sourceImageRegistry'
 import {
   buildCommissionSearchDomKey,
   buildCommissionSearchMetadata,
-} from '#lib/search/commissionSearchMetadata'
-import { getBaseFileName } from '#lib/utils/strings'
+} from '@lib/search/commissionSearchMetadata'
+import { getBaseFileName } from '@lib/utils/strings'
 
 export interface CommissionRenderEntry {
   character: string

@@ -1,5 +1,5 @@
-import type { AnalyticsEventProperties } from '#lib/analytics/track'
-import { ANALYTICS_EVENTS } from '#lib/analytics/events'
+import type { AnalyticsEventProperties } from '@lib/analytics/track'
+import { ANALYTICS_EVENTS } from '@lib/analytics/events'
 
 type TrackEvent = (name: string, properties?: AnalyticsEventProperties) => void
 

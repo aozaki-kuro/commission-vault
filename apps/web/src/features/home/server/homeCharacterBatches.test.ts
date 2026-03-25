@@ -1,5 +1,5 @@
-import type { CharacterCommissions } from '#data/types'
-import { getCharacterSectionId, getCharacterTitleId } from '#lib/characters/nav'
+import type { CharacterCommissions } from '@data/types'
+import { getCharacterSectionId, getCharacterTitleId } from '@lib/characters/nav'
 import { describe, expect, it } from 'vitest'
 import {
   buildHomeCharacterBatchManifest,

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT } from '#features/home/commission/loader/archivedCharactersEvent'
-import { HOME_SCROLL_RESTORE_ABORT_EVENT } from '#features/home/events'
+import { ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT } from '@features/home/commission/loader/archivedCharactersEvent'
+import { HOME_SCROLL_RESTORE_ABORT_EVENT } from '@features/home/events'
 import { describe, expect, it, vi } from 'vitest'
 import {
   loadDeferredHomeNavTarget,

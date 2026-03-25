@@ -2,8 +2,8 @@ import {
   readCommissionViewMode,
   replaceCommissionViewModeInAddress,
   resolveCommissionViewModeFromElement,
-} from '#features/home/commission/viewModeState'
-import { COMMISSION_VIEW_MODE_CHANGE_EVENT } from '#features/home/events'
+} from '@features/home/commission/viewModeState'
+import { COMMISSION_VIEW_MODE_CHANGE_EVENT } from '@features/home/events'
 
 const TOGGLE_SELECTOR = '[data-mobile-view-mode-toggle="true"]'
 

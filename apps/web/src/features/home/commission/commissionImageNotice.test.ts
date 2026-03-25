@@ -1,4 +1,4 @@
-import { ANALYTICS_EVENTS } from '#lib/analytics/events'
+import { ANALYTICS_EVENTS } from '@lib/analytics/events'
 import { waitFor } from '@testing-library/react'
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,13 +1,13 @@
 import type {
   CommissionWithCharacter,
-} from '#lib/commissions/index'
-import { getCommissionData } from '#data/commissionData'
+} from '@lib/commissions/index'
+import { getCommissionData } from '@data/commissionData'
 import {
   collectUniqueCommissions,
   flattenCommissions,
-} from '#lib/commissions/index'
-import { formatDate, parseDateString } from '#lib/date/format'
-import { getBaseFileName, kebabCase } from '#lib/utils/strings'
+} from '@lib/commissions/index'
+import { formatDate, parseDateString } from '@lib/date/format'
+import { getBaseFileName, kebabCase } from '@lib/utils/strings'
 
 const SITE_TITLE = 'Crystallize\'s Commission Index'
 const SITE_URL = 'https://crystallize.cc'

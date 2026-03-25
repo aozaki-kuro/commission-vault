@@ -1,5 +1,5 @@
 import process from 'node:process'
-import { getGeneratedSourceImageManifest } from '#data/generatedFactSource'
+import { getGeneratedSourceImageManifest } from '@data/generatedFactSource'
 
 interface SourceImageModule {
   default: ImageMetadata

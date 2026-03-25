@@ -1,14 +1,14 @@
 import type { CommissionSearchEntrySource } from './CommissionSearch'
-import { clearHomeCharacterBatchRequestCacheForTests } from '#features/home/commission/batch/homeCharacterBatchClient'
-import { clearHomeCharacterBatchManifestCacheForTests } from '#features/home/commission/batch/homeCharacterBatchManifest'
-import { ACTIVE_CHARACTERS_LOAD_REQUEST_EVENT } from '#features/home/commission/loader/activeCharactersEvent'
+import { clearHomeCharacterBatchRequestCacheForTests } from '@features/home/commission/batch/homeCharacterBatchClient'
+import { clearHomeCharacterBatchManifestCacheForTests } from '@features/home/commission/batch/homeCharacterBatchManifest'
+import { ACTIVE_CHARACTERS_LOAD_REQUEST_EVENT } from '@features/home/commission/loader/activeCharactersEvent'
 import {
   ARCHIVED_CHARACTERS_COLLAPSE_REQUEST_EVENT,
   ARCHIVED_CHARACTERS_LOAD_REQUEST_EVENT,
   ARCHIVED_CHARACTERS_LOADED_EVENT,
   ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT,
-} from '#features/home/commission/loader/archivedCharactersEvent'
-import { ANALYTICS_EVENTS } from '#lib/analytics/events'
+} from '@features/home/commission/loader/archivedCharactersEvent'
+import { ANALYTICS_EVENTS } from '@lib/analytics/events'
 // @vitest-environment jsdom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
@@ -18,7 +18,7 @@ const { mockTrackRybbitEvent } = vi.hoisted(() => ({
   mockTrackRybbitEvent: vi.fn(),
 }))
 
-vi.mock('#lib/analytics/track', () => ({
+vi.mock('@lib/analytics/track', () => ({
   trackRybbitEvent: (...args: unknown[]) => mockTrackRybbitEvent(...args),
 }))
 

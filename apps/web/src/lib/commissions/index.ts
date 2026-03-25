@@ -1,5 +1,5 @@
-import type { CharacterCommissions, Commission, Props } from '#data/types'
-import { getBaseFileName } from '#lib/utils/strings'
+import type { CharacterCommissions, Commission, Props } from '@data/types'
+import { getBaseFileName } from '@lib/utils/strings'
 
 export type CommissionWithCharacter = Commission & { character: string }
 

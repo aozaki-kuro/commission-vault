@@ -1,7 +1,7 @@
-import type { CharacterCommissions } from '#data/types'
-import type { HomeLocale } from '#features/home/i18n/homeLocale'
-import { getCharacterSectionId, getCharacterTitleId } from '#lib/characters/nav'
-import { parseCommissionFileName } from '#lib/commissions'
+import type { CharacterCommissions } from '@data/types'
+import type { HomeLocale } from '@features/home/i18n/homeLocale'
+import { getCharacterSectionId, getCharacterTitleId } from '@lib/characters/nav'
+import { parseCommissionFileName } from '@lib/commissions'
 
 export type HomeCharacterBatchStatus = 'active' | 'archived'
 

@@ -1,13 +1,13 @@
 import type { APIRoute } from 'astro'
-import { getCharacterAliases } from '#data/characterAliases'
-import { getKeywordAliases } from '#data/keywordAliases'
-import { HOME_LOCALES, normalizeHomeLocale } from '#features/home/i18n/homeLocale'
-import { buildHomeTimelineBatchPlan } from '#features/home/server/homeTimelineBatches'
-import { buildHomeTimelineBatchPayload } from '#features/home/server/homeTimelineBatchPayload'
-import { normalizeCharacterAliasKey } from '#lib/characterAliases'
-import { buildSitePayload } from '#lib/home/buildSitePayload'
-import { normalizeKeywordAliasKey } from '#lib/keywordAliases'
-import { buildCreatorAliasesMap } from '#lib/sitePayload'
+import { getCharacterAliases } from '@data/characterAliases'
+import { getKeywordAliases } from '@data/keywordAliases'
+import { HOME_LOCALES, normalizeHomeLocale } from '@features/home/i18n/homeLocale'
+import { buildHomeTimelineBatchPlan } from '@features/home/server/homeTimelineBatches'
+import { buildHomeTimelineBatchPayload } from '@features/home/server/homeTimelineBatchPayload'
+import { normalizeCharacterAliasKey } from '@lib/characterAliases'
+import { buildSitePayload } from '@lib/home/buildSitePayload'
+import { normalizeKeywordAliasKey } from '@lib/keywordAliases'
+import { buildCreatorAliasesMap } from '@lib/sitePayload'
 
 function getBatchPlan() {
   const payload = buildSitePayload()

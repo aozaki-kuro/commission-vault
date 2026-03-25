@@ -1,20 +1,12 @@
 import { resolve } from 'node:path'
-import tsconfigPaths from 'vite-tsconfig-paths'
 import { defineConfig } from 'vitest/config'
 
 const rootDir = import.meta.dirname
 
 export default defineConfig({
-  plugins: [
-    tsconfigPaths({
-      projects: [
-        resolve(rootDir, 'tsconfig.json'),
-        resolve(rootDir, 'apps/web/tsconfig.json'),
-        resolve(rootDir, 'apps/admin/tsconfig.json'),
-        resolve(rootDir, 'apps/admin-worker/tsconfig.json'),
-      ],
-    }),
-  ],
+  resolve: {
+    tsconfigPaths: true,
+  },
   test: {
     environment: 'node',
     setupFiles: [resolve(rootDir, 'apps/web/test/setup.tsx')],

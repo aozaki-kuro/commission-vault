@@ -1,19 +1,19 @@
-import type { RequestActiveCharactersLoadOptions } from '#features/home/commission/loader/activeCharactersEvent'
+import type { RequestActiveCharactersLoadOptions } from '@features/home/commission/loader/activeCharactersEvent'
 import {
   fetchHomeCharacterBatch,
   getHomeCharacterBatchTotalCount,
   mountHomeCharacterBatch,
   mountLegacyHomeCharacterBatch,
   prefetchHomeCharacterBatches,
-} from '#features/home/commission/batch/homeCharacterBatchClient'
+} from '@features/home/commission/batch/homeCharacterBatchClient'
 import {
   ACTIVE_CHARACTERS_LOAD_REQUEST_EVENT,
   ACTIVE_CHARACTERS_LOADED_EVENT,
 
   resolveDeferredActiveCharacterBatch,
-} from '#features/home/commission/loader/activeCharactersEvent'
-import { getHashTarget, scrollToHashTargetFromHrefWithoutHash } from '#lib/navigation/hashAnchor'
-import { dispatchSidebarSearchState } from '#lib/navigation/sidebarSearchState'
+} from '@features/home/commission/loader/activeCharactersEvent'
+import { getHashTarget, scrollToHashTargetFromHrefWithoutHash } from '@lib/navigation/hashAnchor'
+import { dispatchSidebarSearchState } from '@lib/navigation/sidebarSearchState'
 
 const CHARACTER_PANEL_SELECTOR = '[data-commission-view-panel="character"]'
 const ACTIVE_CONTAINER_SELECTOR = '[data-active-sections-container="true"]'

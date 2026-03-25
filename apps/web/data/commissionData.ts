@@ -1,7 +1,7 @@
-import type { Props } from '#data/types'
+import type { Props } from '@data/types'
 import type { CharacterRecord } from './commissionRecords'
 import process from 'node:process'
-import { filterHiddenCommissions, sortCommissionsByDate } from '#lib/commissions'
+import { filterHiddenCommissions, sortCommissionsByDate } from '@lib/commissions'
 import { characterRecords, getCharacterRecords } from './commissionRecords'
 
 const isDevelopment = process.env.NODE_ENV === 'development'

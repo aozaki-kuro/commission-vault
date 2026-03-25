@@ -1,7 +1,7 @@
-import type { Props } from '#data/types'
+import type { Props } from '@data/types'
 import type { SearchEntryLike, SearchIndexLike, SuggestionEntryLike } from './index'
-import { hasGeneratedFactSourceContent } from '#data/generatedFactSource'
-import { flattenCommissions, parseCommissionFileName } from '#lib/commissions/index'
+import { hasGeneratedFactSourceContent } from '@data/generatedFactSource'
+import { flattenCommissions, parseCommissionFileName } from '@lib/commissions/index'
 import Fuse from 'fuse.js'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import {
@@ -45,7 +45,7 @@ beforeAll(async () => {
     return
   }
 
-  const { getCommissionData } = await import('#data/commissionData')
+  const { getCommissionData } = await import('@data/commissionData')
   commissionData = getCommissionData()
 })
 

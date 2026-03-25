@@ -1,15 +1,31 @@
 {
-  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "paths": {
-      "#layouts/*": ["./apps/web/src/layouts/*"],
-      "#features/*": ["./apps/web/src/features/*"],
-      "#components/*": ["./apps/web/src/components/*"],
-      "#data/*": ["./apps/web/data/*"],
-      "#lib/*": ["./apps/web/src/lib/*"],
-      "#config/*": ["./apps/web/src/config/*"]
-    },
-    "types": ["node"]
+    "incremental": true,
+    "target": "ES2022",
+    "jsx": "react-jsx",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "allowJs": true,
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": true,
+    "traceResolution": false,
+    "listEmittedFiles": false,
+    "listFiles": false,
+    "pretty": true,
+    "importHelpers": true,
+    "inlineSourceMap": true,
+    "noEmit": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "skipLibCheck": true
   },
   "include": [".astro/types.d.ts", "**/*.ts", "**/*.tsx", "**/*.astro"],
   "exclude": ["node_modules"]

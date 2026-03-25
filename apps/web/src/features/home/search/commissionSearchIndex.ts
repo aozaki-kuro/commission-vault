@@ -1,10 +1,10 @@
-import type { SearchEntryLike, SearchIndexLike, Suggestion, SuggestionEntryLike } from '#lib/search/index'
+import type { SearchEntryLike, SearchIndexLike, Suggestion, SuggestionEntryLike } from '@lib/search/index'
 import {
   collectSuggestions,
   createSearchIndex,
   parseSuggestionRows,
 
-} from '#lib/search/index'
+} from '@lib/search/index'
 
 export type Entry = SearchEntryLike
   & SuggestionEntryLike & {

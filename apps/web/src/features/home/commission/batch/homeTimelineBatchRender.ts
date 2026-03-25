@@ -1,7 +1,7 @@
 import type {
   HomeTimelineBatchPayload,
   HomeTimelineBatchSectionPayload,
-} from '#features/home/commission/batch/homeTimelineBatchPayload'
+} from '@features/home/commission/batch/homeTimelineBatchPayload'
 import {
   renderEntry,
   SECTION_CLASS,

@@ -1,15 +1,15 @@
-import { prefetchHomeCharacterBatches } from '#features/home/commission/batch/homeCharacterBatchClient'
-import { normalizeHomeCharacterTargetId } from '#features/home/commission/batch/homeCharacterBatchManifest'
+import { prefetchHomeCharacterBatches } from '@features/home/commission/batch/homeCharacterBatchClient'
+import { normalizeHomeCharacterTargetId } from '@features/home/commission/batch/homeCharacterBatchManifest'
 import {
   hasDeferredActiveCharacterTarget,
   readActiveCharactersLoadedBatchCount,
   resolveDeferredActiveCharacterBatch,
-} from '#features/home/commission/loader/activeCharactersEvent'
+} from '@features/home/commission/loader/activeCharactersEvent'
 import {
   hasArchivedCharacterTarget,
   readArchivedCharactersLoadedBatchCount,
   resolveDeferredArchivedCharacterBatch,
-} from '#features/home/commission/loader/archivedCharactersEvent'
+} from '@features/home/commission/loader/archivedCharactersEvent'
 
 function resolveTargetSectionId(rawTargetId: string | null | undefined) {
   return normalizeHomeCharacterTargetId(rawTargetId) || null

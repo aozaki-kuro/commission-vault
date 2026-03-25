@@ -1,9 +1,9 @@
 import {
   ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT,
-} from '#features/home/commission/loader/archivedCharactersEvent'
-import { HOME_SCROLL_RESTORE_ABORT_EVENT } from '#features/home/events'
-import { ANALYTICS_EVENTS } from '#lib/analytics/events'
-import { SIDEBAR_SEARCH_STATE_EVENT } from '#lib/navigation/sidebarSearchState'
+} from '@features/home/commission/loader/archivedCharactersEvent'
+import { HOME_SCROLL_RESTORE_ABORT_EVENT } from '@features/home/events'
+import { ANALYTICS_EVENTS } from '@lib/analytics/events'
+import { SIDEBAR_SEARCH_STATE_EVENT } from '@lib/navigation/sidebarSearchState'
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountSidebarNavEnhancer } from './sidebarNavEnhancer'

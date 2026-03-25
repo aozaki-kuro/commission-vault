@@ -1,7 +1,7 @@
 import type {
   HomeCharacterBatchPayload,
   HomeCharacterBatchSectionPayload,
-} from '#features/home/commission/batch/homeCharacterBatchPayload'
+} from '@features/home/commission/batch/homeCharacterBatchPayload'
 import {
   renderEntry,
   SECTION_CLASS,

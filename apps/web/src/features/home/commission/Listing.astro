@@ -1,8 +1,8 @@
 ---
-import type { CharacterCommissions } from '#data/types'
-import CommissionEntries from '#features/home/commission/CommissionEntries.astro'
-import { getHomeLocaleMessages, normalizeHomeLocale } from '#features/home/i18n/homeLocale'
-import { getCharacterSectionHash, getCharacterSectionId, getCharacterTitleId } from '#lib/characters/nav'
+import type { CharacterCommissions } from '@data/types'
+import CommissionEntries from '@features/home/commission/CommissionEntries.astro'
+import { getHomeLocaleMessages, normalizeHomeLocale } from '@features/home/i18n/homeLocale'
+import { getCharacterSectionHash, getCharacterSectionId, getCharacterTitleId } from '@lib/characters/nav'
 
 interface ListingProps {
   locale?: string

@@ -1,5 +1,5 @@
 import process from 'node:process'
-import { dedupeKeywords } from '#lib/search/popularKeywords'
+import { dedupeKeywords } from '@lib/search/popularKeywords'
 import { getGeneratedFactSourceContent } from './generatedFactSource'
 
 const DEFAULT_FEATURED_LIMIT = 6

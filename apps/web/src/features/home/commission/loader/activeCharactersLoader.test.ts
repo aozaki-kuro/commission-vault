@@ -1,8 +1,8 @@
 import {
   ACTIVE_CHARACTERS_LOAD_REQUEST_EVENT,
   ACTIVE_CHARACTERS_LOADED_EVENT,
-} from '#features/home/commission/loader/activeCharactersEvent'
-import { SIDEBAR_SEARCH_STATE_EVENT } from '#lib/navigation/sidebarSearchState'
+} from '@features/home/commission/loader/activeCharactersEvent'
+import { SIDEBAR_SEARCH_STATE_EVENT } from '@lib/navigation/sidebarSearchState'
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
 import { mountActiveCharactersLoader } from './activeCharactersLoader'

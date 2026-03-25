@@ -1,4 +1,4 @@
-import type { HomeCharacterBatchStatus } from '#features/home/server/homeCharacterBatches'
+import type { HomeCharacterBatchStatus } from '@features/home/server/homeCharacterBatches'
 import type { BatchEntryPayload, BatchImagePayload, BatchInterestPayload, BatchLinkPayload } from './batchPayload'
 
 export type HomeCharacterBatchImagePayload = BatchImagePayload

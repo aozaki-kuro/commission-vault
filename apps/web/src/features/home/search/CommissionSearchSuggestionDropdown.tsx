@@ -1,5 +1,5 @@
-import type { SuggestionTokenOperator } from '#lib/search/index'
-import { CommandItem, CommandList } from '#components/ui/command'
+import type { SuggestionTokenOperator } from '@lib/search/index'
+import { CommandItem, CommandList } from '@components/ui/command'
 
 import { LOAD_ARCHIVED_COMMAND_VALUE } from './commissionSearchConstants'
 

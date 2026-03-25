@@ -1,7 +1,7 @@
-import type { HomeLocale } from '#features/home/i18n/homeLocale'
-import type { TimelineYearGroup } from '#lib/commissions/timeline'
-import { getCharacterSectionId } from '#lib/characters/nav'
-import { parseCommissionFileName } from '#lib/commissions'
+import type { HomeLocale } from '@features/home/i18n/homeLocale'
+import type { TimelineYearGroup } from '@lib/commissions/timeline'
+import { getCharacterSectionId } from '@lib/characters/nav'
+import { parseCommissionFileName } from '@lib/commissions'
 
 export interface HomeTimelineBatchPlan {
   initialGroups: TimelineYearGroup[]

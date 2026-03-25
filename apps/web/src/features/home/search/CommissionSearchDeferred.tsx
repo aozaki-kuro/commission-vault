@@ -1,10 +1,10 @@
-import type { CommissionSearchEntrySource, SearchSuggestionAliasGroup } from '#features/home/search/CommissionSearch'
-import { resolveHomeSearchControls } from '#features/home/i18n/homeSearchControls'
-import CommissionSearch from '#features/home/search/CommissionSearch'
+import type { CommissionSearchEntrySource, SearchSuggestionAliasGroup } from '@features/home/search/CommissionSearch'
+import { resolveHomeSearchControls } from '@features/home/i18n/homeSearchControls'
+import CommissionSearch from '@features/home/search/CommissionSearch'
 import {
   buildPopularKeywordPoolFromSuggestTexts,
   dedupeKeywords,
-} from '#lib/search/popularKeywords'
+} from '@lib/search/popularKeywords'
 import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
 
 const MAX_FEATURED_KEYWORDS = 6

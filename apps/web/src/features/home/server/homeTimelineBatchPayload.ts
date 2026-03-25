@@ -1,24 +1,24 @@
-import type { Commission } from '#data/types'
+import type { Commission } from '@data/types'
 import type {
   HomeTimelineBatchEntryPayload,
   HomeTimelineBatchPayload,
   HomeTimelineBatchSectionPayload,
-} from '#features/home/commission/batch/homeTimelineBatchPayload'
-import type { HomeLocale } from '#features/home/i18n/homeLocale'
-import type { TimelineYearGroup } from '#lib/commissions/timeline'
+} from '@features/home/commission/batch/homeTimelineBatchPayload'
+import type { HomeLocale } from '@features/home/i18n/homeLocale'
+import type { TimelineYearGroup } from '@lib/commissions/timeline'
 import {
   COMMISSION_LINK_TEXT_CLASS,
   selectDisplayLinks,
-} from '#features/home/commission/linkDisplay'
-import { getHomeLocaleMessages } from '#features/home/i18n/homeLocale'
-import { getCharacterSectionId } from '#lib/characters/nav'
-import { parseCommissionFileName } from '#lib/commissions'
-import { parseAndFormatDate } from '#lib/date/format'
+} from '@features/home/commission/linkDisplay'
+import { getHomeLocaleMessages } from '@features/home/i18n/homeLocale'
+import { getCharacterSectionId } from '@lib/characters/nav'
+import { parseCommissionFileName } from '@lib/commissions'
+import { parseAndFormatDate } from '@lib/date/format'
 import {
   buildCommissionSearchDomKey,
   buildCommissionSearchMetadata,
-} from '#lib/search/commissionSearchMetadata'
-import { getBaseFileName } from '#lib/utils/strings'
+} from '@lib/search/commissionSearchMetadata'
+import { getBaseFileName } from '@lib/utils/strings'
 import { buildImagePayload, buildInterestPayload, COMMISSION_IMAGE_SIZES } from './batchPayloadBuilder'
 
 async function buildEntryPayload({

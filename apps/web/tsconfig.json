@@ -1,17 +1,16 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "#layouts/*": ["./src/layouts/*"],
-      "#features/*": ["./src/features/*"],
-      "#components/*": ["./src/components/*"],
-      "#images/*": ["./public/images/*"],
-      "#data/*": ["./data/*"],
-      "#lib/*": ["./src/lib/*"],
-      "#styles/*": ["./src/styles/*"],
-      "#config/*": ["./src/config/*"]
-    },
-    "types": ["node"]
+      "@layouts/*": ["./src/layouts/*"],
+      "@features/*": ["./src/features/*"],
+      "@components/*": ["./src/components/*"],
+      "@images/*": ["./public/images/*"],
+      "@data/*": ["./data/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@styles/*": ["./src/styles/*"],
+      "@config/*": ["./src/config/*"]
+    }
   },
   "include": [".astro/types.d.ts", "**/*.ts", "**/*.tsx", "**/*.astro"],
   "exclude": ["node_modules"]

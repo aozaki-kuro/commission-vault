@@ -1,37 +1,37 @@
-import type { HomeSearchControls } from '#features/home/i18n/homeSearchControls'
+import type { HomeSearchControls } from '@features/home/i18n/homeSearchControls'
 import type {
   CommissionSearchEntrySource,
   SearchSuggestionAliasGroup,
-} from '#features/home/search/commissionSearchIndex'
+} from '@features/home/search/commissionSearchIndex'
 import type { KeyboardEvent, MouseEvent } from 'react'
-import { Button } from '#components/ui/button'
-import { Command, CommandInput } from '#components/ui/command'
-import { Popover, PopoverTrigger } from '#components/ui/popover'
+import { Button } from '@components/ui/button'
+import { Command, CommandInput } from '@components/ui/command'
+import { Popover, PopoverTrigger } from '@components/ui/popover'
 import {
   getHomeCharacterBatchTotalCount,
   prefetchHomeCharacterBatches,
-} from '#features/home/commission/batch/homeCharacterBatchClient'
-import { useCommissionViewMode } from '#features/home/commission/CommissionViewMode'
-import { readActiveCharactersLoadedBatchCount } from '#features/home/commission/loader/activeCharactersEvent'
+} from '@features/home/commission/batch/homeCharacterBatchClient'
+import { useCommissionViewMode } from '@features/home/commission/CommissionViewMode'
+import { readActiveCharactersLoadedBatchCount } from '@features/home/commission/loader/activeCharactersEvent'
 import {
   requestArchivedCharactersLoad as dispatchArchivedCharactersLoad,
   readArchivedCharactersLoadedBatchCount,
-} from '#features/home/commission/loader/archivedCharactersEvent'
-import { resolveHomeSearchControls } from '#features/home/i18n/homeSearchControls'
-import CommissionSearchHelpPopover from '#features/home/search/CommissionSearchHelpPopover'
-import CommissionSearchSuggestionDropdown from '#features/home/search/CommissionSearchSuggestionDropdown'
-import PopularKeywordsRow from '#features/home/search/PopularKeywordsRow'
+} from '@features/home/commission/loader/archivedCharactersEvent'
+import { resolveHomeSearchControls } from '@features/home/i18n/homeSearchControls'
+import CommissionSearchHelpPopover from '@features/home/search/CommissionSearchHelpPopover'
+import CommissionSearchSuggestionDropdown from '@features/home/search/CommissionSearchSuggestionDropdown'
+import PopularKeywordsRow from '@features/home/search/PopularKeywordsRow'
 import {
   dispatchSearchQueryLocationChange,
   useCommissionSearchModel,
-} from '#features/home/search/useCommissionSearchModel'
-import { useSuggestionPanelController } from '#features/home/search/useSuggestionPanelController'
-import { jumpToCommissionSearch } from '#lib/navigation/jumpToCommissionSearch'
+} from '@features/home/search/useCommissionSearchModel'
+import { useSuggestionPanelController } from '@features/home/search/useSuggestionPanelController'
+import { jumpToCommissionSearch } from '@lib/navigation/jumpToCommissionSearch'
 import {
   applySuggestionToQuery,
   normalizeQuery,
   normalizeQuotedTokenBoundary,
-} from '#lib/search/index'
+} from '@lib/search/index'
 import { IconCheck, IconHelpCircle, IconSearch, IconShare3, IconX } from '@tabler/icons-react'
 import {
 
@@ -44,7 +44,7 @@ import {
 export type {
   CommissionSearchEntrySource,
   SearchSuggestionAliasGroup,
-} from '#features/home/search/commissionSearchIndex'
+} from '@features/home/search/commissionSearchIndex'
 
 function shouldUseTapLikeFocus() {
   if (typeof window === 'undefined' || typeof navigator === 'undefined')

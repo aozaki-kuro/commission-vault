@@ -1,28 +1,28 @@
-import type { CharacterCommissions, Commission } from '#data/types'
+import type { CharacterCommissions, Commission } from '@data/types'
 import type {
   HomeCharacterBatchEntryPayload,
   HomeCharacterBatchPayload,
   HomeCharacterBatchSectionPayload,
-} from '#features/home/commission/batch/homeCharacterBatchPayload'
-import type { HomeLocale } from '#features/home/i18n/homeLocale'
+} from '@features/home/commission/batch/homeCharacterBatchPayload'
+import type { HomeLocale } from '@features/home/i18n/homeLocale'
 import type { HomeCharacterBatchStatus } from './homeCharacterBatches'
 import {
   COMMISSION_LINK_TEXT_CLASS,
   selectDisplayLinks,
-} from '#features/home/commission/linkDisplay'
-import { getHomeLocaleMessages } from '#features/home/i18n/homeLocale'
+} from '@features/home/commission/linkDisplay'
+import { getHomeLocaleMessages } from '@features/home/i18n/homeLocale'
 import {
   getCharacterSectionHash,
   getCharacterSectionId,
   getCharacterTitleId,
-} from '#lib/characters/nav'
-import { parseCommissionFileName } from '#lib/commissions'
-import { parseAndFormatDate } from '#lib/date/format'
+} from '@lib/characters/nav'
+import { parseCommissionFileName } from '@lib/commissions'
+import { parseAndFormatDate } from '@lib/date/format'
 import {
   buildCommissionSearchDomKey,
   buildCommissionSearchMetadata,
-} from '#lib/search/commissionSearchMetadata'
-import { getBaseFileName } from '#lib/utils/strings'
+} from '@lib/search/commissionSearchMetadata'
+import { getBaseFileName } from '@lib/utils/strings'
 import { buildImagePayload, buildInterestPayload, COMMISSION_IMAGE_SIZES } from './batchPayloadBuilder'
 
 async function buildEntryPayload({

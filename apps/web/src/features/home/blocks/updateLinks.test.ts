@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { ACTIVE_CHARACTERS_LOADED_EVENT } from '#features/home/commission/loader/activeCharactersEvent'
-import { HOME_SCROLL_RESTORE_ABORT_EVENT } from '#features/home/events'
+import { ACTIVE_CHARACTERS_LOADED_EVENT } from '@features/home/commission/loader/activeCharactersEvent'
+import { HOME_SCROLL_RESTORE_ABORT_EVENT } from '@features/home/events'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountHomeUpdateLinks } from './updateLinks'
 

@@ -1,6 +1,6 @@
-import type { CharacterCommissions, Commission } from '#data/types'
-import type { CharacterNavItem } from '#lib/characters/nav'
-import { sortCommissionsByDate } from '#lib/commissions'
+import type { CharacterCommissions, Commission } from '@data/types'
+import type { CharacterNavItem } from '@lib/characters/nav'
+import { sortCommissionsByDate } from '@lib/commissions'
 
 export interface TimelineCommissionEntry {
   character: string

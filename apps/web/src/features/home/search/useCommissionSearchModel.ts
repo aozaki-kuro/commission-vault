@@ -1,9 +1,9 @@
-import type { CommissionSearchEntrySource, SearchIndex, SearchSuggestionAliasGroup } from '#features/home/search/commissionSearchIndex'
-import type { SuggestionViewModel } from '#features/home/search/CommissionSearchSuggestionDropdown'
-import { requestActiveCharactersLoad } from '#features/home/commission/loader/activeCharactersEvent'
-import { requestArchivedCharactersLoad } from '#features/home/commission/loader/archivedCharactersEvent'
-import { requestTimelineViewLoad } from '#features/home/commission/loader/timelineViewEvent'
-import { LOAD_ARCHIVED_COMMAND_VALUE } from '#features/home/search/commissionSearchConstants'
+import type { CommissionSearchEntrySource, SearchIndex, SearchSuggestionAliasGroup } from '@features/home/search/commissionSearchIndex'
+import type { SuggestionViewModel } from '@features/home/search/CommissionSearchSuggestionDropdown'
+import { requestActiveCharactersLoad } from '@features/home/commission/loader/activeCharactersEvent'
+import { requestArchivedCharactersLoad } from '@features/home/commission/loader/archivedCharactersEvent'
+import { requestTimelineViewLoad } from '@features/home/commission/loader/timelineViewEvent'
+import { LOAD_ARCHIVED_COMMAND_VALUE } from '@features/home/search/commissionSearchConstants'
 import {
   buildRelatedSuggestionTermsMap,
   buildSearchIndex,
@@ -11,11 +11,11 @@ import {
   createEmptySearchIndex,
   getDisplayMetrics,
 
-} from '#features/home/search/commissionSearchIndex'
-import { useCommissionSearchDomSync } from '#features/home/search/useCommissionSearchDomSync'
-import { useSearchPanelLoadedState } from '#features/home/search/useSearchPanelLoadedState'
-import { ANALYTICS_EVENTS } from '#lib/analytics/events'
-import { trackRybbitEvent } from '#lib/analytics/track'
+} from '@features/home/search/commissionSearchIndex'
+import { useCommissionSearchDomSync } from '@features/home/search/useCommissionSearchDomSync'
+import { useSearchPanelLoadedState } from '@features/home/search/useSearchPanelLoadedState'
+import { ANALYTICS_EVENTS } from '@lib/analytics/events'
+import { trackRybbitEvent } from '@lib/analytics/track'
 import {
   filterSuggestions,
   getMatchedEntryIds,
@@ -23,7 +23,7 @@ import {
   normalizeQuery,
   parseSuggestionInputState,
   resolveSuggestionContextMatchedIds,
-} from '#lib/search/index'
+} from '@lib/search/index'
 import {
   useCallback,
   useDeferredValue,

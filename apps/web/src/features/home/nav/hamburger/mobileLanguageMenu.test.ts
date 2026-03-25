@@ -1,4 +1,4 @@
-import { HAMBURGER_MENU_MOUNTED_CHANGE_EVENT } from '#features/home/events'
+import { HAMBURGER_MENU_MOUNTED_CHANGE_EVENT } from '@features/home/events'
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest'
 import { mountMobileLanguageMenu } from './mobileLanguageMenu'

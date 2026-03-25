@@ -1,7 +1,7 @@
-import type { HomeTimelineBatchPayload } from '#features/home/commission/batch/homeTimelineBatchPayload'
-import { readHomeTimelineBatchManifest } from '#features/home/commission/batch/homeTimelineBatchManifest'
-import { renderHomeTimelineBatchPayload } from '#features/home/commission/batch/homeTimelineBatchRender'
-import { buildHomeTimelineBatchUrl } from '#features/home/server/homeTimelineBatches'
+import type { HomeTimelineBatchPayload } from '@features/home/commission/batch/homeTimelineBatchPayload'
+import { readHomeTimelineBatchManifest } from '@features/home/commission/batch/homeTimelineBatchManifest'
+import { renderHomeTimelineBatchPayload } from '@features/home/commission/batch/homeTimelineBatchRender'
+import { buildHomeTimelineBatchUrl } from '@features/home/server/homeTimelineBatches'
 
 const batchRequestCache = new Map<string, Promise<HomeTimelineBatchPayload>>()
 const LEGACY_TIMELINE_TEMPLATE_SELECTOR = 'template'

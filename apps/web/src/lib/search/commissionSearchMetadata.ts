@@ -1,8 +1,8 @@
-import { normalizeCharacterAliasKey } from '#lib/characterAliases'
-import { parseCommissionFileName } from '#lib/commissions/index'
-import { normalizeCreatorName } from '#lib/creatorAliases'
-import { buildDateSearchTokensFromCompactDate } from '#lib/date/search'
-import { normalizeKeywordAliasKey, splitKeywordTerms } from '#lib/keywordAliases'
+import { normalizeCharacterAliasKey } from '@lib/characterAliases'
+import { parseCommissionFileName } from '@lib/commissions/index'
+import { normalizeCreatorName } from '@lib/creatorAliases'
+import { buildDateSearchTokensFromCompactDate } from '@lib/date/search'
+import { normalizeKeywordAliasKey, splitKeywordTerms } from '@lib/keywordAliases'
 
 type SuggestionSource = 'Character' | 'Creator' | 'Keyword' | 'Date'
 type CreatorMode = 'normalized' | 'raw'

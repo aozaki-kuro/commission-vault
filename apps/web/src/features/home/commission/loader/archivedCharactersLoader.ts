@@ -1,11 +1,11 @@
-import type { ArchivedCharactersState, RequestArchivedCharactersLoadOptions } from '#features/home/commission/loader/archivedCharactersEvent'
+import type { ArchivedCharactersState, RequestArchivedCharactersLoadOptions } from '@features/home/commission/loader/archivedCharactersEvent'
 import {
   fetchHomeCharacterBatch,
   getHomeCharacterBatchTotalCount,
   mountHomeCharacterBatch,
   mountLegacyHomeCharacterBatch,
   prefetchHomeCharacterBatches,
-} from '#features/home/commission/batch/homeCharacterBatchClient'
+} from '@features/home/commission/batch/homeCharacterBatchClient'
 import {
   ARCHIVED_CHARACTERS_COLLAPSE_REQUEST_EVENT,
   ARCHIVED_CHARACTERS_COLLAPSED_EVENT,
@@ -23,10 +23,10 @@ import {
 
   writeArchivedCharactersLoadedBatchCount,
   writeArchivedCharactersState,
-} from '#features/home/commission/loader/archivedCharactersEvent'
-import { getHashTarget, scrollToHashTargetFromHrefWithoutHash } from '#lib/navigation/hashAnchor'
-import { restoreScrollPosition as restoreWindowScrollPosition } from '#lib/navigation/restoreScrollPosition'
-import { dispatchSidebarSearchState } from '#lib/navigation/sidebarSearchState'
+} from '@features/home/commission/loader/archivedCharactersEvent'
+import { getHashTarget, scrollToHashTargetFromHrefWithoutHash } from '@lib/navigation/hashAnchor'
+import { restoreScrollPosition as restoreWindowScrollPosition } from '@lib/navigation/restoreScrollPosition'
+import { dispatchSidebarSearchState } from '@lib/navigation/sidebarSearchState'
 
 const CHARACTER_PANEL_SELECTOR = '[data-commission-view-panel="character"]'
 const ARCHIVED_PLACEHOLDER_SELECTOR = '[data-archived-sections-placeholder="true"]'

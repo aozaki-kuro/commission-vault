@@ -1,4 +1,4 @@
-import { COMMISSION_VIEW_MODE_CHANGE_EVENT } from '#features/home/events'
+import { COMMISSION_VIEW_MODE_CHANGE_EVENT } from '@features/home/events'
 import { useSyncExternalStore } from 'react'
 import { readCommissionViewMode } from './viewModeState'
 

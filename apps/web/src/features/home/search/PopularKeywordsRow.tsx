@@ -1,5 +1,5 @@
 import type { CSSProperties, Ref } from 'react'
-import { Button } from '#components/ui/button'
+import { Button } from '@components/ui/button'
 import { IconRefresh } from '@tabler/icons-react'
 import { useRef } from 'react'
 

@@ -1,17 +1,17 @@
-import type { CommissionViewMode } from '#features/home/commission/CommissionViewModeSearch'
-import type { RequestActiveCharactersLoadOptions } from '#features/home/commission/loader/activeCharactersEvent'
-import type { ArchivedCharactersVisibility, RequestArchivedCharactersLoadOptions } from '#features/home/commission/loader/archivedCharactersEvent'
-import type { RequestTimelineViewLoadOptions } from '#features/home/commission/loader/timelineViewEvent'
+import type { CommissionViewMode } from '@features/home/commission/CommissionViewModeSearch'
+import type { RequestActiveCharactersLoadOptions } from '@features/home/commission/loader/activeCharactersEvent'
+import type { ArchivedCharactersVisibility, RequestArchivedCharactersLoadOptions } from '@features/home/commission/loader/archivedCharactersEvent'
+import type { RequestTimelineViewLoadOptions } from '@features/home/commission/loader/timelineViewEvent'
 import {
   prefetchDeferredActiveCharacterTarget,
   prefetchDeferredArchivedCharacterTarget,
-} from '#features/home/commission/batch/deferredCharacterBatchPrefetch'
+} from '@features/home/commission/batch/deferredCharacterBatchPrefetch'
 import {
   ACTIVE_CHARACTERS_LOADED_EVENT,
   hasDeferredActiveCharacterTarget,
   requestActiveCharactersLoad,
 
-} from '#features/home/commission/loader/activeCharactersEvent'
+} from '@features/home/commission/loader/activeCharactersEvent'
 import {
   ARCHIVED_CHARACTERS_LOADED_EVENT,
   ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT,
@@ -22,28 +22,28 @@ import {
   requestArchivedCharactersLoad,
   requestArchivedCharactersVisibility,
 
-} from '#features/home/commission/loader/archivedCharactersEvent'
+} from '@features/home/commission/loader/archivedCharactersEvent'
 import {
   hasDeferredTimelineTarget,
   requestTimelineViewLoad,
-} from '#features/home/commission/loader/timelineViewEvent'
-import { TIMELINE_VIEW_LOADED_EVENT } from '#features/home/commission/loader/timelineViewLoader'
+} from '@features/home/commission/loader/timelineViewEvent'
+import { TIMELINE_VIEW_LOADED_EVENT } from '@features/home/commission/loader/timelineViewLoader'
 import {
   readCommissionViewMode,
   replaceCommissionViewModeInAddress,
   resolveCommissionViewModeFromElement,
-} from '#features/home/commission/viewModeState'
-import { COMMISSION_VIEW_MODE_CHANGE_EVENT, dispatchHomeScrollRestoreAbort, HAMBURGER_MENU_MOUNTED_CHANGE_EVENT } from '#features/home/events'
-import { ANALYTICS_EVENTS } from '#lib/analytics/events'
-import { trackRybbitEvent } from '#lib/analytics/track'
+} from '@features/home/commission/viewModeState'
+import { COMMISSION_VIEW_MODE_CHANGE_EVENT, dispatchHomeScrollRestoreAbort, HAMBURGER_MENU_MOUNTED_CHANGE_EVENT } from '@features/home/events'
+import { ANALYTICS_EVENTS } from '@lib/analytics/events'
+import { trackRybbitEvent } from '@lib/analytics/track'
 import {
   getHashFromHref,
   getHashTarget,
   scrollToHashTargetFromHrefWithoutHash,
-} from '#lib/navigation/hashAnchor'
-import { jumpToCommissionSearch } from '#lib/navigation/jumpToCommissionSearch'
-import { SIDEBAR_SEARCH_STATE_EVENT } from '#lib/navigation/sidebarSearchState'
-import { syncHiddenSectionLinkAvailability } from '#lib/navigation/syncHiddenSectionLinkAvailability'
+} from '@lib/navigation/hashAnchor'
+import { jumpToCommissionSearch } from '@lib/navigation/jumpToCommissionSearch'
+import { SIDEBAR_SEARCH_STATE_EVENT } from '@lib/navigation/sidebarSearchState'
+import { syncHiddenSectionLinkAvailability } from '@lib/navigation/syncHiddenSectionLinkAvailability'
 import {
   loadDeferredHomeNavTarget,
   prefetchHomeNavTarget,

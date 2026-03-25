@@ -1,8 +1,8 @@
 import {
   ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT,
-} from '#features/home/commission/loader/archivedCharactersEvent'
-import { HAMBURGER_MENU_MOUNTED_CHANGE_EVENT, HOME_SCROLL_RESTORE_ABORT_EVENT } from '#features/home/events'
-import { ANALYTICS_EVENTS } from '#lib/analytics/events'
+} from '@features/home/commission/loader/archivedCharactersEvent'
+import { HAMBURGER_MENU_MOUNTED_CHANGE_EVENT, HOME_SCROLL_RESTORE_ABORT_EVENT } from '@features/home/events'
+import { ANALYTICS_EVENTS } from '@lib/analytics/events'
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MENU_TRANSITION_MS } from './constants'

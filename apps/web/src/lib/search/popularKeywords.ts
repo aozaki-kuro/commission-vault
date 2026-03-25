@@ -1,5 +1,5 @@
-import { normalizeCreatorName } from '#lib/creatorAliases'
-import { parseSuggestionRows } from '#lib/search/index'
+import { normalizeCreatorName } from '@lib/creatorAliases'
+import { parseSuggestionRows } from '@lib/search/index'
 
 export const DEFAULT_MAX_POPULAR_KEYWORDS = 36
 

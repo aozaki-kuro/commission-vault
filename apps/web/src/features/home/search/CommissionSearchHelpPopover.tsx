@@ -1,6 +1,6 @@
-import type { HomeSearchControls } from '#features/home/i18n/homeSearchControls'
-import { Button } from '#components/ui/button'
-import { PopoverContent } from '#components/ui/popover'
+import type { HomeSearchControls } from '@features/home/i18n/homeSearchControls'
+import { Button } from '@components/ui/button'
+import { PopoverContent } from '@components/ui/popover'
 
 interface CommissionSearchHelpPopoverProps {
   controls: HomeSearchControls

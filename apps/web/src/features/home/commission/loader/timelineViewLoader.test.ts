@@ -1,5 +1,5 @@
-import { COMMISSION_VIEW_MODE_CHANGE_EVENT } from '#features/home/events'
-import { SIDEBAR_SEARCH_STATE_EVENT } from '#lib/navigation/sidebarSearchState'
+import { COMMISSION_VIEW_MODE_CHANGE_EVENT } from '@features/home/events'
+import { SIDEBAR_SEARCH_STATE_EVENT } from '@lib/navigation/sidebarSearchState'
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { clearHomeTimelineBatchRequestCacheForTests } from '../batch/homeTimelineBatchClient'
