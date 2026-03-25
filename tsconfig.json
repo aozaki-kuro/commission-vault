@@ -1,14 +1,13 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
-      "#layouts/*": ["apps/web/src/layouts/*"],
-      "#features/*": ["apps/web/src/features/*"],
-      "#components/*": ["apps/web/src/components/*"],
-      "#data/*": ["apps/web/data/*"],
-      "#lib/*": ["apps/web/src/lib/*"],
-      "#config/*": ["apps/web/src/config/*"]
+      "#layouts/*": ["./apps/web/src/layouts/*"],
+      "#features/*": ["./apps/web/src/features/*"],
+      "#components/*": ["./apps/web/src/components/*"],
+      "#data/*": ["./apps/web/data/*"],
+      "#lib/*": ["./apps/web/src/lib/*"],
+      "#config/*": ["./apps/web/src/config/*"]
     },
     "types": ["node"]
   },
