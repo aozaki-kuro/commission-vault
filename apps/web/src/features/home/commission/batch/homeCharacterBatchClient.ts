@@ -82,6 +82,7 @@ export async function fetchHomeCharacterBatch({
     batchIndex,
     locale: manifest.locale,
     status,
+    v: manifest.v,
   })
 
   let request = batchRequestCache.get(url)

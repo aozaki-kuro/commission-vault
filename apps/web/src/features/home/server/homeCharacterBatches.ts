@@ -29,6 +29,8 @@ export interface HomeCharacterBatchManifestGroup {
 
 export interface HomeCharacterBatchManifest {
   locale: HomeLocale
+  /** Content hash for cache-busting batch fetch URLs. */
+  v?: string
   active: HomeCharacterBatchManifestGroup
   archived: HomeCharacterBatchManifestGroup
 }
@@ -137,6 +139,23 @@ export function buildHomeCharacterBatchPlan({
   }
 }
 
+// djb2 hash — works in both server and browser contexts
+function hashString(str: string): string {
+  let hash = 5381
+  for (let i = 0; i < str.length; i++) {
+    hash = (((hash << 5) + hash) ^ str.charCodeAt(i)) & 0xFFFFFFFF
+  }
+  return (hash >>> 0).toString(36)
+}
+
+function computeBatchManifestVersion(plan: HomeCharacterBatchPlan): string {
+  // Hash all deferred IDs so any commission add/remove changes the version.
+  return hashString(JSON.stringify({
+    a: plan.active.targetBatchById,
+    r: plan.archived.targetBatchById,
+  }))
+}
+
 export function buildHomeCharacterBatchManifest({
   locale,
   plan,
@@ -146,6 +165,7 @@ export function buildHomeCharacterBatchManifest({
 }): HomeCharacterBatchManifest {
   return {
     locale,
+    v: computeBatchManifestVersion(plan),
     active: {
       initialSectionIds: plan.active.initialCharacters.map(getCharacterSectionId),
       totalBatches: plan.active.totalBatches,
@@ -163,10 +183,13 @@ export function buildHomeCharacterBatchUrl({
   batchIndex,
   locale,
   status,
+  v,
 }: {
   batchIndex: number
   locale: HomeLocale
   status: HomeCharacterBatchStatus
+  v?: string
 }) {
-  return `/search/home-character-batches/${locale}/${status}/${batchIndex}.json`
+  const base = `/search/home-character-batches/${locale}/${status}/${batchIndex}.json`
+  return v ? `${base}?v=${v}` : base
 }
