@@ -1,5 +1,12 @@
 # 统一迁移状态板（2026-03-18）
 
+## 本轮执行切片（2026-03-25 web typecheck 配置减脂）
+
+- [x] 复盘 `apps/web/tsconfig.typecheck.json` 是否仍有存在必要，并确认当前 `tsconfig.json` 可直接用于 `tsc --noEmit`
+- [x] 将 `apps/web` workspace 的 `typecheck` 脚本切回 `tsconfig.json`
+- [x] 删除不再需要的 `apps/web/tsconfig.typecheck.json`
+- [x] 跑仓库级 `typecheck`，确认 Turbo 工作区校验链路无回归
+
 ## 本轮执行切片（2026-03-25 本地 Turbo Astro 构建缓存拆链）
 
 - [x] 复盘 `apps/web` 当前 `build/check` 为什么把事实源导出和 Astro 构建绑在同一个 Turbo task 里
@@ -512,3 +519,9 @@
 - [x] `bun x turbo run build --filter=@commission-index/web --dry=json` 已确认只有 `@commission-index/web` 会依赖 `fact-source:export`，未误伤其他 workspace。
 - [x] 连跑两次 `bun run build:web`：第一次 `fact-source:export` / `build` 双 miss，第二次 `Cached: 2 cached, 2 total`。
 - [x] `bun run check` 通过，确认拆链后 `astro check` 仍会先复用 `fact-source:export`。
+
+## Review（2026-03-25 web typecheck 配置减脂）
+
+- [x] `apps/web/tsconfig.typecheck.json` 已删除，`apps/web/package.json` 的 `typecheck` 已直接改为 `tsc --noEmit -p tsconfig.json`。
+- [x] `bun run typecheck` 通过，确认 root Turbo 仍会覆盖 `@commission-index/web`，且 web workspace 已直接使用主 `tsconfig.json` 完成类型检查。
+- [x] 本轮未调整 `wrangler.jsonc` 所有权与 deploy 入口，保持 workspace-local deploy 边界不变。
