@@ -1,5 +1,11 @@
 # 统一迁移状态板（2026-03-18）
 
+## 本轮执行切片（2026-03-25 Want this 跨视图状态同步）
+
+- [x] 复盘首页 `Want this` 在 Character / Date 双视图下的状态键与按钮挂载方式，确认根因
+- [x] 修复同一条 commission 在多处渲染时的 `Recorded` 状态同步
+- [x] 补针对性测试并验证跨视图回归
+
 ## 本轮执行切片（2026-03-25 web typecheck 配置减脂）
 
 - [x] 复盘 `apps/web/tsconfig.typecheck.json` 是否仍有存在必要，并确认当前 `tsconfig.json` 可直接用于 `tsc --noEmit`
@@ -525,3 +531,10 @@
 - [x] `apps/web/tsconfig.typecheck.json` 已删除，`apps/web/package.json` 的 `typecheck` 已直接改为 `tsc --noEmit -p tsconfig.json`。
 - [x] `bun run typecheck` 通过，确认 root Turbo 仍会覆盖 `@commission-index/web`，且 web workspace 已直接使用主 `tsconfig.json` 完成类型检查。
 - [x] 本轮未调整 `wrangler.jsonc` 所有权与 deploy 入口，保持 workspace-local deploy 边界不变。
+
+## Review（2026-03-25 Want this 跨视图状态同步）
+
+- [x] 根因分两层：一是同一条 commission 在 Character / Date 两个视图里各有一颗按钮；二是 Character 视图按钮常常在 deferred load 之后才插入 DOM，旧逻辑既不会同步现有同键按钮，也不会自动 hydrate 新插入的按钮。
+- [x] `apps/web/src/features/home/commission/unpublishedInterestClient.ts` 已改为：写入 localStorage 后同步刷新页面内所有同键按钮，并通过 `MutationObserver` 自动 hydrate 后续 deferred append 的 `Want this` 按钮。
+- [x] `bun vitest run apps/web/src/features/home/commission/unpublishedInterestClient.test.ts` 通过，并已覆盖“同键双按钮同步”和“记录后延迟插入按钮自动显示 Recorded”两条回归路径。
+- [x] `bun eslint apps/web/src/features/home/commission/unpublishedInterestClient.ts apps/web/src/features/home/commission/unpublishedInterestClient.test.ts tasks/todo.md` 通过。

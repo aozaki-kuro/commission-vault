@@ -32,6 +32,24 @@ function writeRecordedState(commissionKey: string, storage: Storage | undefined)
   catch {}
 }
 
+function syncButtonsForKey({
+  commissionKey,
+  doc,
+  recorded,
+}: {
+  commissionKey: string
+  doc: Document
+  recorded: boolean
+}) {
+  const buttons = [...doc.querySelectorAll<HTMLButtonElement>(BUTTON_SELECTOR)].filter(
+    button => button.dataset.commissionInterestKey === commissionKey,
+  )
+
+  for (const button of buttons) {
+    setButtonState(button, recorded)
+  }
+}
+
 function setButtonState(button: HTMLButtonElement, recorded: boolean) {
   const label = button.querySelector<HTMLSpanElement>(LABEL_SELECTOR)
   if (label) {
@@ -77,6 +95,18 @@ function resolveInterestButton(target: EventTarget | null) {
   return null
 }
 
+function collectInterestButtons(node: Node) {
+  if (node instanceof HTMLButtonElement && node.matches(BUTTON_SELECTOR)) {
+    return [node]
+  }
+
+  if (node instanceof Element) {
+    return [...node.querySelectorAll<HTMLButtonElement>(BUTTON_SELECTOR)]
+  }
+
+  return []
+}
+
 export function mountUnpublishedInterestButtons({
   win = window,
   doc = document,
@@ -106,17 +136,30 @@ export function mountUnpublishedInterestButtons({
     if (!commissionKey || button.disabled)
       return
 
-    setButtonState(button, true)
     writeRecordedState(commissionKey, storage)
+    syncButtonsForKey({ commissionKey, doc, recorded: true })
     trackEvent?.({ sub_event: commissionKey })
   }
 
   for (const button of buttons) {
     hydrateButton(button)
   }
+
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        for (const button of collectInterestButtons(node)) {
+          hydrateButton(button)
+        }
+      }
+    }
+  })
+
+  observer.observe(doc.body ?? doc.documentElement, { childList: true, subtree: true })
   doc.addEventListener('click', handleClick)
 
   return () => {
+    observer.disconnect()
     doc.removeEventListener('click', handleClick)
   }
 }
