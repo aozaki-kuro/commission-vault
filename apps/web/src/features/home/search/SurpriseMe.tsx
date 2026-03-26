@@ -2,22 +2,13 @@ import type { HomeSearchControls } from '@features/home/i18n/homeSearchControls'
 import type { CommissionSearchEntrySource } from '@features/home/search/commissionSearchIndex'
 import { replaceCommissionViewModeInAddress } from '@features/home/commission/viewModeState'
 import { applySuggestionToQuery } from '@lib/search/index'
-import {
-  IconDice1,
-  IconDice2,
-  IconDice3,
-  IconDice4,
-  IconDice5,
-  IconDice6,
-} from '@tabler/icons-react'
+import { IconArrowsShuffle } from '@tabler/icons-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 const COMMISSION_ENTRY_SELECTOR = '[data-commission-entry="true"]'
 const ACTIVE_VIEW_PANEL_SELECTOR = '[data-commission-view-panel][data-commission-view-active="true"]'
 const FLASH_DURATION_MS = 500
-const DICE_ROLL_INTERVAL_MS = 75
 
-const DICE_ICONS = [IconDice1, IconDice2, IconDice3, IconDice4, IconDice5, IconDice6]
 const YEAR_ONLY_PATTERN = /^\d{4}$/
 const MULTI_SPACE_PATTERN = /\s+/g
 
@@ -83,9 +74,7 @@ function getActiveRoot(): ParentNode {
 
 export default function SurpriseMe({ controls, externalEntries, onApplyQuery }: SurpriseMeProps) {
   const [flashedMode, setFlashedMode] = useState<SurpriseModeKey | null>(null)
-  const [diceIndex, setDiceIndex] = useState(2)
   const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const diceIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const lastRandomRef = useRef<HTMLElement | null>(null)
   const lastArtistRef = useRef<string | null>(null)
   const lastYearRef = useRef<string | null>(null)
@@ -94,8 +83,6 @@ export default function SurpriseMe({ controls, externalEntries, onApplyQuery }: 
     return () => {
       if (flashTimerRef.current)
         clearTimeout(flashTimerRef.current)
-      if (diceIntervalRef.current)
-        clearInterval(diceIntervalRef.current)
     }
   }, [])
 
@@ -107,22 +94,6 @@ export default function SurpriseMe({ controls, externalEntries, onApplyQuery }: 
       setFlashedMode(null)
       flashTimerRef.current = null
     }, FLASH_DURATION_MS)
-  }, [])
-
-  const startDiceRoll = useCallback(() => {
-    if (diceIntervalRef.current)
-      return
-    diceIntervalRef.current = setInterval(() => {
-      setDiceIndex(prev => (prev + 1) % 6)
-    }, DICE_ROLL_INTERVAL_MS)
-  }, [])
-
-  const stopDiceRoll = useCallback(() => {
-    if (diceIntervalRef.current) {
-      clearInterval(diceIntervalRef.current)
-      diceIntervalRef.current = null
-    }
-    setDiceIndex(Math.floor(Math.random() * 6))
   }, [])
 
   const handleRandom = useCallback(() => {
@@ -166,6 +137,7 @@ export default function SurpriseMe({ controls, externalEntries, onApplyQuery }: 
     if (!year)
       return
 
+    replaceCommissionViewModeInAddress(window, 'timeline')
     onApplyQuery(year)
   }, [externalEntries, flash, onApplyQuery])
 
@@ -188,16 +160,12 @@ export default function SurpriseMe({ controls, externalEntries, onApplyQuery }: 
     `.trim().replace(MULTI_SPACE_PATTERN, ' ')
   }
 
-  const DiceIcon = DICE_ICONS[diceIndex]
-
   return (
     <div
       className="
         mt-2 flex min-h-8 items-center gap-2 text-xs text-gray-500
         dark:text-gray-400
       "
-      onMouseEnter={startDiceRoll}
-      onMouseLeave={stopDiceRoll}
     >
       <span
         className="
@@ -206,7 +174,7 @@ export default function SurpriseMe({ controls, externalEntries, onApplyQuery }: 
         "
         aria-hidden="true"
       >
-        <DiceIcon className="size-3.5 opacity-60 transition-none" stroke={1.8} />
+        <IconArrowsShuffle className="size-3.5 opacity-60 transition-none" stroke={1.8} />
         {controls.surpriseMe}
       </span>
       <div className="flex flex-nowrap gap-1.5 overflow-x-auto pr-0.5">
