@@ -52,6 +52,26 @@ function extractYears(entries: CommissionSearchEntrySource[]): string[] {
   return [...years].sort()
 }
 
+// Picks a random item from the pool with better distribution.
+// Uses crypto.getRandomValues for higher entropy than Math.random.
+function pickRandomWithBetterDistribution<T>(arr: T[]): T | null {
+  if (!arr.length)
+    return null
+
+  let randomIndex: number
+  try {
+    const randomValues = new Uint32Array(1)
+    crypto.getRandomValues(randomValues)
+    randomIndex = randomValues[0] % arr.length
+  }
+  catch {
+    // Fallback to Math.random if crypto is unavailable
+    randomIndex = Math.floor(Math.random() * arr.length)
+  }
+
+  return arr[randomIndex]
+}
+
 // Avoids picking the same item as last time.
 // If the pool only has one item, returns it regardless.
 function pickAvoidingLast<T>(arr: T[], lastRef: React.MutableRefObject<T | null>): T | null {
@@ -63,8 +83,9 @@ function pickAvoidingLast<T>(arr: T[], lastRef: React.MutableRefObject<T | null>
     : arr
 
   const pool = candidates.length > 0 ? candidates : arr
-  const pick = pool[Math.floor(Math.random() * pool.length)]
-  lastRef.current = pick
+  const pick = pickRandomWithBetterDistribution(pool)
+  if (pick !== null)
+    lastRef.current = pick
   return pick
 }
 
