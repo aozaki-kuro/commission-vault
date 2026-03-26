@@ -203,6 +203,20 @@ jobs:
           ended_at=$(date +%s)
           echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
 
+      # Build explicitly so turbo populates .turbo/ BEFORE wrangler triggers
+      # it again. Wrangler's build command re-invokes turbo which then hits
+      # the same-session file cache and skips the rebuild entirely.
+      - name: Build web
+        id: build
+        run: |
+          started_at=$(date +%s)
+          bun run build:web
+          ended_at=$(date +%s)
+          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - name: Deploy web
         id: deploy
         run: |
@@ -243,6 +257,7 @@ jobs:
             echo "| install | ${{ steps.setup.outputs.install-duration || 'n/a' }} |"
             echo "| export fact source | ${{ steps.export.outputs.duration_seconds || 'n/a' }} |"
             echo "| astro check | ${{ steps.check.outputs.duration_seconds || 'n/a' }} |"
+            echo "| build:web | ${{ steps.build.outputs.duration_seconds || 'n/a' }} |"
             echo "| deploy:web | ${{ steps.deploy.outputs.duration_seconds || 'n/a' }} |"
             echo
             echo "- turbo cache hit: ${{ steps.turbo_cache.outputs.cache-hit || 'false' }}"
