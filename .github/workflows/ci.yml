@@ -19,9 +19,6 @@ jobs:
 
   # ────────────────────────────────────────────────────────────────────────────
   # BUILD — runs on every PR and every push to master
-  #
-  # On PR: build only (lint/test/typecheck done locally pre-push).
-  # On master: full validation (lint/test/typecheck/build) before deploy.
   # ────────────────────────────────────────────────────────────────────────────
   build:
     name: Build
@@ -51,12 +48,11 @@ jobs:
           key: turbo-${{ runner.os }}-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
 
   # ────────────────────────────────────────────────────────────────────────────
-  # VALIDATE — master only, full checks before deploy
+  # CHECKS — master only, runs in parallel with build
   # ────────────────────────────────────────────────────────────────────────────
-  validate:
-    name: Validate
+  checks:
+    name: Checks
     runs-on: ubuntu-latest
-    needs: [build]
     if: github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v6
@@ -64,7 +60,6 @@ jobs:
         id: setup
 
       - name: Restore turbo cache
-        id: turbo_cache
         uses: actions/cache/restore@v5
         with:
           path: .turbo
@@ -82,15 +77,12 @@ jobs:
         run: bun run typecheck
 
   # ────────────────────────────────────────────────────────────────────────────
-  # WEB — master only, runs after validate
-  #
-  # Exports fact source from D1/R2, checks Astro build, deploys web worker.
-  # Caches generated inputs for future runs.
+  # WEB — master only, runs after build & checks
   # ────────────────────────────────────────────────────────────────────────────
   web:
     name: Web — Export, Check & Deploy
     runs-on: ubuntu-latest
-    needs: [validate]
+    needs: [build, checks]
     if: github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v6
@@ -144,12 +136,12 @@ jobs:
           key: generated-${{ runner.os }}-master-${{ hashFiles('apps/web/wrangler.jsonc', 'apps/admin-worker/scripts/exportWebFactSource.ts', 'packages/domain/src/factSource.ts') }}
 
   # ────────────────────────────────────────────────────────────────────────────
-  # ADMIN — master only, runs after validate (in parallel with web)
+  # ADMIN — master only, runs after build & checks (in parallel with web)
   # ────────────────────────────────────────────────────────────────────────────
   admin:
     name: Admin — Deploy
     runs-on: ubuntu-latest
-    needs: [validate]
+    needs: [build, checks]
     if: github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v6
