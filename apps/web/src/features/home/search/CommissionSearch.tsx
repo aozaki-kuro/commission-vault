@@ -21,6 +21,7 @@ import { resolveHomeSearchControls } from '@features/home/i18n/homeSearchControl
 import CommissionSearchHelpPopover from '@features/home/search/CommissionSearchHelpPopover'
 import CommissionSearchSuggestionDropdown from '@features/home/search/CommissionSearchSuggestionDropdown'
 import PopularKeywordsRow from '@features/home/search/PopularKeywordsRow'
+import SurpriseMe from '@features/home/search/SurpriseMe'
 import {
   dispatchSearchQueryLocationChange,
   useCommissionSearchModel,
@@ -349,6 +350,11 @@ function CommissionSearch({
     [dismissSuggestionPanel, focusInputAfterSelection, setInputQuery],
   )
 
+  const applyExternalQuery = useCallback(
+    (query: string) => applySelectedQuery(query, { focusInput: false, preventScroll: true }),
+    [applySelectedQuery],
+  )
+
   const applySuggestion = useCallback(
     (suggestion: string | null) => {
       if (!suggestion)
@@ -591,6 +597,8 @@ function CommissionSearch({
         onKeywordPointerDown={prepareSearchInteraction}
         onKeywordSelect={applyPopularKeyword}
       />
+
+      <SurpriseMe controls={controls} externalEntries={externalEntries} onApplyQuery={applyExternalQuery} />
 
       <p ref={liveRef} aria-live="polite" className="sr-only" />
     </section>

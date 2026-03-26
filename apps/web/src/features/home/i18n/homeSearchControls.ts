@@ -34,6 +34,10 @@ export interface HomeSearchControls {
   searchHelpAliasHint: string
   searchHelpClose: string
   searchHelpRows: SearchHelpRow[]
+  surpriseMe: string
+  surpriseMeRandom: string
+  surpriseMeArtist: string
+  surpriseMeYear: string
 }
 
 const DEFAULT_HOME_SEARCH_LOCALE: HomeSearchLocale = 'en'
@@ -88,6 +92,10 @@ const HOME_SEARCH_CONTROLS: Record<HomeSearchLocale, HomeSearchControls> = {
         example: '!sketch',
       },
     ],
+    surpriseMe: 'Surprise me',
+    surpriseMeRandom: 'Random',
+    surpriseMeArtist: 'By artist',
+    surpriseMeYear: 'By year',
   },
   'zh-tw': {
     searchPlaceholder: '搜尋',
@@ -134,6 +142,10 @@ const HOME_SEARCH_CONTROLS: Record<HomeSearchLocale, HomeSearchControls> = {
         example: '!sketch',
       },
     ],
+    surpriseMe: '手氣不錯',
+    surpriseMeRandom: '隨機',
+    surpriseMeArtist: '同繪師',
+    surpriseMeYear: '同年份',
   },
   'ja': {
     searchPlaceholder: '検索',
@@ -180,6 +192,10 @@ const HOME_SEARCH_CONTROLS: Record<HomeSearchLocale, HomeSearchControls> = {
         example: '!sketch',
       },
     ],
+    surpriseMe: 'おまかせ',
+    surpriseMeRandom: 'ランダム',
+    surpriseMeArtist: '絵師別',
+    surpriseMeYear: '年別',
   },
 }
 
