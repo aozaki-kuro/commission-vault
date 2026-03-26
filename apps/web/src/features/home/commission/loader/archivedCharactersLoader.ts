@@ -14,7 +14,6 @@ import {
   ARCHIVED_CHARACTERS_SHOW_REQUEST_EVENT,
 
   dispatchArchivedCharactersStateChange,
-  persistArchivedCharactersVisibility,
   persistReloadArchivedCharactersVisibility,
   readArchivedCharactersStateFromPanel,
   readSavedArchivedCharactersVisibility,
@@ -80,7 +79,6 @@ function scheduleScrollRestore({
 }
 
 function dispatchState(win: Window, state: ArchivedCharactersState) {
-  persistArchivedCharactersVisibility(win, state.visibility)
   dispatchArchivedCharactersStateChange(win, state)
 }
 
