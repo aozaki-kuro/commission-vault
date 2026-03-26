@@ -538,3 +538,14 @@
 - [x] `apps/web/src/features/home/commission/unpublishedInterestClient.ts` 已改为：写入 localStorage 后同步刷新页面内所有同键按钮，并通过 `MutationObserver` 自动 hydrate 后续 deferred append 的 `Want this` 按钮。
 - [x] `bun vitest run apps/web/src/features/home/commission/unpublishedInterestClient.test.ts` 通过，并已覆盖“同键双按钮同步”和“记录后延迟插入按钮自动显示 Recorded”两条回归路径。
 - [x] `bun eslint apps/web/src/features/home/commission/unpublishedInterestClient.ts apps/web/src/features/home/commission/unpublishedInterestClient.test.ts tasks/todo.md` 通过。
+
+## 本轮执行切片（2026-03-26 SurpriseMe React 弃用类型清理）
+
+- [x] 定位 `apps/web/src/features/home/search/SurpriseMe.tsx` 中 `React.MutableRefObject` 弃用告警来源
+- [x] 将 `pickAvoidingLast` 改为依赖最小化的结构化 ref 类型，避免继续引用弃用 React 类型名
+- [x] 运行针对性检查，确认 Astro/TypeScript 不再报告该 warning
+
+## Review（2026-03-26 SurpriseMe React 弃用类型清理）
+
+- [x] `bun run check` 通过，`apps/web` 诊断结果为 `0 errors / 0 warnings / 0 hints`，原 `MutableRefObject` warning 已消失。
+- [x] `bun eslint apps/web/src/features/home/search/SurpriseMe.tsx` 初次执行暴露仓库规则 `ts/consistent-type-definitions`；已将本轮新增的 `type CurrentRef<T>` 收口为 `interface CurrentRef<T>`，避免引入新的 lint 噪音。

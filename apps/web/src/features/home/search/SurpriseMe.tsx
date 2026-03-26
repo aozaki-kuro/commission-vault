@@ -10,6 +10,10 @@ interface SurpriseMeProps {
   onShuffle?: () => void
 }
 
+interface CurrentRef<T> {
+  current: T | null
+}
+
 function pickRandomWithBetterDistribution<T>(arr: T[]): T | null {
   if (!arr.length)
     return null
@@ -27,7 +31,7 @@ function pickRandomWithBetterDistribution<T>(arr: T[]): T | null {
   return arr[randomIndex]
 }
 
-function pickAvoidingLast<T>(arr: T[], lastRef: React.MutableRefObject<T | null>): T | null {
+function pickAvoidingLast<T>(arr: T[], lastRef: CurrentRef<T>): T | null {
   if (!arr.length)
     return null
 
