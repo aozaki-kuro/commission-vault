@@ -1,0 +1,34 @@
+name: Setup
+description: Install Node/Bun, cache bun store, and install dependencies. Repo must already be checked out.
+
+outputs:
+  install-duration:
+    description: Duration of bun install in seconds
+    value: ${{ steps.install.outputs.duration_seconds }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v6
+      with:
+        node-version: 24
+
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: latest
+
+    - name: Cache bun store
+      uses: actions/cache@v5
+      with:
+        path: ~/.bun/install/cache
+        key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+        restore-keys: bun-${{ runner.os }}-
+
+    - name: Install dependencies
+      id: install
+      shell: bash
+      run: |
+        started_at=$(date +%s)
+        bun install --frozen-lockfile
+        ended_at=$(date +%s)
+        echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"

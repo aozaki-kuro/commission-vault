@@ -32,22 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        id: install
-        run: |
-          started_at=$(date +%s)
-          bun install --frozen-lockfile
-          ended_at=$(date +%s)
-          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
+      - uses: ./.github/actions/setup
+        id: setup
 
       # Use cache/restore (not cache) so we control the save step explicitly
       # and avoid the "another job is creating this cache" race condition.
@@ -119,7 +105,6 @@ jobs:
 
       - name: Astro check (cached generated inputs)
         if: steps.generated_inputs.outputs.available == 'true'
-        id: check_web_cached
         run: bun run --cwd apps/web check:astro
 
       - name: Save turbo cache
@@ -137,7 +122,7 @@ jobs:
             echo
             echo "| Step | Seconds |"
             echo "| --- | ---: |"
-            echo "| install | ${{ steps.install.outputs.duration_seconds || 'n/a' }} |"
+            echo "| install | ${{ steps.setup.outputs.install-duration || 'n/a' }} |"
             echo "| lint | ${{ steps.lint.outputs.duration_seconds || 'n/a' }} |"
             echo "| test | ${{ steps.test.outputs.duration_seconds || 'n/a' }} |"
             echo "| typecheck | ${{ steps.typecheck.outputs.duration_seconds || 'n/a' }} |"
@@ -162,23 +147,11 @@ jobs:
     if: github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        id: setup
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        id: install
-        run: |
-          started_at=$(date +%s)
-          bun install --frozen-lockfile
-          ended_at=$(date +%s)
-          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
-
+      # Restore-keys fall through to web- prefix first (full Astro build from
+      # previous deploy) then master- (shared code artifacts from validate).
       - name: Restore turbo cache
         id: turbo_cache
         uses: actions/cache/restore@v5
@@ -242,8 +215,6 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       # Save after a successful deploy so PRs and rebuild.yml can restore it.
-      # Skip when the exact key already exists (immutable cache) to avoid the
-      # "another job may be creating this cache" warning.
       - name: Save generated web inputs
         if: success() && steps.generated_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v5
@@ -253,8 +224,6 @@ jobs:
 
       # Key includes the data hash so one entry is created per unique
       # (source × data) combination — not per push.
-      # continue-on-error suppresses the harmless warning on the rare case
-      # where the same combo is deployed twice.
       - name: Save turbo cache
         if: success()
         continue-on-error: true
@@ -271,7 +240,7 @@ jobs:
             echo
             echo "| Step | Seconds |"
             echo "| --- | ---: |"
-            echo "| install | ${{ steps.install.outputs.duration_seconds || 'n/a' }} |"
+            echo "| install | ${{ steps.setup.outputs.install-duration || 'n/a' }} |"
             echo "| export fact source | ${{ steps.export.outputs.duration_seconds || 'n/a' }} |"
             echo "| astro check | ${{ steps.check.outputs.duration_seconds || 'n/a' }} |"
             echo "| deploy:web | ${{ steps.deploy.outputs.duration_seconds || 'n/a' }} |"
@@ -293,22 +262,8 @@ jobs:
     if: github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        id: install
-        run: |
-          started_at=$(date +%s)
-          bun install --frozen-lockfile
-          ended_at=$(date +%s)
-          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
+      - uses: ./.github/actions/setup
+        id: setup
 
       - name: Restore turbo cache
         id: turbo_cache
@@ -339,7 +294,7 @@ jobs:
             echo
             echo "| Step | Seconds |"
             echo "| --- | ---: |"
-            echo "| install | ${{ steps.install.outputs.duration_seconds || 'n/a' }} |"
+            echo "| install | ${{ steps.setup.outputs.install-duration || 'n/a' }} |"
             echo "| deploy:admin | ${{ steps.deploy.outputs.duration_seconds || 'n/a' }} |"
             echo
             echo "- turbo cache hit: ${{ steps.turbo_cache.outputs.cache-hit || 'false' }}"

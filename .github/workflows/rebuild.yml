@@ -18,23 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        id: setup
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        id: install
-        run: |
-          started_at=$(date +%s)
-          bun install --frozen-lockfile
-          ended_at=$(date +%s)
-          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
-
+      # Check web- namespace first (full Astro build from last ci.yml web job)
+      # before falling back to master- (code-only artifacts from validate).
       - name: Restore turbo cache
         id: turbo_cache
         uses: actions/cache/restore@v5
@@ -42,6 +30,7 @@ jobs:
           path: .turbo
           key: turbo-${{ runner.os }}-master-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
           restore-keys: |
+            turbo-${{ runner.os }}-web-
             turbo-${{ runner.os }}-master-
             turbo-${{ runner.os }}-
 
@@ -92,7 +81,7 @@ jobs:
             echo
             echo "| Step | Seconds |"
             echo "| --- | ---: |"
-            echo "| install | ${{ steps.install.outputs.duration_seconds || 'n/a' }} |"
+            echo "| install | ${{ steps.setup.outputs.install-duration || 'n/a' }} |"
             echo "| deploy:web | ${{ steps.deploy_web.outputs.duration_seconds || 'n/a' }} |"
             echo
             echo "- turbo cache hit: ${{ steps.turbo_cache.outputs.cache-hit || 'false' }}"
