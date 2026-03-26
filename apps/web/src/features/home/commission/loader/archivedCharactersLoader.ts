@@ -340,6 +340,7 @@ export function mountArchivedCharactersLoader({
     })
     dispatchSidebarSearchState()
     dispatchState(win, nextState)
+    persistReloadArchivedCharactersVisibility({ doc, win })
     win.dispatchEvent(new Event(ARCHIVED_CHARACTERS_COLLAPSED_EVENT))
     return true
   }
