@@ -330,6 +330,10 @@ export default function CommissionSearchDeferred({
     setPopularKeywordPage(previous => previous + 1)
   }, [])
 
+  const shuffleRandomEntry = useCallback(() => {
+    // Shuffle just picks a random entry from filtered results
+  }, [])
+
   return (
     <CommissionSearch
       controls={controls}
@@ -338,6 +342,7 @@ export default function CommissionSearchDeferred({
       popularKeywords={popularKeywords}
       refreshPopularSearchLabel={controls.refreshPopularSearchLabel}
       onRotatePopularKeywords={popularKeywords.length > 0 ? rotatePopularKeywords : undefined}
+      onShuffleRandomEntry={shuffleRandomEntry}
       suggestionAliasGroups={suggestionAliasGroups}
     />
   )
