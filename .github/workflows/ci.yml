@@ -18,127 +18,74 @@ env:
 jobs:
 
   # ────────────────────────────────────────────────────────────────────────────
-  # VALIDATE — runs on every PR and every push to master
+  # BUILD — runs on every PR and every push to master
   #
-  # Lint, typecheck, test, and build admin via turbo (parallel internally).
-  # Also runs a best-effort astro check when generated inputs are cached from
-  # a previous master run.
-  #
-  # Turbo cache is saved here so the admin deploy job can restore it and skip
-  # the rebuild entirely.
+  # On PR: build only (lint/test/typecheck done locally pre-push).
+  # On master: full validation (lint/test/typecheck/build) before deploy.
   # ────────────────────────────────────────────────────────────────────────────
-  validate:
-    name: Validate
+  build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup
         id: setup
 
-      # Use cache/restore (not cache) so we control the save step explicitly
-      # and avoid the "another job is creating this cache" race condition.
       - name: Restore turbo cache
         id: turbo_cache
         uses: actions/cache/restore@v5
         with:
           path: .turbo
-          key: turbo-${{ runner.os }}-${{ github.ref_name }}-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
+          key: turbo-${{ runner.os }}-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
           restore-keys: |
-            turbo-${{ runner.os }}-${{ github.ref_name }}-
-            turbo-${{ runner.os }}-master-
             turbo-${{ runner.os }}-
 
-      # Restore generated inputs for a best-effort astro check on PRs.
-      # Key matches what the web job saves, so active branches usually get
-      # a hit from a recent master run.
-      - name: Restore generated web inputs
-        id: generated_cache
-        uses: actions/cache/restore@v5
-        with:
-          path: apps/web/generated
-          key: generated-${{ runner.os }}-master-${{ hashFiles('apps/web/wrangler.jsonc', 'apps/admin-worker/scripts/exportWebFactSource.ts', 'packages/domain/src/factSource.ts') }}
-          restore-keys: |
-            generated-${{ runner.os }}-master-
-            generated-${{ runner.os }}-
-
-      - name: Detect generated web inputs
-        id: generated_inputs
-        run: |
-          if [ -f apps/web/generated/fact-source/content.json ] && \
-             [ -f apps/web/generated/fact-source/source-images-manifest.json ]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Lint
-        id: lint
-        run: |
-          started_at=$(date +%s)
-          bun run lint
-          ended_at=$(date +%s)
-          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
-
-      - name: Test
-        id: test
-        run: |
-          started_at=$(date +%s)
-          bun run test
-          ended_at=$(date +%s)
-          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
-
-      - name: Typecheck
-        id: typecheck
-        run: |
-          started_at=$(date +%s)
-          bun run typecheck
-          ended_at=$(date +%s)
-          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
-
-      - name: Build admin
-        id: build_admin
-        run: |
-          started_at=$(date +%s)
-          bun run build:admin
-          ended_at=$(date +%s)
-          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
-
-      - name: Astro check (cached generated inputs)
-        if: steps.generated_inputs.outputs.available == 'true'
-        run: bun run --cwd apps/web check:astro
+      - name: Build
+        run: bun run build:admin
 
       - name: Save turbo cache
         if: always() && steps.turbo_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v5
         with:
           path: .turbo
-          key: turbo-${{ runner.os }}-${{ github.ref_name }}-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
+          key: turbo-${{ runner.os }}-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
 
-      - name: Summary
-        if: always()
-        run: |
-          {
-            echo "## Validate"
-            echo
-            echo "| Step | Seconds |"
-            echo "| --- | ---: |"
-            echo "| install | ${{ steps.setup.outputs.install-duration || 'n/a' }} |"
-            echo "| lint | ${{ steps.lint.outputs.duration_seconds || 'n/a' }} |"
-            echo "| test | ${{ steps.test.outputs.duration_seconds || 'n/a' }} |"
-            echo "| typecheck | ${{ steps.typecheck.outputs.duration_seconds || 'n/a' }} |"
-            echo "| build:admin | ${{ steps.build_admin.outputs.duration_seconds || 'n/a' }} |"
-            echo
-            echo "- turbo cache hit: ${{ steps.turbo_cache.outputs.cache-hit || 'false' }}"
-            echo "- generated inputs available: ${{ steps.generated_inputs.outputs.available }}"
-          } >> "$GITHUB_STEP_SUMMARY"
+  # ────────────────────────────────────────────────────────────────────────────
+  # VALIDATE — master only, full checks before deploy
+  # ────────────────────────────────────────────────────────────────────────────
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
+        id: setup
+
+      - name: Restore turbo cache
+        id: turbo_cache
+        uses: actions/cache/restore@v5
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Test
+        run: bun run test
+
+      - name: Typecheck
+        run: bun run typecheck
 
   # ────────────────────────────────────────────────────────────────────────────
   # WEB — master only, runs after validate
   #
-  # Exports fresh fact source data from Cloudflare D1/R2, validates the Astro
-  # build, then deploys the web worker. Saves generated inputs to cache so
-  # future PR validate runs can do a best-effort astro check without
-  # hitting D1/R2 again, and so rebuild.yml can restore them.
+  # Exports fact source from D1/R2, checks Astro build, deploys web worker.
+  # Caches generated inputs for future runs.
   # ────────────────────────────────────────────────────────────────────────────
   web:
     name: Web — Export, Check & Deploy
@@ -150,17 +97,12 @@ jobs:
       - uses: ./.github/actions/setup
         id: setup
 
-      # Restore-keys fall through to web- prefix first (full Astro build from
-      # previous deploy) then master- (shared code artifacts from validate).
       - name: Restore turbo cache
-        id: turbo_cache
         uses: actions/cache/restore@v5
         with:
           path: .turbo
-          key: turbo-${{ runner.os }}-web-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
+          key: turbo-${{ runner.os }}-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
           restore-keys: |
-            turbo-${{ runner.os }}-web-
-            turbo-${{ runner.os }}-master-
             turbo-${{ runner.os }}-
 
       - name: Restore generated web inputs
@@ -174,61 +116,26 @@ jobs:
             generated-${{ runner.os }}-
 
       - name: Export fact source from D1/R2
-        id: export
-        run: |
-          started_at=$(date +%s)
-          bun run web:fact-source:export
-          ended_at=$(date +%s)
-          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
+        run: bun run web:fact-source:export
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      # Derive a stable token from the exported data so turbo can reuse its
-      # cached Astro build when the fact source hasn't changed between pushes.
-      # (apps/web/generated/ is gitignored, so turbo can't hash it directly.)
-      - name: Derive WEB_BUILD_CACHE_TOKEN from exported data
-        run: |
-          hash=$(sha256sum \
-            apps/web/generated/fact-source/content.json \
-            apps/web/generated/fact-source/source-images-manifest.json \
-            | sha256sum | cut -c1-16)
-          echo "WEB_BUILD_CACHE_TOKEN=data-${hash}" >> "$GITHUB_ENV"
-
       - name: Astro check
-        id: check
-        run: |
-          started_at=$(date +%s)
-          bun run --cwd apps/web check:astro
-          ended_at=$(date +%s)
-          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
+        run: bun run --cwd apps/web check:astro
 
-      # Build explicitly so turbo populates .turbo/ BEFORE wrangler triggers
-      # it again. Wrangler's build command re-invokes turbo which then hits
-      # the same-session file cache and skips the rebuild entirely.
       - name: Build web
-        id: build
-        run: |
-          started_at=$(date +%s)
-          bun run build:web
-          ended_at=$(date +%s)
-          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
+        run: bun run build:web
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Deploy web
-        id: deploy
-        run: |
-          started_at=$(date +%s)
-          bun run deploy:web
-          ended_at=$(date +%s)
-          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
+        run: bun run deploy:web
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      # Save after a successful deploy so PRs and rebuild.yml can restore it.
       - name: Save generated web inputs
         if: success() && steps.generated_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v5
@@ -236,39 +143,8 @@ jobs:
           path: apps/web/generated
           key: generated-${{ runner.os }}-master-${{ hashFiles('apps/web/wrangler.jsonc', 'apps/admin-worker/scripts/exportWebFactSource.ts', 'packages/domain/src/factSource.ts') }}
 
-      # Key includes the data hash so one entry is created per unique
-      # (source × data) combination — not per push.
-      - name: Save turbo cache
-        if: success()
-        continue-on-error: true
-        uses: actions/cache/save@v5
-        with:
-          path: .turbo
-          key: turbo-${{ runner.os }}-web-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}-${{ env.WEB_BUILD_CACHE_TOKEN }}
-
-      - name: Summary
-        if: always()
-        run: |
-          {
-            echo "## Web — Export, Check & Deploy"
-            echo
-            echo "| Step | Seconds |"
-            echo "| --- | ---: |"
-            echo "| install | ${{ steps.setup.outputs.install-duration || 'n/a' }} |"
-            echo "| export fact source | ${{ steps.export.outputs.duration_seconds || 'n/a' }} |"
-            echo "| astro check | ${{ steps.check.outputs.duration_seconds || 'n/a' }} |"
-            echo "| build:web | ${{ steps.build.outputs.duration_seconds || 'n/a' }} |"
-            echo "| deploy:web | ${{ steps.deploy.outputs.duration_seconds || 'n/a' }} |"
-            echo
-            echo "- turbo cache hit: ${{ steps.turbo_cache.outputs.cache-hit || 'false' }}"
-            echo "- generated cache hit: ${{ steps.generated_cache.outputs.cache-hit || 'false' }}"
-          } >> "$GITHUB_STEP_SUMMARY"
-
   # ────────────────────────────────────────────────────────────────────────────
   # ADMIN — master only, runs after validate (in parallel with web)
-  #
-  # Restores the turbo cache saved by validate so deploy:admin can skip
-  # rebuilding the admin app entirely.
   # ────────────────────────────────────────────────────────────────────────────
   admin:
     name: Admin — Deploy
@@ -281,36 +157,15 @@ jobs:
         id: setup
 
       - name: Restore turbo cache
-        id: turbo_cache
         uses: actions/cache/restore@v5
         with:
           path: .turbo
-          key: turbo-${{ runner.os }}-master-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
+          key: turbo-${{ runner.os }}-${{ hashFiles('bun.lock', 'turbo.json', 'package.json', 'apps/*/package.json', 'packages/*/package.json') }}
           restore-keys: |
-            turbo-${{ runner.os }}-master-
             turbo-${{ runner.os }}-
 
       - name: Deploy admin
-        id: deploy
-        run: |
-          started_at=$(date +%s)
-          bun run deploy:admin
-          ended_at=$(date +%s)
-          echo "duration_seconds=$((ended_at - started_at))" >> "$GITHUB_OUTPUT"
+        run: bun run deploy:admin
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
-      - name: Summary
-        if: always()
-        run: |
-          {
-            echo "## Admin — Deploy"
-            echo
-            echo "| Step | Seconds |"
-            echo "| --- | ---: |"
-            echo "| install | ${{ steps.setup.outputs.install-duration || 'n/a' }} |"
-            echo "| deploy:admin | ${{ steps.deploy.outputs.duration_seconds || 'n/a' }} |"
-            echo
-            echo "- turbo cache hit: ${{ steps.turbo_cache.outputs.cache-hit || 'false' }}"
-          } >> "$GITHUB_STEP_SUMMARY"
