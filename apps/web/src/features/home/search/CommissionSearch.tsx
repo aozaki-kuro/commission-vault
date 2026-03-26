@@ -589,7 +589,7 @@ function CommissionSearch({
       <PopularKeywordsRow
         keywords={popularKeywords}
         refreshLabel={refreshPopularSearchLabel}
-        shuffleLabel={controls.shuffleRandomEntry}
+        shuffleLabel={controls.shuffleRandomEntryLabel}
         onRotate={onRotatePopularKeywords}
         onShuffle={onShuffleRandomEntry}
         onKeywordPointerDown={prepareSearchInteraction}
