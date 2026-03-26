@@ -15,11 +15,7 @@ const inlineEditStyles
 
 function CommissionEditFormSkeleton() {
   return (
-    <div className="
-      space-y-4 rounded-xl border border-gray-200/80 bg-white/80 p-4
-      dark:border-gray-700/80 dark:bg-gray-900/30
-    "
-    >
+    <div className="space-y-4">
       <div className="
         aspect-1280/525 w-full animate-pulse rounded-xl bg-gray-200/80
         dark:bg-gray-800
@@ -334,7 +330,8 @@ export function SortableCharacterCard({
             <div
               aria-hidden={!isOpen}
               className={`
-                space-y-4 border-t border-gray-200 bg-white/85 px-5 py-4
+                border-t border-gray-200 bg-white/85 px-3
+                sm:px-5
                 dark:border-gray-700 dark:bg-gray-900/30
                 ${reduceMotion ? '' : 'transition-all duration-200 ease-out'}
                 ${isOpen
@@ -345,7 +342,7 @@ export function SortableCharacterCard({
               {/* Show skeleton only while the card is open and loading */}
               {isOpen && (isCommissionsLoading || !isCommissionsLoaded)
                 ? (
-                    <div className="space-y-4">
+                    <div className="space-y-4 py-4">
                       <CommissionEditFormSkeleton />
                       <p className="
                         text-sm text-gray-500
@@ -363,23 +360,32 @@ export function SortableCharacterCard({
                 ? commissionList.length === 0
                   ? (
                       <p className="
-                        text-sm text-gray-500
+                        py-4 text-sm text-gray-500
                         dark:text-gray-300
                       "
                       >
                         No commissions recorded yet.
                       </p>
                     )
-                  : commissionList.map(commission => (
-                      <CommissionEditForm
-                        key={commission.id}
-                        commission={commission}
-                        characters={charactersForSelect}
-                        commissionSearchRows={commissionSearchRows}
-                        onDelete={() => onDeleteCommission(commission.id)}
-                        onSaveSuccess={onSaveSuccess}
-                      />
-                    ))
+                  : (
+                      <div className="
+                        divide-y divide-gray-200/80
+                        dark:divide-gray-700/80
+                      "
+                      >
+                        {commissionList.map(commission => (
+                          <div key={commission.id} className="py-4">
+                            <CommissionEditForm
+                              commission={commission}
+                              characters={charactersForSelect}
+                              commissionSearchRows={commissionSearchRows}
+                              onDelete={() => onDeleteCommission(commission.id)}
+                              onSaveSuccess={onSaveSuccess}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )
                 : null}
             </div>
           </div>
