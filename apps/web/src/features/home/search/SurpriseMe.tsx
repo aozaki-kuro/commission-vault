@@ -35,7 +35,13 @@ function pickAvoidingLast<T>(arr: T[], lastRef: CurrentRef<T>): T | null {
   if (!arr.length)
     return null
 
-  const candidates = arr.length > 1 && lastRef.current !== null
+  if (arr.length === 1) {
+    const pick = arr[0]
+    lastRef.current = pick
+    return pick
+  }
+
+  const candidates = lastRef.current !== null
     ? arr.filter(item => item !== lastRef.current)
     : arr
 
@@ -71,7 +77,7 @@ export default function SurpriseMe({ label = 'Shuffle', onShuffle }: SurpriseMeP
       { duration: 1100, easing: 'ease-out' },
     )
     onShuffle?.()
-  }, [onShuffle])
+  }, [lastRandomRef, onShuffle])
 
   return (
     <Button
