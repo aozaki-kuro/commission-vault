@@ -257,7 +257,7 @@ export function useCommissionSearchDomSync({
     // keeping it visible would let users click into a section with zero results.
     const { archivedPlaceholder } = resolvedIndex
     if (archivedPlaceholder) {
-      const shouldHidePlaceholder = hasDeferredQuery && hiddenArchivedMatchedCount === 0
+      const shouldHidePlaceholder = archivedVisible || (hasDeferredQuery && hiddenArchivedMatchedCount === 0)
       if (toggleHiddenClass(archivedPlaceholder, shouldHidePlaceholder)) {
         didLayoutChange = true
       }
