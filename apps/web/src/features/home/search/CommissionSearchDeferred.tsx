@@ -243,6 +243,7 @@ export default function CommissionSearchDeferred({
   const [popularKeywordPool, setPopularKeywordPool] = useState<string[]>(() =>
     externalEntries ? buildPopularKeywordPoolFromEntries(externalEntries) : [],
   )
+  const [matchedIds, setMatchedIds] = useState<Set<number>>(() => new Set())
 
   const dedupedFeaturedKeywordBatch = useMemo(
     () => dedupeKeywords(featuredKeywords, MAX_FEATURED_KEYWORDS),
@@ -330,9 +331,34 @@ export default function CommissionSearchDeferred({
     setPopularKeywordPage(previous => previous + 1)
   }, [])
 
-  const shuffleRandomEntry = useCallback(() => {
-    // Shuffle just picks a random entry from filtered results
-  }, [])
+  const shuffleRandomEntry = useCallback((matchedIds?: Set<number>) => {
+    if (!externalEntries || externalEntries.length === 0)
+      return
+
+    const candidates = matchedIds && matchedIds.size > 0
+      ? externalEntries.filter(entry => matchedIds.has(entry.id))
+      : externalEntries
+
+    if (candidates.length === 0)
+      return
+
+    const randomIndex = Math.floor(Math.random() * candidates.length)
+    const randomEntry = candidates[randomIndex]
+
+    if (randomEntry.domKey) {
+      const element = document.querySelector(`[data-commission-search-key="${randomEntry.domKey}"]`)
+      if (element instanceof HTMLElement) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        element.animate(
+          [
+            { boxShadow: '0 0 0 3px rgba(107,114,128,0.5)' },
+            { boxShadow: '0 0 0 12px rgba(107,114,128,0)' },
+          ],
+          { duration: 1100, easing: 'ease-out' },
+        )
+      }
+    }
+  }, [externalEntries])
 
   return (
     <CommissionSearch
@@ -342,7 +368,8 @@ export default function CommissionSearchDeferred({
       popularKeywords={popularKeywords}
       refreshPopularSearchLabel={controls.refreshPopularSearchLabel}
       onRotatePopularKeywords={popularKeywords.length > 0 ? rotatePopularKeywords : undefined}
-      onShuffleRandomEntry={shuffleRandomEntry}
+      onShuffleRandomEntry={() => shuffleRandomEntry(matchedIds)}
+      onMatchedIdsChange={setMatchedIds}
       suggestionAliasGroups={suggestionAliasGroups}
     />
   )
