@@ -140,7 +140,7 @@ export function mountScrollReveal(): () => void {
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ['class', 'style', 'data-commission-view-active'],
+    attributeFilter: ['data-commission-view-active'],
   })
 
   const rescan = () => {

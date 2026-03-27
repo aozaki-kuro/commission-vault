@@ -30,8 +30,23 @@ export default defineConfig({
       provider: fontProviders.fontsource(),
       name: 'IBM Plex Sans',
       cssVariable: '--font-ibm-plex-sans',
-      weights: [400, 600],
+      weights: [400, 600, 700],
       styles: ['normal'],
+    },
+    {
+      provider: fontProviders.local(),
+      name: 'Berkeley Mono',
+      cssVariable: '--font-berkeley-mono',
+      options: {
+        variants: [
+          {
+            weight: 400,
+            style: 'normal',
+            display: 'swap',
+            src: ['./src/assets/fonts/BerkeleyMono-Regular.woff2'],
+          },
+        ],
+      },
     },
   ],
 
