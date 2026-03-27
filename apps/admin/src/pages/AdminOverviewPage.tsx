@@ -1,14 +1,17 @@
 import type { AdminCommissionSearchRow } from '@commission-index/domain'
-import type { MouseEvent } from 'react'
+import type { ReactNode } from 'react'
 import type { StatusTone } from '../app/ui'
 import type { AdminOverviewPayload } from '../lib/adminApi'
 import { useCallback, useEffect, useEffectEvent, useReducer, useRef, useState } from 'react'
 import {
   adminActionLinkStyles,
   adminInsetCardStyles,
+  adminMetricCardStyles,
   adminSurfaceStyles,
+  getRebuildButtonStyles,
   getStatusBadgeStyles,
 } from '../app/ui'
+import { AdminInternalLink } from '../components/AdminInternalLink'
 import {
   fetchAdminOverviewPayload,
   getAdminApiBaseUrl,
@@ -148,18 +151,38 @@ function getStatusDescription(
   return isLoading ? 'Loading live worker status...' : 'Worker status unavailable.'
 }
 
+function MetricCard({ title, value, children }: { title: string, value: string, children: ReactNode }) {
+  return (
+    <article className={adminMetricCardStyles}>
+      <p className="
+        text-xs font-semibold tracking-wide text-gray-500 uppercase
+        dark:text-gray-300
+      "
+      >
+        {title}
+      </p>
+      <p className="
+        mt-2 text-3xl font-semibold text-gray-900
+        dark:text-gray-100
+      "
+      >
+        {value}
+      </p>
+      <p className="
+        mt-2 text-xs text-gray-600
+        dark:text-gray-300
+      "
+      >
+        {children}
+      </p>
+    </article>
+  )
+}
+
 type RebuildState = 'idle' | 'pending' | 'success' | 'error'
 
 interface AdminOverviewPageProps {
   onNavigate: (path: string) => void
-}
-
-function shouldHandleInternalNavigation(event: MouseEvent<HTMLAnchorElement>) {
-  return !event.defaultPrevented
-    && !event.metaKey
-    && !event.ctrlKey
-    && !event.shiftKey
-    && !event.altKey
 }
 
 export function AdminOverviewPage({ onNavigate }: AdminOverviewPageProps) {
@@ -248,137 +271,37 @@ export function AdminOverviewPage({ onNavigate }: AdminOverviewPageProps) {
         sm:grid-cols-2
       "
       >
-        <article className="
-          rounded-2xl border border-gray-200 bg-white/90 p-5 shadow-sm ring-1
-          ring-gray-900/5 backdrop-blur-sm
-          dark:border-gray-700 dark:bg-gray-900/40 dark:ring-white/10
-        "
-        >
-          <p className="
-            text-xs font-semibold tracking-wide text-gray-500 uppercase
-            dark:text-gray-300
-          "
-          >
-            Characters
-          </p>
-          <p className="
-            mt-2 text-3xl font-semibold text-gray-900
-            dark:text-gray-100
-          "
-          >
-            {getMetricValue(metrics?.totalCharacters ?? null)}
-          </p>
-          <p className="
-            mt-2 text-xs text-gray-600
-            dark:text-gray-300
-          "
-          >
-            Active
-            {' '}
-            {getMetricValue(metrics?.activeCharacters ?? null)}
-            {' '}
-            / Archived
-            {' '}
-            {getMetricValue(metrics?.archivedCharacters ?? null)}
-          </p>
-        </article>
+        <MetricCard title="Characters" value={getMetricValue(metrics?.totalCharacters ?? null)}>
+          Active
+          {' '}
+          {getMetricValue(metrics?.activeCharacters ?? null)}
+          {' '}
+          / Archived
+          {' '}
+          {getMetricValue(metrics?.archivedCharacters ?? null)}
+        </MetricCard>
 
-        <article className="
-          rounded-2xl border border-gray-200 bg-white/90 p-5 shadow-sm ring-1
-          ring-gray-900/5 backdrop-blur-sm
-          dark:border-gray-700 dark:bg-gray-900/40 dark:ring-white/10
-        "
-        >
-          <p className="
-            text-xs font-semibold tracking-wide text-gray-500 uppercase
-            dark:text-gray-300
-          "
-          >
-            Commissions
-          </p>
-          <p className="
-            mt-2 text-3xl font-semibold text-gray-900
-            dark:text-gray-100
-          "
-          >
-            {getMetricValue(metrics?.totalCommissions ?? null)}
-          </p>
-          <p className="
-            mt-2 text-xs text-gray-600
-            dark:text-gray-300
-          "
-          >
-            Indexed entries available for admin search.
-          </p>
-        </article>
+        <MetricCard title="Commissions" value={getMetricValue(metrics?.totalCommissions ?? null)}>
+          Indexed entries available for admin search.
+        </MetricCard>
 
-        <article className="
-          rounded-2xl border border-gray-200 bg-white/90 p-5 shadow-sm ring-1
-          ring-gray-900/5 backdrop-blur-sm
-          dark:border-gray-700 dark:bg-gray-900/40 dark:ring-white/10
-        "
-        >
-          <p className="
-            text-xs font-semibold tracking-wide text-gray-500 uppercase
-            dark:text-gray-300
-          "
-          >
-            Alias Rows
-          </p>
-          <p className="
-            mt-2 text-3xl font-semibold text-gray-900
-            dark:text-gray-100
-          "
-          >
-            {getMetricValue(metrics?.totalAliasRows ?? null)}
-          </p>
-          <p className="
-            mt-2 text-xs text-gray-600
-            dark:text-gray-300
-          "
-          >
-            Character
-            {' '}
-            {getMetricValue(metrics?.characterAliasCount ?? null)}
-            {' '}
-            / Creator
-            {' '}
-            {getMetricValue(metrics?.creatorAliasCount ?? null)}
-            {' '}
-            / Keyword
-            {' '}
-            {getMetricValue(metrics?.keywordAliasCount ?? null)}
-          </p>
-        </article>
+        <MetricCard title="Alias Rows" value={getMetricValue(metrics?.totalAliasRows ?? null)}>
+          Character
+          {' '}
+          {getMetricValue(metrics?.characterAliasCount ?? null)}
+          {' '}
+          / Creator
+          {' '}
+          {getMetricValue(metrics?.creatorAliasCount ?? null)}
+          {' '}
+          / Keyword
+          {' '}
+          {getMetricValue(metrics?.keywordAliasCount ?? null)}
+        </MetricCard>
 
-        <article className="
-          rounded-2xl border border-gray-200 bg-white/90 p-5 shadow-sm ring-1
-          ring-gray-900/5 backdrop-blur-sm
-          dark:border-gray-700 dark:bg-gray-900/40 dark:ring-white/10
-        "
-        >
-          <p className="
-            text-xs font-semibold tracking-wide text-gray-500 uppercase
-            dark:text-gray-300
-          "
-          >
-            Featured Keywords
-          </p>
-          <p className="
-            mt-2 text-3xl font-semibold text-gray-900
-            dark:text-gray-100
-          "
-          >
-            {getMetricValue(metrics?.featuredKeywordCount ?? null)}
-          </p>
-          <p className="
-            mt-2 text-xs text-gray-600
-            dark:text-gray-300
-          "
-          >
-            Curated home suggestions.
-          </p>
-        </article>
+        <MetricCard title="Featured Keywords" value={getMetricValue(metrics?.featuredKeywordCount ?? null)}>
+          Curated home suggestions.
+        </MetricCard>
       </section>
 
       <section className={adminSurfaceStyles}>
@@ -401,66 +324,22 @@ export function AdminOverviewPage({ onNavigate }: AdminOverviewPageProps) {
           sm:grid-cols-2
         "
         >
-          <a
-            href="/create"
-            className={adminActionLinkStyles}
-            onClick={(event) => {
-              if (!shouldHandleInternalNavigation(event)) {
-                return
-              }
-
-              event.preventDefault()
-              onNavigate('/create')
-            }}
-          >
+          <AdminInternalLink href="/create" onNavigate={onNavigate} className={adminActionLinkStyles}>
             Create entries
             <span aria-hidden="true">→</span>
-          </a>
-          <a
-            href="/edit"
-            className={adminActionLinkStyles}
-            onClick={(event) => {
-              if (!shouldHandleInternalNavigation(event)) {
-                return
-              }
-
-              event.preventDefault()
-              onNavigate('/edit')
-            }}
-          >
+          </AdminInternalLink>
+          <AdminInternalLink href="/edit" onNavigate={onNavigate} className={adminActionLinkStyles}>
             Edit existing
             <span aria-hidden="true">→</span>
-          </a>
-          <a
-            href="/aliases"
-            className={adminActionLinkStyles}
-            onClick={(event) => {
-              if (!shouldHandleInternalNavigation(event)) {
-                return
-              }
-
-              event.preventDefault()
-              onNavigate('/aliases')
-            }}
-          >
+          </AdminInternalLink>
+          <AdminInternalLink href="/aliases" onNavigate={onNavigate} className={adminActionLinkStyles}>
             Manage aliases
             <span aria-hidden="true">→</span>
-          </a>
-          <a
-            href="/suggestion"
-            className={adminActionLinkStyles}
-            onClick={(event) => {
-              if (!shouldHandleInternalNavigation(event)) {
-                return
-              }
-
-              event.preventDefault()
-              onNavigate('/suggestion')
-            }}
-          >
+          </AdminInternalLink>
+          <AdminInternalLink href="/suggestion" onNavigate={onNavigate} className={adminActionLinkStyles}>
             Curate suggestions
             <span aria-hidden="true">→</span>
-          </a>
+          </AdminInternalLink>
         </div>
 
         <div className="
@@ -492,42 +371,9 @@ export function AdminOverviewPage({ onNavigate }: AdminOverviewPageProps) {
               type="button"
               onClick={handleRebuild}
               disabled={rebuildState === 'pending'}
-              className={`
-                w-28 shrink-0 rounded-lg border px-4 py-2 text-center text-xs
-                font-semibold shadow-sm transition
-                focus-visible:ring-2 focus-visible:ring-offset-2
-                focus-visible:ring-offset-white focus-visible:outline-none
-                active:scale-[0.97]
-                disabled:cursor-not-allowed disabled:opacity-50
-                ${rebuildState === 'error'
-      ? `
-        border-red-300 bg-red-50 text-red-700
-        hover:border-red-400 hover:bg-red-100
-        focus-visible:ring-red-400
-        dark:border-red-700 dark:bg-red-500/15 dark:text-red-200
-        dark:hover:border-red-600 dark:hover:bg-red-500/25
-        dark:focus-visible:ring-red-500 dark:focus-visible:ring-offset-gray-900
-      `
-      : rebuildState === 'success'
-        ? `
-          border-emerald-300 bg-emerald-50 text-emerald-700
-          hover:border-emerald-400 hover:bg-emerald-100
-          focus-visible:ring-emerald-400
-          dark:border-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200
-          dark:hover:border-emerald-600 dark:hover:bg-emerald-500/25
-          dark:focus-visible:ring-emerald-500
-          dark:focus-visible:ring-offset-gray-900
-        `
-        : `
-          border-amber-500 bg-amber-500 text-white
-          hover:border-amber-400 hover:bg-amber-400
-          focus-visible:ring-amber-400
-          dark:border-amber-400 dark:bg-amber-400 dark:text-amber-950
-          dark:hover:border-amber-300 dark:hover:bg-amber-300
-          dark:focus-visible:ring-amber-300
-          dark:focus-visible:ring-offset-gray-900
-        `}
-              `}
+              className={getRebuildButtonStyles(
+                rebuildState === 'error' ? 'error' : rebuildState === 'success' ? 'success' : 'default',
+              )}
             >
               {rebuildState === 'pending'
                 ? 'Dispatching…'
@@ -651,25 +497,18 @@ export function AdminOverviewPage({ onNavigate }: AdminOverviewPageProps) {
           >
             Latest entries
           </h2>
-          <a
+          <AdminInternalLink
+            href="/edit"
+            onNavigate={onNavigate}
             className="
               text-xs text-gray-600
               hover:text-gray-900
               dark:text-gray-300
               dark:hover:text-gray-100
             "
-            href="/edit"
-            onClick={(event) => {
-              if (!shouldHandleInternalNavigation(event)) {
-                return
-              }
-
-              event.preventDefault()
-              onNavigate('/edit')
-            }}
           >
             Open edit view
-          </a>
+          </AdminInternalLink>
         </div>
 
         {latestCommissions.length === 0

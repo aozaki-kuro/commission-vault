@@ -17,12 +17,12 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { IconGripHorizontal, IconX } from '@tabler/icons-react'
 import { useActionState, useDeferredValue, useMemo, useState } from 'react'
-import { useFormStatus } from 'react-dom'
 import { adminSurfaceStyles, formControlStyles } from '../app/ui'
 import { saveHomeFeaturedKeywordsAction } from '../lib/adminActions'
 import { INITIAL_FORM_STATE } from '../lib/formState'
 import { dedupeKeywords } from '../lib/keywords'
 import { FormStatusIndicator } from './FormStatusIndicator'
+import { SaveButton } from './SaveButton'
 
 interface AdminSuggestionDashboardProps {
   featuredKeywords: string[]
@@ -40,32 +40,6 @@ function normalizeKeyword(value: string) {
 
 function normalizeKeywordKey(value: string) {
   return normalizeKeyword(value).toLowerCase()
-}
-
-function SaveButton() {
-  const { pending } = useFormStatus()
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="
-        inline-flex h-9 items-center justify-center rounded-md bg-gray-900 px-3
-        text-sm font-medium whitespace-nowrap text-white transition
-        hover:bg-gray-700
-        focus-visible:ring-2 focus-visible:ring-gray-400
-        focus-visible:ring-offset-2 focus-visible:ring-offset-white
-        focus-visible:outline-none
-        active:scale-[0.97]
-        disabled:pointer-events-none disabled:opacity-50
-        dark:bg-gray-100 dark:text-gray-900
-        dark:hover:bg-gray-200
-        dark:focus-visible:ring-offset-gray-900
-      "
-    >
-      {pending ? 'Saving...' : 'Save featured keywords'}
-    </button>
-  )
 }
 
 interface SortableKeywordItemProps {
@@ -288,7 +262,7 @@ export function AdminSuggestionDashboard({
                 successLabel="Saved"
                 errorFallback="Unable to save featured keywords."
               />
-              <SaveButton />
+              <SaveButton label="Save featured keywords" />
             </div>
           </div>
 

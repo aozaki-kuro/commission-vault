@@ -1,7 +1,7 @@
-import type { MouseEvent } from 'react'
 import { startTransition, useCallback, useEffect, useRef, useState } from 'react'
 import { adminSections, getAdminSectionForPath, normalizeAdminPath } from './app/sections'
 import { adminActionLinkStyles, adminSurfaceStyles } from './app/ui'
+import { AdminInternalLink } from './components/AdminInternalLink'
 import { AdminPageShell, AdminRootLayout } from './components/AdminLayout'
 import { AdminAliasesPage } from './pages/AdminAliasesPage'
 import { AdminCreatePage } from './pages/AdminCreatePage'
@@ -29,14 +29,6 @@ function getPublicSiteUrl() {
 
 function getWindowScrollTop() {
   return Math.max(window.scrollY, window.pageYOffset, 0)
-}
-
-function shouldHandleInternalNavigation(event: MouseEvent<HTMLAnchorElement>) {
-  return !event.defaultPrevented
-    && !event.metaKey
-    && !event.ctrlKey
-    && !event.shiftKey
-    && !event.altKey
 }
 
 export function App() {
@@ -159,22 +151,15 @@ export function App() {
             "
             >
               {adminSections.map(section => (
-                <a
+                <AdminInternalLink
                   key={section.key}
                   href={section.path}
-                  onClick={(event) => {
-                    if (!shouldHandleInternalNavigation(event)) {
-                      return
-                    }
-
-                    event.preventDefault()
-                    navigateTo(section.path)
-                  }}
+                  onNavigate={navigateTo}
                   className={adminActionLinkStyles}
                 >
                   {section.title}
                   <span aria-hidden="true">→</span>
-                </a>
+                </AdminInternalLink>
               ))}
             </div>
             <a
