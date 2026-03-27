@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@commission-index/domain": "workspace:*"
+    "@commission-index/domain": "workspace:*",
+    "sharp": "^0.33.5"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",

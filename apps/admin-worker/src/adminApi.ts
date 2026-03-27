@@ -105,6 +105,7 @@ export interface CreateCommissionInput extends CommissionFields {
 
 export interface UpdateCommissionInput extends CommissionFields {
   id: number
+  oldFileName?: string
 }
 
 export interface ReplaceCommissionSourceImageInput {
@@ -419,6 +420,12 @@ function createNativeCrudBackend(
     async updateCommission(input) {
       try {
         await persistCommissionUpdate(db, input)
+        if (imagesBucket && input.oldFileName && input.oldFileName !== input.fileName) {
+          const oldCandidateKeys = buildSourceImageCandidateKeys(input.oldFileName)
+          for (const key of oldCandidateKeys) {
+            await imagesBucket.delete(key).catch(() => {})
+          }
+        }
         return json({
           status: 'success',
           message: `Commission "${input.fileName}" updated.`,
@@ -570,8 +577,10 @@ async function handleCrudRequest(request: Request, backend: AdminCrudBackend) {
       return failure(validation)
     }
 
+    const oldFileName = await persistCommissionFileName(db, id)
     return handleCrudBackendRequest(() => backend.updateCommission({
       id,
+      oldFileName,
       ...fields,
     }))
   }

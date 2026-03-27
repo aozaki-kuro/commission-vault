@@ -53,34 +53,13 @@ function normalizeCommissionFileName(rawValue: string) {
   return rawValue.trim()
 }
 
-function getSourceImageContentType(extension: '.jpg' | '.png') {
-  if (extension === '.png') {
-    return 'image/png'
-  }
-
-  return 'image/jpeg'
-}
-
-function resolveUploadExtension(file: File): '.jpg' | '.png' | null {
-  const mimeType = file.type.toLowerCase()
-  if (mimeType === 'image/jpeg') {
-    return '.jpg'
-  }
-
-  if (mimeType === 'image/png') {
-    return '.png'
-  }
-
-  const fileName = file.name.toLowerCase()
-  if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
-    return '.jpg'
-  }
-
-  if (fileName.endsWith('.png')) {
-    return '.png'
-  }
-
-  return null
+async function convertToJpeg(buffer: ArrayBuffer): Promise<ArrayBuffer> {
+  const { default: sharp } = await import('sharp')
+  const { Buffer: NodeBuffer } = await import('node:buffer')
+  const result = await sharp(NodeBuffer.from(buffer))
+    .jpeg({ quality: 95 })
+    .toBuffer()
+  return result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength)
 }
 
 export function getSourceImageFileNameValidationError(rawValue: string) {
@@ -155,6 +134,7 @@ export async function saveSourceImageToBucket(
     commissionFileName: string
     file: File
     overwrite: boolean
+    oldCommissionFileName?: string
   },
 ): Promise<SavedSourceImage> {
   const validationError = getSourceImageFileNameValidationError(input.commissionFileName)
@@ -172,10 +152,15 @@ export async function saveSourceImageToBucket(
   }
 
   const fileName = normalizeCommissionFileName(input.commissionFileName)
-  const targetKey = `${fileName}${extension}`
+  const targetKey = `${fileName}.jpg`
   const candidateKeys = buildSourceImageCandidateKeys(fileName)
-  const imageBuffer = await input.file.arrayBuffer()
-  const mimeType = getSourceImageContentType(extension)
+  let imageBuffer = await input.file.arrayBuffer()
+
+  if (extension === '.png') {
+    imageBuffer = await convertToJpeg(imageBuffer)
+  }
+
+  const mimeType = 'image/jpeg'
 
   if (!input.overwrite) {
     for (const key of candidateKeys) {
@@ -199,6 +184,13 @@ export async function saveSourceImageToBucket(
       }
 
       await bucket.delete(key)
+    }
+
+    if (input.oldCommissionFileName && input.oldCommissionFileName !== input.commissionFileName) {
+      const oldCandidateKeys = buildSourceImageCandidateKeys(input.oldCommissionFileName)
+      for (const key of oldCandidateKeys) {
+        await bucket.delete(key)
+      }
     }
   }
 
