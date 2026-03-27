@@ -52,6 +52,7 @@ export function CharacterDeleteDialog({
       className="
         fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4
         backdrop-blur-[2px]
+        motion-safe:animate-[overlayFadeIn_200ms_ease-out]
       "
       onClick={() => {
         if (!isDeletePending) {
@@ -67,6 +68,7 @@ export function CharacterDeleteDialog({
         className="
           w-full max-w-md rounded-2xl bg-white p-6 shadow-xl ring-1
           ring-gray-900/10
+          motion-safe:animate-[dialogEnter_240ms_cubic-bezier(0.25,1,0.5,1)]
           dark:bg-gray-950 dark:ring-white/10
         "
         onClick={event => event.stopPropagation()}

@@ -151,9 +151,15 @@ function getStatusDescription(
   return isLoading ? 'Loading live worker status...' : 'Worker status unavailable.'
 }
 
-function MetricCard({ title, value, children }: { title: string, value: string, children: ReactNode }) {
+function MetricCard({ title, value, children, index = 0 }: { title: string, value: string, children: ReactNode, index?: number }) {
   return (
-    <article className={adminMetricCardStyles}>
+    <article
+      className={`
+        ${adminMetricCardStyles}
+        motion-safe:animate-[tabFade_400ms_cubic-bezier(0.25,1,0.5,1)_backwards]
+      `}
+      style={{ animationDelay: `${index * 80}ms` }}
+    >
       <p className="
         text-xs font-semibold tracking-wide text-gray-500 uppercase
         dark:text-gray-300
@@ -271,7 +277,7 @@ export function AdminOverviewPage({ onNavigate }: AdminOverviewPageProps) {
         sm:grid-cols-2
       "
       >
-        <MetricCard title="Characters" value={getMetricValue(metrics?.totalCharacters ?? null)}>
+        <MetricCard index={0} title="Characters" value={getMetricValue(metrics?.totalCharacters ?? null)}>
           Active
           {' '}
           {getMetricValue(metrics?.activeCharacters ?? null)}
@@ -281,11 +287,11 @@ export function AdminOverviewPage({ onNavigate }: AdminOverviewPageProps) {
           {getMetricValue(metrics?.archivedCharacters ?? null)}
         </MetricCard>
 
-        <MetricCard title="Commissions" value={getMetricValue(metrics?.totalCommissions ?? null)}>
+        <MetricCard index={1} title="Commissions" value={getMetricValue(metrics?.totalCommissions ?? null)}>
           Indexed entries available for admin search.
         </MetricCard>
 
-        <MetricCard title="Alias Rows" value={getMetricValue(metrics?.totalAliasRows ?? null)}>
+        <MetricCard index={2} title="Alias Rows" value={getMetricValue(metrics?.totalAliasRows ?? null)}>
           Character
           {' '}
           {getMetricValue(metrics?.characterAliasCount ?? null)}
@@ -299,7 +305,7 @@ export function AdminOverviewPage({ onNavigate }: AdminOverviewPageProps) {
           {getMetricValue(metrics?.keywordAliasCount ?? null)}
         </MetricCard>
 
-        <MetricCard title="Featured Keywords" value={getMetricValue(metrics?.featuredKeywordCount ?? null)}>
+        <MetricCard index={3} title="Featured Keywords" value={getMetricValue(metrics?.featuredKeywordCount ?? null)}>
           Curated home suggestions.
         </MetricCard>
       </section>
