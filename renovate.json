@@ -17,21 +17,24 @@
       "groupName": "astro stack"
     },
     {
+      "description": "Vite build toolchain",
+      "matchPackageNames": ["vite", "@tailwindcss/vite"],
+      "groupName": "vite toolchain"
+    },
+    {
       "description": "React runtime packages",
       "matchPackageNames": ["react", "react-dom", "cmdk"],
       "groupName": "react runtime"
     },
     {
       "description": "Type declarations",
-      "matchPackageNames": ["@types/react", "@types/react-dom", "@types/node", "@types/better-sqlite3"],
+      "matchPackageNames": ["@types/react", "@types/react-dom", "@types/node"],
       "groupName": "types"
     },
     {
       "description": "Tailwind and styling ecosystem",
       "matchPackageNames": [
         "tailwindcss",
-        "@tailwindcss/postcss",
-        "postcss",
         "tailwind-merge",
         "class-variance-authority",
         "clsx",
@@ -41,7 +44,17 @@
     },
     {
       "description": "Lint and hooks tooling",
-      "matchPackageNames": ["eslint", "@antfu/eslint-config", "lint-staged", "@j178/prek"],
+      "matchPackageNames": [
+        "eslint",
+        "@antfu/eslint-config",
+        "@eslint-react/eslint-plugin",
+        "eslint-plugin-astro",
+        "eslint-plugin-format",
+        "eslint-plugin-react-hooks",
+        "eslint-plugin-react-refresh",
+        "lint-staged",
+        "@j178/prek"
+      ],
       "groupName": "lint and hooks"
     },
     {
@@ -57,7 +70,7 @@
     },
     {
       "description": "TypeScript toolchain",
-      "matchPackageNames": ["typescript", "vite-tsconfig-paths"],
+      "matchPackageNames": ["typescript"],
       "groupName": "typescript toolchain"
     },
     {
@@ -71,14 +84,23 @@
       "groupName": "dnd-kit"
     },
     {
-      "description": "Infra and native modules",
-      "matchPackageNames": ["wrangler", "better-sqlite3", "sharp"],
-      "groupName": "infra and native modules"
+      "description": "Infra and deploy tooling",
+      "matchPackageNames": ["wrangler", "sharp", "turbo"],
+      "groupName": "infra and deploy"
     },
     {
       "description": "Runtime utilities",
-      "matchPackageNames": ["fuse.js", "@tabler/icons-react"],
+      "matchPackageNames": [
+        "fuse.js",
+        "@tabler/icons-react",
+        "@fontsource/ibm-plex-sans"
+      ],
       "groupName": "runtime utilities"
+    },
+    {
+      "description": "Formatting",
+      "matchPackageNames": ["prettier"],
+      "groupName": "formatting"
     },
     {
       "description": "Automerge stable minor and patch updates",
@@ -95,9 +117,9 @@
         "react",
         "react-dom",
         "cmdk",
+        "vite",
         "wrangler",
-        "sharp",
-        "better-sqlite3"
+        "sharp"
       ],
       "automerge": false
     }
