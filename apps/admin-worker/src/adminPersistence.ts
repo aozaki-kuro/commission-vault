@@ -535,6 +535,20 @@ export async function saveSourceImageMetadata(
   )
 }
 
+export async function getSourceImageMetadata(db: D1DatabaseLike, commissionFileName: string) {
+  await ensureSourceImagesTable(db)
+  return queryFirstRow<{
+    objectKey: string
+    mimeType: string
+    byteSize: number
+    sha256: string
+  }>(
+    db,
+    'SELECT object_key as objectKey, mime_type as mimeType, byte_size as byteSize, sha256 FROM source_images WHERE commission_file_name = ? LIMIT 1',
+    [commissionFileName],
+  )
+}
+
 export async function deleteSourceImageMetadata(db: D1DatabaseLike, commissionFileName: string) {
   await ensureSourceImagesTable(db)
   await runStatement(

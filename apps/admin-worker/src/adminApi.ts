@@ -11,6 +11,7 @@ import {
   getCommissionFileName as persistCommissionFileName,
   updateCommission as persistCommissionUpdate,
   saveSourceImageMetadata as persistSourceImageMetadata,
+  getSourceImageMetadata as persistSourceImageMetadataGet,
   saveCharacterAliasesBatch,
   saveCreatorAliasesBatch,
   saveHomeFeaturedSearchKeywords,
@@ -418,7 +419,37 @@ function createNativeCrudBackend(
     },
     async updateCommission(input) {
       try {
+        const oldFileName = await persistCommissionFileName(db, input.id)
+        const newFileName = input.fileName.trim()
+        const fileNameChanged = oldFileName !== newFileName
+
+        let oldSourceImageMeta: Awaited<ReturnType<typeof persistSourceImageMetadataGet>> = null
+        if (fileNameChanged) {
+          oldSourceImageMeta = await persistSourceImageMetadataGet(db, oldFileName)
+        }
+
         await persistCommissionUpdate(db, input)
+
+        if (fileNameChanged && oldSourceImageMeta && imagesBucket) {
+          const ext = oldSourceImageMeta.objectKey.slice(oldFileName.length)
+          const newObjectKey = `${newFileName}${ext}`
+          const oldObject = await imagesBucket.get(oldSourceImageMeta.objectKey)
+          if (oldObject) {
+            const buffer = await oldObject.arrayBuffer()
+            await imagesBucket.put(newObjectKey, buffer, {
+              httpMetadata: { contentType: oldSourceImageMeta.mimeType },
+            })
+            await persistSourceImageMetadata(db, {
+              commissionFileName: newFileName,
+              objectKey: newObjectKey,
+              mimeType: oldSourceImageMeta.mimeType,
+              byteSize: oldSourceImageMeta.byteSize,
+              sha256: oldSourceImageMeta.sha256,
+            })
+            await imagesBucket.delete(oldSourceImageMeta.objectKey)
+          }
+        }
+
         return json({
           status: 'success',
           message: `Commission "${input.fileName}" updated.`,

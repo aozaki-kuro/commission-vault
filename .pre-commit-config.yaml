@@ -23,6 +23,15 @@ repos:
           - pre-commit
         always_run: true
 
+      - id: typecheck
+        name: typecheck
+        entry: bun run typecheck
+        language: system
+        pass_filenames: false
+        stages:
+          - pre-push
+        always_run: true
+
       - id: tests
         name: vitest
         entry: bun run test
