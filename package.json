@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^7.7.3",
-    "@eslint-react/eslint-plugin": "^2.11.0",
+    "@eslint-react/eslint-plugin": "^2.13.0",
     "@j178/prek": "^0.3.8",
     "@playwright/test": "^1.58.2",
     "@types/node": "^25.5.0",
@@ -54,7 +54,7 @@
     "tailwindcss": "^4.2.2",
     "turbo": "^2.8.20",
     "typescript": "^6.0.2",
-    "vitest": "^4.1.1"
+    "vitest": "^4.1.2"
   },
   "lint-staged": {
     "*": [
