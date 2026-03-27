@@ -292,6 +292,7 @@ export function CommissionEditForm({
               <img
                 src={previewImageSrc}
                 alt={commission.fileName}
+                loading="lazy"
                 className="size-full object-contain"
                 onError={() => setErrorSrc(imageSrc)}
               />
