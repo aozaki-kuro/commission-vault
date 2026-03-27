@@ -53,6 +53,15 @@ function normalizeCommissionFileName(rawValue: string) {
   return rawValue.trim()
 }
 
+function resolveUploadExtension(file: File): string | null {
+  const type = file.type.toLowerCase()
+  if (type === 'image/jpeg')
+    return '.jpg'
+  if (type === 'image/png')
+    return '.png'
+  return null
+}
+
 async function convertToJpeg(buffer: ArrayBuffer): Promise<ArrayBuffer> {
   const { default: sharp } = await import('sharp')
   const { Buffer: NodeBuffer } = await import('node:buffer')
@@ -152,15 +161,21 @@ export async function saveSourceImageToBucket(
   }
 
   const fileName = normalizeCommissionFileName(input.commissionFileName)
-  const targetKey = `${fileName}.jpg`
-  const candidateKeys = buildSourceImageCandidateKeys(fileName)
   let imageBuffer = await input.file.arrayBuffer()
+  let targetKey: string
+  let mimeType: string
 
   if (extension === '.png') {
+    targetKey = `${fileName}.png`
+    mimeType = 'image/png'
+  }
+  else {
     imageBuffer = await convertToJpeg(imageBuffer)
+    targetKey = `${fileName}.jpg`
+    mimeType = 'image/jpeg'
   }
 
-  const mimeType = 'image/jpeg'
+  const candidateKeys = buildSourceImageCandidateKeys(fileName)
 
   if (!input.overwrite) {
     for (const key of candidateKeys) {

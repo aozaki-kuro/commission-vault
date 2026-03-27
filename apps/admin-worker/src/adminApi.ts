@@ -448,15 +448,14 @@ function createNativeCrudBackend(
       try {
         const oldCommissionFileName = await persistCommissionFileName(db, input.id)
         const savedSourceImage = await saveSourceImageToBucket(imagesBucket, {
-          commissionFileName: input.commissionFileName,
+          commissionFileName: oldCommissionFileName,
           file: input.sourceImage,
           overwrite: true,
-          oldCommissionFileName,
         })
         await persistSourceImageMetadata(db, savedSourceImage)
         return json({
           status: 'success',
-          message: `Source image for "${input.commissionFileName}" replaced.`,
+          message: `Source image for "${oldCommissionFileName}" replaced.`,
         })
       }
       catch (error) {

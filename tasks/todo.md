@@ -1,5 +1,11 @@
 # 统一迁移状态板（2026-03-18）
 
+## 本轮执行切片（2026-03-27 Vitest jpg 处理回归修复）
+
+- [x] 跑仓库级 `vitest`，收集当前全部失败并确认是否与 jpg 处理逻辑变更相关
+- [x] 以最小改动修复实现或更新测试预期，覆盖 admin worker source-image 相关回归
+- [x] 重新运行受影响测试并确认仓库级 `vitest` 恢复通过
+
 ## 本轮执行切片（2026-03-25 Want this 跨视图状态同步）
 
 - [x] 复盘首页 `Want this` 在 Character / Date 双视图下的状态键与按钮挂载方式，确认根因
@@ -549,3 +555,10 @@
 
 - [x] `bun run check` 通过，`apps/web` 诊断结果为 `0 errors / 0 warnings / 0 hints`，原 `MutableRefObject` warning 已消失。
 - [x] `bun eslint apps/web/src/features/home/search/SurpriseMe.tsx` 初次执行暴露仓库规则 `ts/consistent-type-definitions`；已将本轮新增的 `type CurrentRef<T>` 收口为 `interface CurrentRef<T>`，避免引入新的 lint 噪音。
+
+## Review（2026-03-27 Vitest jpg 处理回归修复）
+
+- [x] 根因不是路由或 D1/R2 契约变更，而是 `apps/admin-worker/src/adminSourceImages.ts` 现在会把 `image/jpeg` 上传真正送进 `sharp` 做 JPEG 转码；旧测试里的 `new File(['jpg'], ...)` 只是文本字节，已不再是合法输入。
+- [x] `apps/admin-worker/src/adminApi.test.ts` 已把 source-image replacement 用例改为真实可解码的 JPEG 样本，继续验证 `.jpg` 写入与 `.jpeg` / `.png` 清理语义，而不是依赖伪造文本文件。
+- [x] `bun x eslint apps/admin-worker/src/adminApi.test.ts` 通过。
+- [x] `bun run test` 通过，结果为 `38 passed / 179 passed`。

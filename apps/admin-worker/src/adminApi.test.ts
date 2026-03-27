@@ -6,6 +6,7 @@ import type {
   UpdateCharacterInput,
   UpdateCommissionInput,
 } from './adminApi'
+import { Buffer } from 'node:buffer'
 import { describe, expect, it, vi } from 'vitest'
 import {
   handleAdminApiRequest,
@@ -13,6 +14,10 @@ import {
 
 const baseUrl = 'http://127.0.0.1:8787'
 const noopCtx = { waitUntil: (_p: Promise<unknown>) => {} }
+const sampleJpegBytes = Uint8Array.from(Buffer.from(
+  '/9j/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/2wBDAQICAgICAgUDAwUKBwYHCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgr/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AL+AA//Z',
+  'base64',
+))
 
 function createJsonResponse(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -850,7 +855,7 @@ describe('admin worker CRUD contract routing', () => {
 
     const formData = new FormData()
     formData.set('commissionFileName', 'stale-client-name')
-    formData.set('sourceImage', new File(['jpg'], 'sample.jpg', { type: 'image/jpeg' }))
+    formData.set('sourceImage', new File([sampleJpegBytes], 'sample.jpg', { type: 'image/jpeg' }))
 
     const response = await handleAdminApiRequest(
       new Request(`${baseUrl}/api/admin/commissions/19/source-image`, {
