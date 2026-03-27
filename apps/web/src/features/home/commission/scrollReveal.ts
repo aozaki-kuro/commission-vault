@@ -111,9 +111,12 @@ export function mountScrollReveal(): () => void {
     for (const mutation of mutations) {
       if (mutation.type === 'attributes') {
         const target = mutation.target
-        if (target instanceof HTMLElement) {
-          observeAll(target)
-        }
+        if (!(target instanceof HTMLElement))
+          continue
+        // Only rescan on class changes for view-panel elements (hidden → visible)
+        if (mutation.attributeName === 'class' && !target.hasAttribute('data-commission-view-panel'))
+          continue
+        observeAll(target)
         continue
       }
 
@@ -140,7 +143,7 @@ export function mountScrollReveal(): () => void {
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ['data-commission-view-active'],
+    attributeFilter: ['data-commission-view-active', 'class'],
   })
 
   const rescan = () => {
