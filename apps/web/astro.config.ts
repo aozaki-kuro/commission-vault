@@ -16,6 +16,8 @@ const vitePlugins: AstroVitePlugins = [
 
 export default defineConfig({
   output: 'static',
+  // Persist image cache outside node_modules so it survives dependency reinstalls
+  cacheDir: '.astro',
   i18n: {
     defaultLocale: 'en',
     locales: ['en', 'zh-tw', 'ja'],
