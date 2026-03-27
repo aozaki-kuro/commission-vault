@@ -9,6 +9,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { IconSearch, IconX } from '@tabler/icons-react'
 import {
   useCallback,
+  useDeferredValue,
   useEffect,
   useMemo,
   useRef,
@@ -46,6 +47,7 @@ export function CommissionManager({
   const [loadedCharacterIds, setLoadedCharacterIds] = useState<Set<number>>(() => new Set())
   const [loadError, setLoadError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const deferredSearchQuery = useDeferredValue(searchQuery)
   const loadedCharacterIdsRef = useRef<Set<number>>(new Set())
   const inFlightLoadPromisesRef = useRef<Map<number, Promise<void>>>(new Map())
   const buttonMapRef = useRef<Record<number, HTMLButtonElement | null>>({})
@@ -81,8 +83,8 @@ export function CommissionManager({
   })
 
   const normalizedQuery = useMemo(
-    () => normalizeAdminSearchQuery(searchQuery),
-    [searchQuery],
+    () => normalizeAdminSearchQuery(deferredSearchQuery),
+    [deferredSearchQuery],
   )
   const hasAppliedSearchQuery = normalizedQuery.length > 0
   const searchEntries = useMemo(
@@ -94,8 +96,8 @@ export function CommissionManager({
     [searchEntries],
   )
   const matchedCommissionIds = useMemo(
-    () => matchCommissionIds(searchQuery, searchEntries),
-    [searchEntries, searchQuery],
+    () => matchCommissionIds(deferredSearchQuery, searchEntries),
+    [searchEntries, deferredSearchQuery],
   )
   const effectiveMatchedCommissionIds = hasAppliedSearchQuery ? matchedCommissionIds : allCommissionIds
   const commissionToCharacterIdMap = useMemo(

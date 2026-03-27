@@ -1,14 +1,15 @@
-import { startTransition, useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, startTransition, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { adminSections, getAdminSectionForPath, normalizeAdminPath } from './app/sections'
 import { adminActionLinkStyles, adminSurfaceStyles } from './app/ui'
 import { AdminInternalLink } from './components/AdminInternalLink'
 import { AdminPageShell, AdminRootLayout } from './components/AdminLayout'
-import { AdminAliasesPage } from './pages/AdminAliasesPage'
-import { AdminCreatePage } from './pages/AdminCreatePage'
-import { AdminEditPage } from './pages/AdminEditPage'
-import { AdminOverviewPage } from './pages/AdminOverviewPage'
-import { AdminPlaceholderPage } from './pages/AdminPlaceholderPage'
-import { AdminSuggestionPage } from './pages/AdminSuggestionPage'
+
+const AdminOverviewPage = lazy(() => import('./pages/AdminOverviewPage').then(m => ({ default: m.AdminOverviewPage })))
+const AdminCreatePage = lazy(() => import('./pages/AdminCreatePage').then(m => ({ default: m.AdminCreatePage })))
+const AdminEditPage = lazy(() => import('./pages/AdminEditPage').then(m => ({ default: m.AdminEditPage })))
+const AdminAliasesPage = lazy(() => import('./pages/AdminAliasesPage').then(m => ({ default: m.AdminAliasesPage })))
+const AdminSuggestionPage = lazy(() => import('./pages/AdminSuggestionPage').then(m => ({ default: m.AdminSuggestionPage })))
+const AdminPlaceholderPage = lazy(() => import('./pages/AdminPlaceholderPage').then(m => ({ default: m.AdminPlaceholderPage })))
 
 function getPublicSiteUrl() {
   if (typeof window === 'undefined') {
@@ -201,7 +202,9 @@ export function App() {
         onNavigate={navigateTo}
         publicSiteUrl={publicSiteUrl}
       >
-        {page}
+        <Suspense>
+          {page}
+        </Suspense>
       </AdminPageShell>
     </AdminRootLayout>
   )
