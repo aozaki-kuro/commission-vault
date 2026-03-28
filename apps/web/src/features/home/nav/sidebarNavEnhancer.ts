@@ -118,10 +118,6 @@ function getVisibleNavPanel(root: HTMLElement, mode: CommissionViewMode) {
   return root.querySelector<HTMLElement>(`${NAV_PANEL_SELECTOR}[data-sidebar-nav-panel="${mode}"]`)
 }
 
-function getVisibleSidebarItemCount(root: HTMLElement, mode: CommissionViewMode) {
-  return getVisibleNavPanel(root, mode)?.querySelectorAll<HTMLAnchorElement>(CHARACTER_LINK_SELECTOR).length ?? 0
-}
-
 function getVisibleTitleIds(panel: HTMLElement | null) {
   if (!panel)
     return []
@@ -549,12 +545,10 @@ export function mountSidebarNavEnhancer({
   }
 
   const trackSidebarCharacterClick = (link: HTMLAnchorElement) => {
-    const mode = getCurrentMode(win)
     deps.trackEvent(ANALYTICS_EVENTS.sidebarNavUsed, {
       source: 'character_link',
       nav_surface: 'sidebar',
-      view_mode: mode,
-      item_count: getVisibleSidebarItemCount(navRoot, mode),
+      view_mode: getCurrentMode(win),
       character_name: link.textContent?.trim() || 'unknown',
       section_id: link.getAttribute('href')?.replace(HASH_PREFIX_PATTERN, '') || 'unknown',
     })
@@ -617,12 +611,10 @@ export function mountSidebarNavEnhancer({
 
       if (!hasTrackedSidebarSearchUsage) {
         hasTrackedSidebarSearchUsage = true
-        const mode = getCurrentMode(win)
         deps.trackEvent(ANALYTICS_EVENTS.sidebarNavUsed, {
           source: 'search_link',
           nav_surface: 'sidebar',
-          view_mode: mode,
-          item_count: getVisibleSidebarItemCount(navRoot, mode),
+          view_mode: getCurrentMode(win),
         })
       }
 

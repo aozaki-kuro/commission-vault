@@ -99,7 +99,6 @@ describe('commissionSearch', () => {
           ANALYTICS_EVENTS.searchUsed,
           expect.objectContaining({
             source: 'input',
-            result_count: 1,
           }),
         )
       })
@@ -107,6 +106,7 @@ describe('commissionSearch', () => {
         ([eventName]) => eventName === ANALYTICS_EVENTS.searchUsed,
       )?.[1] as Record<string, unknown> | undefined
       expect(searchEventPayload).toBeDefined()
+      expect(searchEventPayload).not.toHaveProperty('result_count')
       expect(searchEventPayload).not.toHaveProperty('query_length')
       expect(searchEventPayload).not.toHaveProperty('trackable_query_length')
     }

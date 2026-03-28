@@ -451,12 +451,10 @@ export function useCommissionSearchModel({
     hasTrackedSearchUsageRef.current = true
 
     trackRybbitEvent(ANALYTICS_EVENTS.searchUsed, {
-      result_count: matchedIds.size,
       source: inputQuery === null ? 'url_query' : 'input',
     })
   }, [
     inputQuery,
-    matchedIds.size,
     normalizedDeferredQuery.length,
     resolvedIndex.entries.length,
     resolvedIndex.fuse,
