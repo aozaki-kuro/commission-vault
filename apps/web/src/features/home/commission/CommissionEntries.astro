@@ -29,6 +29,7 @@ interface CommissionEntriesProps {
   showImage?: boolean
   showLinks?: boolean
   embedSearchMetadata?: boolean
+  priorityFirstImage?: boolean
 }
 
 const {
@@ -41,6 +42,7 @@ const {
   showImage = true,
   showLinks = true,
   embedSearchMetadata,
+  priorityFirstImage = false,
 } = Astro.props as CommissionEntriesProps
 
 const resolvedLocale = normalizeHomeLocale(locale)
@@ -49,7 +51,7 @@ const shouldEmbedSearchMetadata = embedSearchMetadata ?? Boolean(import.meta.env
 ---
 
 {
-  entries.map(({ character, commission, sectionId, entryAnchorPrefix }) => {
+  entries.map(({ character, commission, sectionId, entryAnchorPrefix }, entryIndex) => {
     const { date, year, creator } = parseCommissionFileName(commission.fileName)
     const copyrightCreator = creator ? getBaseFileName(creator).trim() || creator : 'Anonymous'
     const altText = `© ${year} ${copyrightCreator} & Crystallize`
@@ -93,7 +95,7 @@ const shouldEmbedSearchMetadata = embedSearchMetadata ?? Boolean(import.meta.env
 ? (
             sourceImage
 ? (
-              <ProtectedCommissionImage altText={altText} sourceImage={sourceImage} />
+              <ProtectedCommissionImage altText={altText} sourceImage={sourceImage} priority={priorityFirstImage && entryIndex === 0} />
             )
 : (
               <div

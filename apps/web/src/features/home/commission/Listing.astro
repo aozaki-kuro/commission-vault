@@ -12,6 +12,7 @@ interface ListingProps {
   characterAliasesMap: Map<string, string[]> | null
   creatorAliasesMap: Map<string, string[]> | null
   keywordAliasesMap: Map<string, string[]> | null
+  priorityFirstImage?: boolean
 }
 
 const {
@@ -22,6 +23,7 @@ const {
   characterAliasesMap,
   creatorAliasesMap,
   keywordAliasesMap,
+  priorityFirstImage = false,
 } = Astro.props as ListingProps
 const resolvedLocale = normalizeHomeLocale(locale)
 const messages = getHomeLocaleMessages(resolvedLocale)
@@ -79,6 +81,7 @@ const commissions = characterData?.Commissions ?? []
         characterAliasesMap={characterAliasesMap}
         creatorAliasesMap={creatorAliasesMap}
         keywordAliasesMap={keywordAliasesMap}
+        priorityFirstImage={priorityFirstImage}
       />
     )
   }

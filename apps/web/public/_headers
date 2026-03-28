@@ -7,6 +7,12 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   X-Robots-Tag: noindex
 
+/*.html
+  Cache-Control: public, max-age=60, stale-while-revalidate=86400
+
+/
+  Cache-Control: public, max-age=60, stale-while-revalidate=86400
+
 /search/home-search-entries.json
   Cache-Control: public, max-age=300, stale-while-revalidate=86400
 

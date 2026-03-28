@@ -80,7 +80,7 @@ const archivedCommissionCount = archivedChars.reduce(
     data-archived-batches-loaded-count="0"
   >
     {
-      initialActiveChars.map(characterName => (
+      initialActiveChars.map((characterName, charIndex) => (
         <Listing
           locale={locale}
           Character={characterName}
@@ -89,6 +89,7 @@ const archivedCommissionCount = archivedChars.reduce(
           characterAliasesMap={characterAliasesMap}
           creatorAliasesMap={creatorAliasesMap}
           keywordAliasesMap={keywordAliasesMap}
+          priorityFirstImage={charIndex === 0}
         />
       ))
     }

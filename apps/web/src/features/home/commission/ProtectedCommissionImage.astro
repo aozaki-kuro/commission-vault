@@ -5,9 +5,10 @@ import { Image } from 'astro:assets'
 interface ProtectedCommissionImageProps {
   altText: string
   sourceImage: ImageMetadata
+  priority?: boolean
 }
 
-const { altText, sourceImage } = Astro.props as ProtectedCommissionImageProps
+const { altText, sourceImage, priority = false } = Astro.props as ProtectedCommissionImageProps
 
 const COMMISSION_IMAGE_WIDTH = 1280
 const COMMISSION_IMAGE_SIZES = '(max-width: 768px) 92vw, 640px'
@@ -32,7 +33,7 @@ const COMMISSION_IMAGE_SIZES = '(max-width: 768px) 92vw, 640px'
     format="webp"
     sizes={COMMISSION_IMAGE_SIZES}
     class="pointer-events-none relative z-10 block w-full select-none"
-    loading="lazy"
+    loading={priority ? 'eager' : 'lazy'}
     style="height:auto"
   />
 </div>
