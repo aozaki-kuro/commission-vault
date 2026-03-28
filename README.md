@@ -31,33 +31,20 @@ Workspace notes:
 - `bun run dev` — run the public `apps/web` Astro app in development mode.
 - `bun run dev:admin` — start `apps/admin-worker` in local `wrangler dev` mode with remote D1/R2 bindings, wait until worker-backed bootstrap data is readable, then start the standalone admin frontend.
 - `bun run dev:admin:remote` — compatibility alias for `bun run dev:admin`.
-- `apps/web` no longer mounts the legacy `/admin` pages in local dev; use `bun run dev:admin` for admin work.
-- Admin route shells are Astro pages; interactive admin state is mounted via React islands.
 - `bun run build` — run Astro static build output to `apps/web/dist/`.
 - `bun run build:all` — run every workspace `build` task that currently participates in the Turbo graph.
 - `bun run typecheck` — run workspace `typecheck` tasks through Turbo.
 - `bun run preview` — preview static output locally.
 
-Monorepo migration is in progress:
+Additional workspace scripts: `bun run dev:web`, `bun run dev:admin:remote` (alias for `dev:admin`), `bun run dev:worker`, `bun run build:web`, `bun run build:admin`.
 
-- Public runtime source of truth is `apps/web/*`.
-- New scaffolds are available at `apps/admin`, `apps/admin-worker`, and `apps/web`.
-- New workspace scripts:
-  - `bun run dev:web`
-  - `bun run dev:admin`
-  - `bun run dev:admin:remote`
-  - `bun run dev:worker`
-  - `bun run build:web`
-  - `bun run build:admin`
+## Admin
 
-## Admin migration direction
-
-- Standalone admin capability work now lands on `apps/admin-worker` with `DB` / `IMAGES` bindings; future CRUD, asset writes, and admin tooling should target the worker + D1/R2 surface instead of expanding the legacy `/api/admin/*` layer inside `apps/web`.
-- `bun run dev:admin` is now the default standalone admin workflow. It starts `apps/admin` plus `apps/admin-worker` in local `wrangler dev` mode against the configured remote D1/R2 resources, without pulling in `apps/web`.
-- The root admin dev orchestrator now waits for a binding-backed worker API response before opening the frontend, so first-load admin pages do not race the worker startup/build sequence.
-- The admin worker no longer falls back to the legacy local SQLite/image path when `DB` or `IMAGES` bindings are missing. Known admin routes fail fast until the remote D1/R2-backed runtime is available.
-- The legacy `/admin` pages together with `/api/admin/*` in `apps/web` are now reference-only code paths and are not mounted by default.
-- `apps/admin-worker/wrangler.jsonc` now declares the real production `DB` / `IMAGES` bindings plus the D1 migrations directory, and the current remote D1/R2 fact source is the only supported admin/runtime truth.
+- Admin UI lives in `apps/admin` (React SPA); admin API lives in `apps/admin-worker` (Cloudflare Worker with D1/R2 bindings).
+- `bun run dev:admin` starts the admin frontend plus `apps/admin-worker` in local `wrangler dev` mode against remote D1/R2, without pulling in `apps/web`.
+- The root dev orchestrator waits for a binding-backed worker API response before opening the frontend, so first-load admin pages do not race the worker startup.
+- Admin worker fails fast when `DB` or `IMAGES` bindings are missing.
+- Production admin auth is enforced by Cloudflare Zero Trust.
 
 ## Cloudflare deploy layout
 

@@ -77,10 +77,10 @@ Key patterns:
 
 ### Admin Architecture
 
-- Standalone admin uses `apps/admin` + `apps/admin-worker`; legacy `/admin` routes in `apps/web` are reference-only
+- Admin UI: `apps/admin`; admin API: `apps/admin-worker`
 - Worker owns all CRUD: character, commission, aliases, suggestions, source images
 - Production auth: Cloudflare Zero Trust (no worker-side auth)
-- Worker fails fast when D1/R2 bindings are missing — no legacy fallback
+- Worker fails fast when D1/R2 bindings are missing
 
 ### Path Aliases (apps/web)
 

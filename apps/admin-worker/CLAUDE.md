@@ -16,7 +16,7 @@ Standalone admin Cloudflare Worker: API router, D1/R2 CRUD, asset serving.
 ## Responsibilities
 
 - Serve `admin.crystallize.cc` with Cloudflare Zero Trust as auth boundary
-- Own all admin CRUD on D1/R2 — no legacy fallback
+- Own all admin CRUD on D1/R2
 - Fail fast when `DB` or `IMAGES` bindings are missing
 - Keep `exportWebFactSource.ts` config-driven so `apps/web` builds use web-owned bindings
 

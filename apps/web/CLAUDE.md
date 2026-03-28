@@ -15,7 +15,7 @@ Active Astro 6 public runtime (`crystallize.cc`).
 
 - Render static output from Astro; no runtime D1/R2 access
 - Treat `generated/*` as the only fact source — no SQLite or `data/images/*` reads
-- Do not mount legacy `/admin*` behavior; standalone admin lives in `apps/admin`
+- Admin lives in `apps/admin` + `apps/admin-worker` — not in this app
 
 ## Dependency Boundaries
 
