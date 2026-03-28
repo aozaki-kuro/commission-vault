@@ -82,7 +82,7 @@ function withCorsHeaders(request: Request, response: Response) {
 }
 
 export default {
-  async fetch(request: Request, env: Env, ctx: { waitUntil: (p: Promise<unknown>) => void }): Promise<Response> {
+  async fetch(request: Request, env: Env, _ctx: { waitUntil: (p: Promise<unknown>) => void }): Promise<Response> {
     const { pathname } = new URL(request.url)
 
     if (request.method === 'OPTIONS' && pathname.startsWith('/api/admin/')) {
@@ -90,7 +90,7 @@ export default {
     }
 
     if (pathname.startsWith('/api/admin/')) {
-      return withCorsHeaders(request, await handleAdminApiRequest(request, env, ctx))
+      return withCorsHeaders(request, await handleAdminApiRequest(request, env))
     }
 
     return env.ASSETS.fetch(request)

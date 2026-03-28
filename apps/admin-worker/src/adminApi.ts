@@ -49,28 +49,6 @@ function buildRebuildDispatchBody() {
   }
 }
 
-async function triggerWebRebuild(env: Env): Promise<void> {
-  if (!env.GITHUB_DISPATCH_TOKEN) {
-    return
-  }
-
-  try {
-    await fetch('https://api.github.com/repos/aozaki-kuro/commission-index/dispatches', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/vnd.github+json',
-        'Authorization': `Bearer ${env.GITHUB_DISPATCH_TOKEN}`,
-        'Content-Type': 'application/json',
-        'User-Agent': 'commission-index-admin-worker',
-      },
-      body: JSON.stringify(buildRebuildDispatchBody()),
-    })
-  }
-  catch {
-    // fire-and-forget, never block the response
-  }
-}
-
 export interface ApiState {
   status: 'success' | 'error'
   message: string
@@ -743,16 +721,9 @@ async function handleBatchWriteRequest(request: Request, env: Env) {
   return null
 }
 
-interface CtxLike {
-  waitUntil: (promise: Promise<unknown>) => void
-}
-
-const noopCtx: CtxLike = { waitUntil: () => {} }
-
 export async function handleAdminApiRequest(
   request: Request,
   env: Env,
-  ctx: CtxLike = noopCtx,
   backend: AdminCrudBackend | undefined = undefined,
 ) {
   const { pathname } = new URL(request.url)
@@ -804,17 +775,11 @@ export async function handleAdminApiRequest(
 
   const nativeCrudResponse = await handleCrudRequest(request, resolvedBackend)
   if (nativeCrudResponse) {
-    if (request.method !== 'GET' && nativeCrudResponse.ok) {
-      ctx.waitUntil(triggerWebRebuild(env))
-    }
     return nativeCrudResponse
   }
 
   const batchWriteResponse = await handleBatchWriteRequest(request, env)
   if (batchWriteResponse) {
-    if (batchWriteResponse.ok) {
-      ctx.waitUntil(triggerWebRebuild(env))
-    }
     return batchWriteResponse
   }
 
