@@ -3,7 +3,9 @@ import type {
   CharacterRow,
   CommissionRow,
   CreatorAliasRow,
+  SearchIndexLike,
 } from '@commission-index/domain'
+import type { AdminCommissionSearchEntry } from '../../lib/search/adminCommissionSearch'
 import {
   createSearchIndex,
   getMatchedEntryIds,
@@ -99,18 +101,18 @@ export function CommissionManager({
     () => createSearchIndex(searchEntries),
     [searchEntries],
   )
-  const [searchIndex, setSearchIndex] = useState(baseSearchIndex)
+  const [hydratedIndex, setHydratedIndex] = useState<{ base: SearchIndexLike<AdminCommissionSearchEntry>, index: SearchIndexLike<AdminCommissionSearchEntry> } | null>(null)
   useEffect(() => {
-    setSearchIndex(baseSearchIndex)
     let cancelled = false
     hydrateSearchIndexFuse(baseSearchIndex).then((hydrated) => {
       if (!cancelled)
-        setSearchIndex(hydrated)
+        setHydratedIndex({ base: baseSearchIndex, index: hydrated })
     })
     return () => {
       cancelled = true
     }
   }, [baseSearchIndex])
+  const searchIndex = (hydratedIndex?.base === baseSearchIndex) ? hydratedIndex.index : baseSearchIndex
   const allCommissionIds = baseSearchIndex.allIds
   const matchedCommissionIds = useMemo(
     () => getMatchedEntryIds(deferredSearchQuery, searchIndex),
