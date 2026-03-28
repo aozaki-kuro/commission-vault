@@ -69,15 +69,77 @@ describe('mountActiveCharactersLoader', () => {
         callback(0)
         return 1
       })
-    const scrollToHashWithoutWrite = vi.fn()
+    const scrollToHashWithoutWrite = vi.fn().mockReturnValue(true)
+    const setHash = vi.fn()
 
     const cleanup = mountActiveCharactersLoader({
-      deps: { scrollToHashWithoutWrite },
+      deps: { scrollToHashWithoutWrite, setHash },
     })
     await flushAsyncWork()
 
     expect(document.getElementById('section-beta')).toBeTruthy()
     expect(scrollToHashWithoutWrite).toHaveBeenCalledWith('#section-beta-20240101')
+    expect(setHash).toHaveBeenCalledWith('#section-beta-20240101')
+
+    cleanup()
+    requestAnimationFrameSpy.mockRestore()
+    window.history.replaceState(null, '', '/')
+  })
+
+  it('still scrolls to deferred target even when hash is cleared before queueLoad resolves', async () => {
+    renderFixture()
+    document.querySelector('template[data-active-sections-template="true"]')!.innerHTML = `
+      <section id="section-beta"></section>
+    `
+    window.history.replaceState(null, '', '#section-beta')
+
+    const requestAnimationFrameSpy = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback) => {
+        callback(0)
+        return 1
+      })
+    const scrollToHashWithoutWrite = vi.fn().mockReturnValue(true)
+    const setHash = vi.fn()
+
+    const cleanup = mountActiveCharactersLoader({
+      deps: { scrollToHashWithoutWrite, setHash },
+    })
+
+    // Simulate clearHashIfTargetMissing clearing the URL hash before the batch loads
+    window.history.replaceState(null, '', '/')
+
+    await flushAsyncWork()
+
+    expect(scrollToHashWithoutWrite).toHaveBeenCalledWith('#section-beta')
+    expect(setHash).toHaveBeenCalledWith('#section-beta')
+
+    cleanup()
+    requestAnimationFrameSpy.mockRestore()
+  })
+
+  it('scrolls with RAF when element is already in the initial HTML', async () => {
+    renderFixture()
+    // section-alpha is already in the static HTML (not in the template)
+    window.history.replaceState(null, '', '#section-alpha')
+
+    const requestAnimationFrameSpy = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback) => {
+        callback(0)
+        return 1
+      })
+    const scrollToHashWithoutWrite = vi.fn().mockReturnValue(true)
+    const setHash = vi.fn()
+
+    const cleanup = mountActiveCharactersLoader({
+      deps: { scrollToHashWithoutWrite, setHash },
+    })
+    await flushAsyncWork()
+
+    expect(scrollToHashWithoutWrite).toHaveBeenCalledWith('#section-alpha')
+    // setHash not called for initial-HTML path (browser native scroll handles it)
+    expect(setHash).not.toHaveBeenCalled()
 
     cleanup()
     requestAnimationFrameSpy.mockRestore()

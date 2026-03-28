@@ -43,10 +43,11 @@ import {
   resolveElementsByIds,
 } from '@lib/characters/scrollSpy'
 import {
-  clearHashIfTargetIsArchived,
+  clearHashIfTargetMissing,
   getHashFromHref,
   getHashTarget,
   scrollToHashTargetFromHrefWithoutHash,
+  setLocationHash,
 } from '@lib/navigation/hashAnchor'
 import { jumpToCommissionSearch } from '@lib/navigation/jumpToCommissionSearch'
 import { SIDEBAR_SEARCH_STATE_EVENT } from '@lib/navigation/sidebarSearchState'
@@ -76,7 +77,8 @@ const BACK_TO_TOP_VISIBILITY_SCROLL_THRESHOLD = 360
 interface SidebarNavEnhancerDeps {
   trackEvent: typeof trackRybbitEvent
   jumpToSearch: typeof jumpToCommissionSearch
-  clearHash: typeof clearHashIfTargetIsArchived
+  clearHash: typeof clearHashIfTargetMissing
+  setHash: typeof setLocationHash
   scrollToHashWithoutWrite: typeof scrollToHashTargetFromHrefWithoutHash
   prefetchActiveTarget: (doc: Document, targetId: string | null | undefined) => void
   prefetchArchivedTarget: (doc: Document, targetId: string | null | undefined) => void
@@ -102,7 +104,8 @@ interface SidebarActivePanelSnapshot {
 const defaultDeps: SidebarNavEnhancerDeps = {
   trackEvent: trackRybbitEvent,
   jumpToSearch: jumpToCommissionSearch,
-  clearHash: clearHashIfTargetIsArchived,
+  clearHash: clearHashIfTargetMissing,
+  setHash: setLocationHash,
   scrollToHashWithoutWrite: scrollToHashTargetFromHrefWithoutHash,
   prefetchActiveTarget: prefetchDeferredActiveCharacterTarget,
   prefetchArchivedTarget: prefetchDeferredArchivedCharacterTarget,
@@ -198,7 +201,7 @@ export function mountSidebarNavEnhancer({
   const archivedDetails = navRoot.querySelector<HTMLDetailsElement>(ARCHIVED_DETAILS_SELECTOR)
   const backToTopButton = navRoot.querySelector<HTMLButtonElement>(BACK_TO_TOP_BUTTON_SELECTOR)
 
-  let clearHashRafId: number | null = null
+  let clearHashMissingRafId: number | null = null
   let syncLinksRafId: number | null = null
   let syncDotsRafId: number | null = null
   let syncBackToTopRafId: number | null = null
@@ -372,12 +375,12 @@ export function mountSidebarNavEnhancer({
     )
   }
 
-  const scheduleClearHashIfTargetIsArchived = () => {
+  const scheduleClearHashIfTargetMissing = () => {
     scheduleAnimationFrame({
-      rafId: clearHashRafId,
+      rafId: clearHashMissingRafId,
       run: deps.clearHash,
       setRafId: (nextRafId) => {
-        clearHashRafId = nextRafId
+        clearHashMissingRafId = nextRafId
       },
     })
   }
@@ -450,7 +453,7 @@ export function mountSidebarNavEnhancer({
     syncViewModeControls()
     scheduleSyncCharacterLinkAvailability()
     scheduleSyncActiveDots()
-    scheduleClearHashIfTargetIsArchived()
+    scheduleClearHashIfTargetMissing()
   }
 
   const openArchivedDetails = () => {
@@ -570,6 +573,7 @@ export function mountSidebarNavEnhancer({
       loadedEvent,
       onLoaded: () => {
         deps.scrollToHashWithoutWrite(href)
+        deps.setHash(getHashFromHref(href))
         scheduleSyncCharacterLinkAvailability({ invalidateSnapshot: true })
         scheduleSyncActiveDots()
       },
@@ -693,6 +697,7 @@ export function mountSidebarNavEnhancer({
       revealArchivedHomeNavTarget({
         onVisible: () => {
           deps.scrollToHashWithoutWrite(href)
+          deps.setHash(getHashFromHref(href))
           scheduleSyncCharacterLinkAvailability({ invalidateSnapshot: true })
           scheduleSyncActiveDots()
         },
@@ -712,7 +717,9 @@ export function mountSidebarNavEnhancer({
 
     if (mode === 'timeline') {
       event.preventDefault()
-      deps.scrollToHashWithoutWrite(characterLink.getAttribute('href'))
+      const timelineHref = characterLink.getAttribute('href')
+      deps.scrollToHashWithoutWrite(timelineHref)
+      deps.setHash(getHashFromHref(timelineHref))
     }
 
     trackSidebarCharacterClick(characterLink)
@@ -721,7 +728,7 @@ export function mountSidebarNavEnhancer({
   const onSidebarSearchState = () => {
     scheduleSyncCharacterLinkAvailability({ invalidateSnapshot: true })
     scheduleSyncActiveDots()
-    scheduleClearHashIfTargetIsArchived()
+    scheduleClearHashIfTargetMissing()
   }
   const onViewModeMaybeChanged = () => {
     clearActivePanelSnapshot()
@@ -746,7 +753,7 @@ export function mountSidebarNavEnhancer({
   archivedDetails?.addEventListener('toggle', onArchivedDetailsToggle)
   win.addEventListener('scroll', scheduleSyncActiveDots, { passive: true })
   win.addEventListener('resize', scheduleSyncActiveDots)
-  win.addEventListener('scroll', scheduleClearHashIfTargetIsArchived, { passive: true })
+  win.addEventListener('scroll', scheduleClearHashIfTargetMissing, { passive: true })
   if (backToTopButton) {
     backToTopButton.addEventListener('click', onBackToTopClick)
     win.addEventListener('scroll', scheduleSyncBackToTopVisibility, { passive: true })
@@ -775,7 +782,7 @@ export function mountSidebarNavEnhancer({
     archivedDetails?.removeEventListener('toggle', onArchivedDetailsToggle)
     win.removeEventListener('scroll', scheduleSyncActiveDots)
     win.removeEventListener('resize', scheduleSyncActiveDots)
-    win.removeEventListener('scroll', scheduleClearHashIfTargetIsArchived)
+    win.removeEventListener('scroll', scheduleClearHashIfTargetMissing)
     if (backToTopButton) {
       backToTopButton.removeEventListener('click', onBackToTopClick)
       win.removeEventListener('scroll', scheduleSyncBackToTopVisibility)
@@ -785,9 +792,9 @@ export function mountSidebarNavEnhancer({
     win.removeEventListener(COMMISSION_VIEW_MODE_CHANGE_EVENT, onViewModeMaybeChanged)
     win.removeEventListener('popstate', onViewModeMaybeChanged)
 
-    if (clearHashRafId !== null) {
-      win.cancelAnimationFrame(clearHashRafId)
-      clearHashRafId = null
+    if (clearHashMissingRafId !== null) {
+      win.cancelAnimationFrame(clearHashMissingRafId)
+      clearHashMissingRafId = null
     }
     if (syncLinksRafId !== null) {
       win.cancelAnimationFrame(syncLinksRafId)

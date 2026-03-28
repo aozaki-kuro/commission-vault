@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearHashIfTargetIsArchived, scrollToHashTargetFromHrefWithoutHash } from './hashAnchor'
+import { clearHashIfTargetMissing, scrollToHashTargetFromHrefWithoutHash, setLocationHash } from './hashAnchor'
 
 describe('hashAnchor utils', () => {
   beforeEach(() => {
@@ -58,84 +58,32 @@ describe('hashAnchor utils', () => {
     expect(hiddenTarget.scrollIntoView).not.toHaveBeenCalled()
   })
 
-  it('clears hash when target is missing or offscreen', () => {
+  it('clears hash when target is missing from DOM', () => {
     window.history.replaceState(null, '', '/?view=timeline#missing')
-    clearHashIfTargetIsArchived()
-    expect(window.location.pathname + window.location.search + window.location.hash).toBe(
-      '/?view=timeline',
-    )
-
-    const target = document.createElement('div')
-    target.id = 'timeline-year-2026'
-    target.getBoundingClientRect = () =>
-      ({
-        top: window.innerHeight + 10,
-        bottom: window.innerHeight + 20,
-        left: 0,
-        right: 0,
-        width: 10,
-        height: 10,
-        x: 0,
-        y: window.innerHeight + 10,
-        toJSON: () => ({}),
-      }) as DOMRect
-    document.body.appendChild(target)
-
-    window.history.replaceState(null, '', '/?view=timeline#timeline-year-2026')
-    clearHashIfTargetIsArchived()
-
+    clearHashIfTargetMissing()
     expect(window.location.pathname + window.location.search + window.location.hash).toBe(
       '/?view=timeline',
     )
   })
 
-  it('keeps hash when target is still onscreen', () => {
+  it('keeps hash when target exists in DOM, regardless of scroll position', () => {
     const target = document.createElement('div')
     target.id = 'timeline-year-2026'
-    target.getBoundingClientRect = () =>
-      ({
-        top: 100,
-        bottom: 120,
-        left: 0,
-        right: 0,
-        width: 10,
-        height: 20,
-        x: 0,
-        y: 100,
-        toJSON: () => ({}),
-      }) as DOMRect
     document.body.appendChild(target)
     window.history.replaceState(null, '', '/?view=timeline#timeline-year-2026')
 
-    clearHashIfTargetIsArchived()
+    clearHashIfTargetMissing()
 
     expect(window.location.pathname + window.location.search + window.location.hash).toBe(
       '/?view=timeline#timeline-year-2026',
     )
   })
 
-  it('clears hash when target sits exactly at viewport boundary', () => {
-    const target = document.createElement('div')
-    target.id = 'timeline-year-2026'
-    target.getBoundingClientRect = () =>
-      ({
-        top: window.innerHeight,
-        bottom: window.innerHeight + 20,
-        left: 0,
-        right: 0,
-        width: 10,
-        height: 20,
-        x: 0,
-        y: window.innerHeight,
-        toJSON: () => ({}),
-      }) as DOMRect
-    document.body.appendChild(target)
-    window.history.replaceState(null, '', '/?view=timeline#timeline-year-2026')
-
-    clearHashIfTargetIsArchived()
-
+  it('sets hash via replaceState without scrolling', () => {
+    window.history.replaceState(null, '', '/?view=timeline')
+    setLocationHash('#timeline-year-2026')
     expect(window.location.pathname + window.location.search + window.location.hash).toBe(
-      '/?view=timeline',
+      '/?view=timeline#timeline-year-2026',
     )
   })
 })

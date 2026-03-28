@@ -12,7 +12,7 @@ import {
 
   resolveDeferredActiveCharacterBatch,
 } from '@features/home/commission/loader/activeCharactersEvent'
-import { getHashTarget, scrollToHashTargetFromHrefWithoutHash } from '@lib/navigation/hashAnchor'
+import { getHashTarget, scrollToHashTargetFromHrefWithoutHash, setLocationHash } from '@lib/navigation/hashAnchor'
 import { dispatchSidebarSearchState } from '@lib/navigation/sidebarSearchState'
 
 const CHARACTER_PANEL_SELECTOR = '[data-commission-view-panel="character"]'
@@ -27,6 +27,7 @@ const ACTIVE_IDLE_PREFETCH_FALLBACK_DELAY_MS = 180
 interface ActiveCharactersLoaderDeps {
   dispatchSidebarSync: typeof dispatchSidebarSearchState
   scrollToHashWithoutWrite: typeof scrollToHashTargetFromHrefWithoutHash
+  setHash: typeof setLocationHash
 }
 
 interface MountActiveCharactersLoaderOptions {
@@ -45,6 +46,7 @@ type WindowWithIntersectionObserver = Window
 const defaultDeps: ActiveCharactersLoaderDeps = {
   dispatchSidebarSync: dispatchSidebarSearchState,
   scrollToHashWithoutWrite: scrollToHashTargetFromHrefWithoutHash,
+  setHash: setLocationHash,
 }
 
 function shouldLoadForSentinel(win: Window, sentinel: HTMLElement | null) {
@@ -273,17 +275,33 @@ export function mountActiveCharactersLoader({
     const hash = win.location.hash
     if (!hash || isLocalLoaded())
       return
-    if (getHashTarget(hash))
+
+    if (getHashTarget(hash)) {
+      // Element is in the initial HTML. Browser native scroll may have fired at parse
+      // time but Chrome can end up at the wrong position after layout shifts from
+      // images/deferred content loading above the fold. Scroll explicitly one frame
+      // after mount so layout has had a chance to stabilize.
+      win.requestAnimationFrame(() => {
+        deps.scrollToHashWithoutWrite(hash)
+      })
       return
+    }
 
     const batchIndex = resolveDeferredActiveCharacterBatch(doc, hash)
     if (batchIndex === null)
       return
 
-    void queueLoad({ strategy: 'target', targetId: hash }).then((didChange) => {
-      if (!didChange || !win.location.hash)
-        return
-      deps.scrollToHashWithoutWrite(hash)
+    void queueLoad({ strategy: 'target', targetId: hash }).then(() => {
+      // Do NOT guard on win.location.hash — it may have been transiently cleared by
+      // clearHashIfTargetMissing while the batch was loading (element not yet in DOM).
+      // Do NOT guard on didChange — a concurrent load may have already mounted the
+      // batch (didChange=false) but the target is now in DOM.
+      // Wrap in RAF so layout is committed before scroll.
+      win.requestAnimationFrame(() => {
+        const scrolled = deps.scrollToHashWithoutWrite(hash)
+        if (scrolled)
+          deps.setHash(hash)
+      })
     })
   }
 

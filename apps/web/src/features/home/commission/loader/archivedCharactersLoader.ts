@@ -23,7 +23,7 @@ import {
   writeArchivedCharactersLoadedBatchCount,
   writeArchivedCharactersState,
 } from '@features/home/commission/loader/archivedCharactersEvent'
-import { getHashTarget, scrollToHashTargetFromHrefWithoutHash } from '@lib/navigation/hashAnchor'
+import { getHashTarget, scrollToHashTargetFromHrefWithoutHash, setLocationHash } from '@lib/navigation/hashAnchor'
 import { restoreScrollPosition as restoreWindowScrollPosition } from '@lib/navigation/restoreScrollPosition'
 import { dispatchSidebarSearchState } from '@lib/navigation/sidebarSearchState'
 
@@ -41,6 +41,7 @@ const ARCHIVED_IDLE_PREFETCH_FALLBACK_DELAY_MS = 180
 
 interface ArchivedCharactersLoaderDeps {
   scrollToHashWithoutWrite: typeof scrollToHashTargetFromHrefWithoutHash
+  setHash: typeof setLocationHash
   restoreScrollPosition: (win: Window, position: { x: number, y: number }) => void
 }
 
@@ -53,6 +54,7 @@ type WindowWithIntersectionObserver = Window
 
 const defaultDeps: ArchivedCharactersLoaderDeps = {
   scrollToHashWithoutWrite: scrollToHashTargetFromHrefWithoutHash,
+  setHash: setLocationHash,
   restoreScrollPosition: restoreWindowScrollPosition,
 }
 
@@ -401,8 +403,13 @@ export function mountArchivedCharactersLoader({
     const hash = win.location.hash
     if (!hash)
       return
-    if (getHashTarget(hash))
+
+    if (getHashTarget(hash)) {
+      win.requestAnimationFrame(() => {
+        deps.scrollToHashWithoutWrite(hash)
+      })
       return
+    }
 
     const batchIndex = resolveDeferredArchivedCharacterBatch(doc, hash)
     if (batchIndex === null)
@@ -412,10 +419,12 @@ export function mountArchivedCharactersLoader({
       preserveScroll: false,
       strategy: 'target',
       targetId: hash,
-    }).then((didChange) => {
-      if (!didChange || !win.location.hash)
-        return
-      deps.scrollToHashWithoutWrite(hash)
+    }).then(() => {
+      win.requestAnimationFrame(() => {
+        const scrolled = deps.scrollToHashWithoutWrite(hash)
+        if (scrolled)
+          deps.setHash(hash)
+      })
     })
   }
 
