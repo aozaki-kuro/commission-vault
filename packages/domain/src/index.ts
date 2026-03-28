@@ -83,6 +83,22 @@ export type {
   SuggestionSource,
   SuggestionTokenOperator,
 } from './search'
+export {
+  applySuggestionToQuery,
+  buildStrictTermIndex,
+  collectSuggestions,
+  createSearchFuse,
+  createSearchIndex,
+  filterSuggestions,
+  getMatchedEntryIds,
+  hydrateSearchIndexFuse,
+  normalizeQuery,
+  normalizeQuotedTokenBoundary,
+  normalizeSuggestionTerm,
+  parseSuggestionInputState,
+  parseSuggestionRows,
+  resolveSuggestionContextMatchedIds,
+} from './search'
 export type {
   TimelineCommissionEntry,
   TimelineYearGroup,

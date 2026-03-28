@@ -4,6 +4,11 @@ import type {
   CommissionRow,
   CreatorAliasRow,
 } from '@commission-index/domain'
+import {
+  createSearchIndex,
+  getMatchedEntryIds,
+  hydrateSearchIndexFuse,
+} from '@commission-index/domain'
 import { closestCenter, DndContext } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { IconSearch, IconX } from '@tabler/icons-react'
@@ -22,7 +27,6 @@ import {
   buildAdminCommissionSearchEntries,
   buildCommissionToCharacterMap,
   collectMatchedCharacterIds,
-  matchCommissionIds,
   normalizeAdminSearchQuery,
 } from '../../lib/search/adminCommissionSearch'
 import { CharacterDeleteDialog } from './CharacterDeleteDialog'
@@ -91,13 +95,26 @@ export function CommissionManager({
     () => buildAdminCommissionSearchEntries(commissionSearchRows, creatorAliases),
     [commissionSearchRows, creatorAliases],
   )
-  const allCommissionIds = useMemo(
-    () => new Set(searchEntries.map(entry => entry.id)),
+  const baseSearchIndex = useMemo(
+    () => createSearchIndex(searchEntries),
     [searchEntries],
   )
+  const [searchIndex, setSearchIndex] = useState(baseSearchIndex)
+  useEffect(() => {
+    setSearchIndex(baseSearchIndex)
+    let cancelled = false
+    hydrateSearchIndexFuse(baseSearchIndex).then((hydrated) => {
+      if (!cancelled)
+        setSearchIndex(hydrated)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [baseSearchIndex])
+  const allCommissionIds = baseSearchIndex.allIds
   const matchedCommissionIds = useMemo(
-    () => matchCommissionIds(deferredSearchQuery, searchEntries),
-    [searchEntries, deferredSearchQuery],
+    () => getMatchedEntryIds(deferredSearchQuery, searchIndex),
+    [searchIndex, deferredSearchQuery],
   )
   const effectiveMatchedCommissionIds = hasAppliedSearchQuery ? matchedCommissionIds : allCommissionIds
   const commissionToCharacterIdMap = useMemo(

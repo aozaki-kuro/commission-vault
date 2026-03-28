@@ -16,11 +16,6 @@ export function normalizeAdminSearchQuery(value: string) {
   return value.trim().toLowerCase().replace(WHITESPACE_PATTERN, ' ')
 }
 
-function tokenizeSearchQuery(value: string) {
-  const normalized = normalizeAdminSearchQuery(value)
-  return normalized ? normalized.split(' ') : []
-}
-
 function buildCreatorAliasesMap(rows: CreatorAliasRow[]) {
   return new Map(rows.map(row => [row.creatorName, row.aliases] as const))
 }
@@ -52,22 +47,6 @@ export function buildAdminCommissionSearchEntries(
       row.fileName,
     ),
   }))
-}
-
-export function matchCommissionIds(
-  query: string,
-  entries: AdminCommissionSearchEntry[],
-): Set<number> {
-  const tokens = tokenizeSearchQuery(query)
-  if (tokens.length === 0) {
-    return new Set(entries.map(entry => entry.id))
-  }
-
-  return new Set(
-    entries
-      .filter(entry => tokens.every(token => entry.searchText.includes(token)))
-      .map(entry => entry.id),
-  )
 }
 
 export function buildCommissionToCharacterMap(rows: AdminCommissionSearchRow[]) {
