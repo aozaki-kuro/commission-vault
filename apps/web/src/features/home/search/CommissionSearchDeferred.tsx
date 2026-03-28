@@ -229,6 +229,17 @@ function buildPopularKeywordPoolFromEntries(entries: CommissionSearchEntrySource
   )
 }
 
+function cryptoRandomIndex(length: number) {
+  try {
+    const buf = new Uint32Array(1)
+    crypto.getRandomValues(buf)
+    return buf[0] % length
+  }
+  catch {
+    return Math.floor(Math.random() * length)
+  }
+}
+
 function extractSectionIdFromDomKey(domKey: string) {
   const separatorIndex = domKey.indexOf('::')
   return separatorIndex > 0 ? domKey.slice(0, separatorIndex) : ''
@@ -430,7 +441,7 @@ export default function CommissionSearchDeferred({
       ? candidates.filter(entry => entry.id !== lastShuffledIdRef.current)
       : candidates
 
-    const randomIndex = Math.floor(Math.random() * pool.length)
+    const randomIndex = cryptoRandomIndex(pool.length)
     const randomEntry = pool[randomIndex]
     lastShuffledIdRef.current = randomEntry.id
 
