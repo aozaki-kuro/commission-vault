@@ -86,14 +86,27 @@ Key patterns:
 
 `#layouts/*`, `#features/*`, `#components/*`, `#images/*`, `#data/*`, `#lib/*`, `#styles/*`, `#config/*`, `#admin/*`
 
-## Validation Gates (pre-push order)
+## Validation Gates
 
-1. `bun run dev` — smoke-check local startup
-2. `bun run lint` — ESLint
-3. `bun run check` — Astro type-check (mandatory when `.astro` files changed)
-4. `bun run test` — unit tests
-5. `bun run test:visual` — visual regression (when touching search/nav/admin UI shells)
-6. `bun run build` — full build (mandatory for runtime/route/config/data changes)
+### Local Hooks (enforced by prek)
+
+**Pre-commit:**
+
+1. `bun install --frozen-lockfile` — lockfile integrity
+2. `lint-staged` — ESLint fix on staged files
+
+**Pre-push:**
+
+1. `bun run lint` — full ESLint check
+2. `bun run typecheck` — TypeScript across all workspaces
+3. `bun run test` — Vitest unit tests
+
+### CI (master only, after push)
+
+1. `bun run build:admin` — admin build
+2. `bun run --cwd apps/web check:astro` — Astro type-check
+3. `bun run build:web` — web build
+4. Deploy web + admin
 
 ## Guardrails
 

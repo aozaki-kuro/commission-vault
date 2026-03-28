@@ -40,3 +40,12 @@ repos:
         stages:
           - pre-push
         always_run: true
+
+      - id: lint
+        name: lint (full)
+        entry: bun run lint
+        language: system
+        pass_filenames: false
+        stages:
+          - pre-push
+        always_run: true
