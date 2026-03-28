@@ -44,10 +44,10 @@ import {
 } from '@lib/characters/scrollSpy'
 import {
   clearHashIfTargetMissing,
+  clearLocationHash,
   getHashFromHref,
   getHashTarget,
   scrollToHashTargetFromHrefWithoutHash,
-  setLocationHash,
 } from '@lib/navigation/hashAnchor'
 import { jumpToCommissionSearch } from '@lib/navigation/jumpToCommissionSearch'
 import { SIDEBAR_SEARCH_STATE_EVENT } from '@lib/navigation/sidebarSearchState'
@@ -78,7 +78,7 @@ interface SidebarNavEnhancerDeps {
   trackEvent: typeof trackRybbitEvent
   jumpToSearch: typeof jumpToCommissionSearch
   clearHash: typeof clearHashIfTargetMissing
-  setHash: typeof setLocationHash
+  clearHashNow: typeof clearLocationHash
   scrollToHashWithoutWrite: typeof scrollToHashTargetFromHrefWithoutHash
   prefetchActiveTarget: (doc: Document, targetId: string | null | undefined) => void
   prefetchArchivedTarget: (doc: Document, targetId: string | null | undefined) => void
@@ -105,7 +105,7 @@ const defaultDeps: SidebarNavEnhancerDeps = {
   trackEvent: trackRybbitEvent,
   jumpToSearch: jumpToCommissionSearch,
   clearHash: clearHashIfTargetMissing,
-  setHash: setLocationHash,
+  clearHashNow: clearLocationHash,
   scrollToHashWithoutWrite: scrollToHashTargetFromHrefWithoutHash,
   prefetchActiveTarget: prefetchDeferredActiveCharacterTarget,
   prefetchArchivedTarget: prefetchDeferredArchivedCharacterTarget,
@@ -573,7 +573,6 @@ export function mountSidebarNavEnhancer({
       loadedEvent,
       onLoaded: () => {
         deps.scrollToHashWithoutWrite(href)
-        deps.setHash(getHashFromHref(href))
         scheduleSyncCharacterLinkAvailability({ invalidateSnapshot: true })
         scheduleSyncActiveDots()
       },
@@ -697,7 +696,6 @@ export function mountSidebarNavEnhancer({
       revealArchivedHomeNavTarget({
         onVisible: () => {
           deps.scrollToHashWithoutWrite(href)
-          deps.setHash(getHashFromHref(href))
           scheduleSyncCharacterLinkAvailability({ invalidateSnapshot: true })
           scheduleSyncActiveDots()
         },
@@ -719,8 +717,12 @@ export function mountSidebarNavEnhancer({
       event.preventDefault()
       const timelineHref = characterLink.getAttribute('href')
       deps.scrollToHashWithoutWrite(timelineHref)
-      deps.setHash(getHashFromHref(timelineHref))
     }
+
+    // 浏览器默认行为会把 hash 写入地址栏，等原生滚动完成后清除
+    win.requestAnimationFrame(() => {
+      deps.clearHashNow()
+    })
 
     trackSidebarCharacterClick(characterLink)
   }
