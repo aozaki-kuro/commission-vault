@@ -22,6 +22,7 @@ import {
 import { notifyDataUpdate } from '../../lib/dataUpdateSignal'
 import { findDuplicateCommissionHints } from '../../lib/duplicateCommissionHints'
 import { INITIAL_FORM_STATE } from '../../lib/formState'
+import { markPendingRebuild } from '../../lib/pendingRebuildSignal'
 import { CommissionHiddenSwitch } from '../create/CommissionFormFields'
 import { CommissionSharedFields } from '../create/CommissionSharedFields'
 import { DuplicateCommissionNotice } from '../create/DuplicateCommissionNotice'
@@ -136,6 +137,7 @@ export function CommissionEditForm({
     // Notify other tabs a change occurred; the session-ID filter in
     // dataUpdateSignal prevents the current tab from re-fetching bootstrap.
     notifyDataUpdate()
+    markPendingRebuild()
 
     // Update the commission in-place locally — no round-trip needed.
     const vals = savedFormRef.current

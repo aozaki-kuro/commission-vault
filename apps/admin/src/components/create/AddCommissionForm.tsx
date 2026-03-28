@@ -9,6 +9,7 @@ import { isValidCommissionFileName } from '../../lib/commissionFileName'
 import { notifyDataUpdate } from '../../lib/dataUpdateSignal'
 import { findDuplicateCommissionHints } from '../../lib/duplicateCommissionHints'
 import { INITIAL_FORM_STATE } from '../../lib/formState'
+import { markPendingRebuild } from '../../lib/pendingRebuildSignal'
 import { FormStatusIndicator } from '../FormStatusIndicator'
 import { SubmitButton } from '../SubmitButton'
 import { CommissionHiddenSwitch, CommissionSourceImageField } from './CommissionFormFields'
@@ -58,6 +59,7 @@ export function AddCommissionForm({
   useEffect(() => {
     if (state.status === 'success') {
       notifyDataUpdate()
+      markPendingRebuild()
     }
   }, [state.status])
 

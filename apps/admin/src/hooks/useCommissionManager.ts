@@ -28,6 +28,7 @@ import {
   saveCharacterOrder,
 } from '../lib/adminActions'
 import { notifyDataUpdate } from '../lib/dataUpdateSignal'
+import { markPendingRebuild } from '../lib/pendingRebuildSignal'
 
 const disclosureStorageKey = 'admin-existing-open'
 const expiryMs = 30 * 60 * 1000
@@ -312,7 +313,10 @@ export function useCommissionManager({
     onError: (message) => {
       setFeedback({ text: message, type: 'error' })
     },
-    onSaved: notifyDataUpdate,
+    onSaved: () => {
+      notifyDataUpdate()
+      markPendingRebuild()
+    },
     saveOrder: saveCharacterOrder,
   })
 
@@ -528,6 +532,7 @@ export function useCommissionManager({
           setFeedback(toFeedback(result))
           setEditing(null)
           notifyDataUpdate()
+          markPendingRebuild()
         })
         .catch(() => {
           setFeedback({ text: 'Unable to update character.', type: 'error' })
@@ -553,6 +558,7 @@ export function useCommissionManager({
           dispatchCommissionMap({ characterId: character.id, type: 'remove-character' })
           setFeedback(toFeedback(result))
           notifyDataUpdate()
+          markPendingRebuild()
         })
         .catch(() => {
           setFeedback({ text: 'Unable to delete character.', type: 'error' })

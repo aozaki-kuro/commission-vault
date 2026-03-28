@@ -4,6 +4,7 @@ import { formControlStyles } from '../../app/ui'
 import { addCharacterAction } from '../../lib/adminActions'
 import { notifyDataUpdate } from '../../lib/dataUpdateSignal'
 import { INITIAL_FORM_STATE } from '../../lib/formState'
+import { markPendingRebuild } from '../../lib/pendingRebuildSignal'
 import { FormStatusIndicator } from '../FormStatusIndicator'
 import { SubmitButton } from '../SubmitButton'
 
@@ -27,6 +28,7 @@ export function AddCharacterForm() {
   useEffect(() => {
     if (state.status === 'success') {
       notifyDataUpdate()
+      markPendingRebuild()
     }
   }, [state.status])
 

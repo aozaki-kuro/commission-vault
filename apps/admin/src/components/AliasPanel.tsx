@@ -1,7 +1,8 @@
 import type { FormState } from '../lib/formState'
-import { useActionState, useMemo, useState } from 'react'
+import { useActionState, useEffect, useMemo, useState } from 'react'
 import { adminSurfaceStyles, formControlStyles } from '../app/ui'
 import { INITIAL_FORM_STATE } from '../lib/formState'
+import { markPendingRebuild } from '../lib/pendingRebuildSignal'
 import { FormStatusIndicator } from './FormStatusIndicator'
 import { SaveButton } from './SaveButton'
 
@@ -48,6 +49,12 @@ export function AliasPanel({
   const [drafts, setDrafts] = useState<Record<string, string>>(() =>
     Object.fromEntries(rows.map(row => [row.key, row.initialValue])),
   )
+
+  useEffect(() => {
+    if (state.status === 'success') {
+      markPendingRebuild()
+    }
+  }, [state.status])
 
   const rowsPayload = useMemo(
     () => buildPayload(rows, drafts),

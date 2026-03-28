@@ -16,11 +16,12 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { IconGripHorizontal, IconX } from '@tabler/icons-react'
-import { useActionState, useDeferredValue, useMemo, useState } from 'react'
+import { useActionState, useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { adminSurfaceStyles, formControlStyles } from '../app/ui'
 import { saveHomeFeaturedKeywordsAction } from '../lib/adminActions'
 import { INITIAL_FORM_STATE } from '../lib/formState'
 import { dedupeKeywords } from '../lib/keywords'
+import { markPendingRebuild } from '../lib/pendingRebuildSignal'
 import { FormStatusIndicator } from './FormStatusIndicator'
 import { SaveButton } from './SaveButton'
 
@@ -115,6 +116,13 @@ export function AdminSuggestionDashboard({
   keywordOptions,
 }: AdminSuggestionDashboardProps) {
   const [state, formAction] = useActionState(saveHomeFeaturedKeywordsAction, INITIAL_FORM_STATE)
+
+  useEffect(() => {
+    if (state.status === 'success') {
+      markPendingRebuild()
+    }
+  }, [state.status])
+
   const [manualInput, setManualInput] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const deferredSearchInput = useDeferredValue(searchInput)
