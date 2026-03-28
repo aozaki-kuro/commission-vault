@@ -1,11 +1,22 @@
 import type { CommissionSearchEntrySource, SearchSuggestionAliasGroup } from '@features/home/search/CommissionSearch'
+import {
+  readHomeCharacterBatchManifest,
+} from '@features/home/commission/batch/homeCharacterBatchManifest'
+import {
+  ACTIVE_CHARACTERS_LOADED_EVENT,
+  requestActiveCharactersLoad,
+} from '@features/home/commission/loader/activeCharactersEvent'
+import {
+  ARCHIVED_CHARACTERS_LOADED_EVENT,
+  requestArchivedCharactersLoad,
+} from '@features/home/commission/loader/archivedCharactersEvent'
 import { resolveHomeSearchControls } from '@features/home/i18n/homeSearchControls'
 import CommissionSearch from '@features/home/search/CommissionSearch'
 import {
   buildPopularKeywordPoolFromSuggestTexts,
   dedupeKeywords,
 } from '@lib/search/popularKeywords'
-import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 const MAX_FEATURED_KEYWORDS = 6
 const MAX_VISIBLE_POPULAR_KEYWORDS = 6
@@ -218,6 +229,76 @@ function buildPopularKeywordPoolFromEntries(entries: CommissionSearchEntrySource
   )
 }
 
+function extractSectionIdFromDomKey(domKey: string) {
+  const separatorIndex = domKey.indexOf('::')
+  return separatorIndex > 0 ? domKey.slice(0, separatorIndex) : ''
+}
+
+const SHUFFLE_DEFERRED_LOAD_TIMEOUT_MS = 8000
+
+function loadDeferredEntryBatch(sectionId: string): Promise<void> {
+  const manifest = readHomeCharacterBatchManifest(document)
+  if (!manifest)
+    return Promise.reject(new Error('No batch manifest'))
+
+  const isActive = sectionId in manifest.active.targetBatchById
+  const isArchived = !isActive && sectionId in manifest.archived.targetBatchById
+  if (!isActive && !isArchived)
+    return Promise.reject(new Error('Section not found in manifest'))
+
+  const loadedEvent = isActive
+    ? ACTIVE_CHARACTERS_LOADED_EVENT
+    : ARCHIVED_CHARACTERS_LOADED_EVENT
+
+  return new Promise<void>((resolve, reject) => {
+    let settled = false
+    let timeoutId: number
+
+    const onLoaded = () => {
+      if (settled)
+        return
+      settled = true
+      window.clearTimeout(timeoutId)
+      window.removeEventListener(loadedEvent, onLoaded)
+      resolve()
+    }
+
+    timeoutId = window.setTimeout(() => {
+      if (settled)
+        return
+      settled = true
+      window.removeEventListener(loadedEvent, onLoaded)
+      reject(new Error('Deferred load timeout'))
+    }, SHUFFLE_DEFERRED_LOAD_TIMEOUT_MS)
+
+    window.addEventListener(loadedEvent, onLoaded)
+
+    if (isActive) {
+      requestActiveCharactersLoad(window, {
+        strategy: 'target',
+        targetId: sectionId,
+      })
+    }
+    else {
+      requestArchivedCharactersLoad(window, {
+        strategy: 'target',
+        targetId: sectionId,
+      })
+    }
+  })
+}
+
+function scrollAndAnimateEntry(element: HTMLElement) {
+  element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  element.animate(
+    [
+      { boxShadow: '0 0 0 3px rgba(107,114,128,0.5)' },
+      { boxShadow: '0 0 0 12px rgba(107,114,128,0)' },
+    ],
+    { duration: 1100, easing: 'ease-out' },
+  )
+}
+
 interface CommissionSearchDeferredProps {
   locale?: string
   featuredKeywords?: string[]
@@ -331,6 +412,8 @@ export default function CommissionSearchDeferred({
     setPopularKeywordPage(previous => previous + 1)
   }, [])
 
+  const lastShuffledIdRef = useRef<number | null>(null)
+
   const shuffleRandomEntry = useCallback((matchedIds?: Set<number>) => {
     if (!externalEntries || externalEntries.length === 0)
       return
@@ -342,22 +425,47 @@ export default function CommissionSearchDeferred({
     if (candidates.length === 0)
       return
 
-    const randomIndex = Math.floor(Math.random() * candidates.length)
-    const randomEntry = candidates[randomIndex]
+    // Avoid picking the same entry twice in a row
+    const pool = candidates.length > 1 && lastShuffledIdRef.current !== null
+      ? candidates.filter(entry => entry.id !== lastShuffledIdRef.current)
+      : candidates
 
-    if (randomEntry.domKey) {
-      const element = document.querySelector(`[data-commission-search-key="${randomEntry.domKey}"]`)
-      if (element instanceof HTMLElement) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        element.animate(
-          [
-            { boxShadow: '0 0 0 3px rgba(107,114,128,0.5)' },
-            { boxShadow: '0 0 0 12px rgba(107,114,128,0)' },
-          ],
-          { duration: 1100, easing: 'ease-out' },
-        )
-      }
+    const randomIndex = Math.floor(Math.random() * pool.length)
+    const randomEntry = pool[randomIndex]
+    lastShuffledIdRef.current = randomEntry.id
+
+    if (!randomEntry.domKey)
+      return
+
+    // Try to find the element in DOM (already loaded)
+    const element = document.querySelector<HTMLElement>(
+      `[data-commission-search-key="${CSS.escape(randomEntry.domKey)}"]`,
+    )
+    if (element) {
+      scrollAndAnimateEntry(element)
+      return
     }
+
+    // Entry is in a deferred batch — trigger load, then scroll
+    const sectionId = extractSectionIdFromDomKey(randomEntry.domKey)
+    if (!sectionId)
+      return
+
+    void loadDeferredEntryBatch(sectionId)
+      .then(() => {
+        // Use requestAnimationFrame so layout is committed after batch mount
+        window.requestAnimationFrame(() => {
+          const loadedElement = document.querySelector<HTMLElement>(
+            `[data-commission-search-key="${CSS.escape(randomEntry.domKey)}"]`,
+          )
+          if (loadedElement) {
+            scrollAndAnimateEntry(loadedElement)
+          }
+        })
+      })
+      .catch(() => {
+        // Deferred load failed or timed out — silently ignore
+      })
   }, [externalEntries])
 
   return (
