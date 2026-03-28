@@ -34,6 +34,7 @@ function getParsedFileName(value: string) {
   if (!normalized) {
     return {
       creatorName: null as string | null,
+      rawCreatorName: null as string | null,
       date: null as string | null,
     }
   }
@@ -41,7 +42,10 @@ function getParsedFileName(value: string) {
   const { creator, date } = parseCommissionFileName(normalized)
 
   return {
+    // 用于别名查找等需要忽略 part 后缀的场景
     creatorName: creator ? normalizeCreatorName(creator) : null,
+    // 用于重复检测：保留 (part N) 以区分多 part 稿件
+    rawCreatorName: creator ? creator.trim() : null,
     date: VALID_DATE_PATTERN.test(date) ? date : null,
   }
 }
@@ -99,9 +103,9 @@ export function findDuplicateCommissionHints({
       const sameDate = parsedQuery.date && parsedCandidate.date === parsedQuery.date
       const sameCharacter = hasCharacterSelection && candidate.characterId === characterId
       const sameCreator = Boolean(
-        parsedQuery.creatorName
-        && parsedCandidate.creatorName
-        && parsedQuery.creatorName === parsedCandidate.creatorName,
+        parsedQuery.rawCreatorName
+        && parsedCandidate.rawCreatorName
+        && parsedQuery.rawCreatorName === parsedCandidate.rawCreatorName,
       )
 
       if (!isLikelyDuplicate && sameCharacter && sameDate && sameCreator) {

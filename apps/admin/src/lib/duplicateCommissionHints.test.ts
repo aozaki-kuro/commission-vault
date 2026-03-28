@@ -101,16 +101,23 @@ describe('findDuplicateCommissionHints', () => {
         commissionId: 4,
         reasons: ['Same file name', 'Shared keyword: dress, smile'],
       },
-      {
-        commissionId: 3,
-        reasons: [
-          'Same character',
-          'Same date 20250302',
-          'Same creator',
-          'Shared keyword: dress, smile',
-        ],
-      },
     ])
+  })
+
+  it('does not warn when the only difference is a (part N) suffix', () => {
+    // 20250302_Artist 和 20250302_Artist (part 2) 是同一组稿的不同 part，不应触发重复提示
+    expect(
+      findDuplicateCommissionHints({
+        characterId: 1,
+        commissions,
+        fileName: '20250302_Artist',
+        keyword: 'dress, smile',
+      }),
+    ).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ commissionId: 3 }),
+      ]),
+    )
   })
 
   it('excludes the current commission when editing', () => {
@@ -126,10 +133,19 @@ describe('findDuplicateCommissionHints', () => {
         commissionId: 4,
         reasons: ['Same file name'],
       },
-      {
-        commissionId: 3,
-        reasons: ['Same character', 'Same date 20250302', 'Same creator'],
-      },
     ])
+    // part 2 稿不应出现在编辑 part 1 时的重复提示中
+    expect(
+      findDuplicateCommissionHints({
+        characterId: 1,
+        commissionId: 1,
+        commissions,
+        fileName: '20250302_Artist',
+      }),
+    ).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ commissionId: 3 }),
+      ]),
+    )
   })
 })
