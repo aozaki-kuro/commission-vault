@@ -25,19 +25,3 @@ export function getStatusBadgeStyles(tone: StatusTone) {
       return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-100'
   }
 }
-
-export type RebuildTone = 'default' | 'success' | 'error'
-
-const rebuildButtonBase
-  = 'w-28 shrink-0 rounded-lg border px-4 py-2 text-center text-xs font-semibold shadow-sm transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50'
-
-export function getRebuildButtonStyles(tone: RebuildTone) {
-  switch (tone) {
-    case 'error':
-      return `${rebuildButtonBase} border-red-300 bg-red-50 text-red-700 hover:border-red-400 hover:bg-red-100 focus-visible:ring-red-400 dark:border-red-700 dark:bg-red-500/15 dark:text-red-200 dark:hover:border-red-600 dark:hover:bg-red-500/25 dark:focus-visible:ring-red-500 dark:focus-visible:ring-offset-gray-900`
-    case 'success':
-      return `${rebuildButtonBase} border-emerald-300 bg-emerald-50 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-100 focus-visible:ring-emerald-400 dark:border-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200 dark:hover:border-emerald-600 dark:hover:bg-emerald-500/25 dark:focus-visible:ring-emerald-500 dark:focus-visible:ring-offset-gray-900`
-    default:
-      return `${rebuildButtonBase} border-amber-500 bg-amber-500 text-white hover:border-amber-400 hover:bg-amber-400 focus-visible:ring-amber-400 dark:border-amber-400 dark:bg-amber-400 dark:text-amber-950 dark:hover:border-amber-300 dark:hover:bg-amber-300 dark:focus-visible:ring-amber-300 dark:focus-visible:ring-offset-gray-900`
-  }
-}

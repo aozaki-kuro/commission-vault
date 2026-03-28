@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useReducer, useSyncExternalStore } from 'react'
 import { triggerRebuildDeploy } from '../lib/adminApi'
 import {
   clearPendingRebuild,
@@ -53,14 +53,12 @@ export function FloatingRebuildButton() {
     status: 'idle',
   })
 
-  // Show button and reset status when new pending changes arrive.
-  // Comparing to a ref lets us detect the false→true edge in render
-  // without an extra effect that would fire set-in-effect lint warnings.
-  const prevHasPendingRef = useRef(hasPending)
-  if (hasPending && !prevHasPendingRef.current) {
-    dispatch({ type: 'pending_appeared' })
-  }
-  prevHasPendingRef.current = hasPending
+  // Show button and reset status when new pending changes arrive
+  useEffect(() => {
+    if (hasPending) {
+      dispatch({ type: 'pending_appeared' })
+    }
+  }, [hasPending])
 
   // Auto-hide 1.6s after successful dispatch with no pending changes left
   useEffect(() => {
