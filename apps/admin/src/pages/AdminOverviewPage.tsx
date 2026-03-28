@@ -2,7 +2,7 @@ import type { AdminCommissionSearchRow } from '@commission-index/domain'
 import type { ReactNode } from 'react'
 import type { StatusTone } from '../app/ui'
 import type { AdminOverviewPayload } from '../lib/adminApi'
-import { useEffect, useEffectEvent, useReducer, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useReducer, useState } from 'react'
 import {
   adminActionLinkStyles,
   adminInsetCardStyles,
@@ -15,6 +15,7 @@ import {
   fetchAdminOverviewPayload,
   getAdminApiBaseUrl,
   readCachedAdminJson,
+  triggerRebuildDeploy,
 } from '../lib/adminApi'
 
 const LATEST_ENTRY_LIMIT = 10
@@ -191,7 +192,19 @@ export function AdminOverviewPage({ onNavigate }: AdminOverviewPageProps) {
   const [state, dispatch] = useReducer(overviewReducer, undefined, createInitialOverviewState)
   const [reloadToken, setReloadToken] = useState(0)
   const apiBaseUrl = getAdminApiBaseUrl() || 'same-origin'
+  const [forceRebuildLabel, setForceRebuildLabel] = useState('Force rebuild')
   const hasPayload = useEffectEvent(() => state.payload !== null)
+
+  const handleForceRebuild = useCallback(async () => {
+    setForceRebuildLabel('Dispatching…')
+    try {
+      await triggerRebuildDeploy()
+      setForceRebuildLabel('Dispatched ✓')
+    }
+    catch {
+      setForceRebuildLabel('Failed — retry')
+    }
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -317,6 +330,38 @@ export function AdminOverviewPage({ onNavigate }: AdminOverviewPageProps) {
             Curate suggestions
             <span aria-hidden="true">→</span>
           </AdminInternalLink>
+        </div>
+
+        <div className="
+          mt-4 border-t border-gray-200/80 pt-4
+          dark:border-gray-700/80
+        "
+        >
+          <div className="flex items-center justify-between gap-3">
+            <p className="
+              text-xs text-gray-500
+              dark:text-gray-400
+            "
+            >
+              Trigger a full data export + web deploy via GitHub Actions.
+            </p>
+            <button
+              type="button"
+              onClick={handleForceRebuild}
+              disabled={forceRebuildLabel === 'Dispatching…'}
+              className="
+                shrink-0 rounded-lg border border-gray-300/80 px-3 py-1.5
+                text-xs font-medium text-gray-700 transition
+                hover:border-gray-400 hover:text-gray-900
+                active:scale-[0.97]
+                disabled:cursor-not-allowed disabled:opacity-50
+                dark:border-gray-700 dark:text-gray-200
+                dark:hover:border-gray-600 dark:hover:text-gray-100
+              "
+            >
+              {forceRebuildLabel}
+            </button>
+          </div>
         </div>
 
       </section>

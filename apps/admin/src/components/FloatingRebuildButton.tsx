@@ -84,30 +84,39 @@ export function FloatingRebuildButton() {
   if (!visible)
     return null
 
+  const label = status === 'pending'
+    ? 'Dispatching…'
+    : status === 'success'
+      ? 'Dispatched ✓'
+      : status === 'error'
+        ? 'Retry'
+        : 'Rebuild'
+
+  const toneStyles = status === 'error'
+    ? 'border-red-300 text-red-600 hover:border-red-400 dark:border-red-700 dark:text-red-300 dark:hover:border-red-600'
+    : status === 'success'
+      ? 'border-emerald-300 text-emerald-600 dark:border-emerald-700 dark:text-emerald-300'
+      : 'border-amber-400 text-amber-600 hover:border-amber-500 hover:text-amber-700 dark:border-amber-500 dark:text-amber-300 dark:hover:border-amber-400 dark:hover:text-amber-200'
+
   return (
     <button
       type="button"
       onClick={handleClick}
       disabled={status === 'pending'}
       className={`
-        fixed bottom-6 right-6 z-50
-        flex items-center gap-2 rounded-full px-5 py-3
-        text-sm font-semibold shadow-lg
-        transition-all duration-300 ease-out
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
-        disabled:cursor-not-allowed disabled:opacity-60
-        ${status === 'error'
-      ? 'border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 focus-visible:ring-red-400 dark:border-red-700 dark:bg-red-500/20 dark:text-red-200 dark:hover:bg-red-500/30 dark:focus-visible:ring-offset-gray-900'
-      : status === 'success'
-        ? 'border border-emerald-300 bg-emerald-50 text-emerald-700 focus-visible:ring-emerald-400 dark:border-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200 dark:focus-visible:ring-offset-gray-900'
-        : 'border border-amber-400 bg-amber-500 text-white hover:bg-amber-400 focus-visible:ring-amber-400 dark:border-amber-300 dark:bg-amber-400 dark:text-amber-950 dark:hover:bg-amber-300 dark:focus-visible:ring-offset-gray-900'
-    }
+        fixed bottom-6 right-4 z-50
+        rounded-lg border bg-white/90 px-3 py-1.5
+        text-xs font-medium shadow-sm backdrop-blur-sm
+        transition
+        active:scale-[0.97]
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2
+        disabled:cursor-not-allowed disabled:opacity-50
+        md:right-auto md:left-[calc(50%+22rem)]
+        dark:bg-gray-900/80
+        ${toneStyles}
       `}
     >
-      {status === 'pending' && 'Dispatching…'}
-      {status === 'success' && 'Dispatched ✓'}
-      {status === 'error' && 'Retry Rebuild'}
-      {status === 'idle' && 'Rebuild & Deploy'}
+      {label}
     </button>
   )
 }
