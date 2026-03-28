@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearHashIfTargetMissing, scrollToHashTargetFromHrefWithoutHash, setLocationHash } from './hashAnchor'
+import { clearHashIfTargetOffscreen, scrollToHashTargetFromHrefWithoutHash } from './hashAnchor'
 
 describe('hashAnchor utils', () => {
   beforeEach(() => {
@@ -60,28 +60,45 @@ describe('hashAnchor utils', () => {
 
   it('clears hash when target is missing from DOM', () => {
     window.history.replaceState(null, '', '/?view=timeline#missing')
-    clearHashIfTargetMissing()
+    clearHashIfTargetOffscreen()
     expect(window.location.pathname + window.location.search + window.location.hash).toBe(
       '/?view=timeline',
     )
   })
 
-  it('keeps hash when target exists in DOM, regardless of scroll position', () => {
+  it('clears hash when target is scrolled offscreen', () => {
     const target = document.createElement('div')
     target.id = 'timeline-year-2026'
+    // jsdom returns all-zero rects by default (top=0, bottom=0) → offscreen
     document.body.appendChild(target)
     window.history.replaceState(null, '', '/?view=timeline#timeline-year-2026')
 
-    clearHashIfTargetMissing()
+    clearHashIfTargetOffscreen()
 
     expect(window.location.pathname + window.location.search + window.location.hash).toBe(
-      '/?view=timeline#timeline-year-2026',
+      '/?view=timeline',
     )
   })
 
-  it('sets hash via replaceState without scrolling', () => {
-    window.history.replaceState(null, '', '/?view=timeline')
-    setLocationHash('#timeline-year-2026')
+  it('keeps hash when target is within viewport', () => {
+    const target = document.createElement('div')
+    target.id = 'timeline-year-2026'
+    vi.spyOn(target, 'getBoundingClientRect').mockReturnValue({
+      top: 100,
+      bottom: 200,
+      left: 0,
+      right: 0,
+      width: 0,
+      height: 100,
+      x: 0,
+      y: 100,
+      toJSON: () => {},
+    })
+    document.body.appendChild(target)
+    window.history.replaceState(null, '', '/?view=timeline#timeline-year-2026')
+
+    clearHashIfTargetOffscreen()
+
     expect(window.location.pathname + window.location.search + window.location.hash).toBe(
       '/?view=timeline#timeline-year-2026',
     )

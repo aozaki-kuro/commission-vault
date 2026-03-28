@@ -43,7 +43,7 @@ import {
   resolveElementsByIds,
 } from '@lib/characters/scrollSpy'
 import {
-  clearHashIfTargetMissing,
+  clearHashIfTargetOffscreen,
   clearLocationHash,
   getHashFromHref,
   getHashTarget,
@@ -77,7 +77,7 @@ const BACK_TO_TOP_VISIBILITY_SCROLL_THRESHOLD = 360
 interface SidebarNavEnhancerDeps {
   trackEvent: typeof trackRybbitEvent
   jumpToSearch: typeof jumpToCommissionSearch
-  clearHash: typeof clearHashIfTargetMissing
+  clearHash: typeof clearHashIfTargetOffscreen
   clearHashNow: typeof clearLocationHash
   scrollToHashWithoutWrite: typeof scrollToHashTargetFromHrefWithoutHash
   prefetchActiveTarget: (doc: Document, targetId: string | null | undefined) => void
@@ -104,7 +104,7 @@ interface SidebarActivePanelSnapshot {
 const defaultDeps: SidebarNavEnhancerDeps = {
   trackEvent: trackRybbitEvent,
   jumpToSearch: jumpToCommissionSearch,
-  clearHash: clearHashIfTargetMissing,
+  clearHash: clearHashIfTargetOffscreen,
   clearHashNow: clearLocationHash,
   scrollToHashWithoutWrite: scrollToHashTargetFromHrefWithoutHash,
   prefetchActiveTarget: prefetchDeferredActiveCharacterTarget,

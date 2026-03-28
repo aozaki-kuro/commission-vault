@@ -67,17 +67,19 @@ export function clearLocationHash() {
   history.replaceState(null, '', `${pathname}${search}`)
 }
 
-export function clearHashIfTargetMissing() {
+export function clearHashIfTargetOffscreen() {
   const hash = window.location.hash
   if (!hash)
     return
 
   const element = getHashTarget(hash)
-  if (!element)
+  if (!element) {
     clearLocationHash()
-}
+    return
+  }
 
-export function setLocationHash(hash: string) {
-  const { pathname, search } = window.location
-  history.replaceState(null, '', `${pathname}${search}${hash}`)
+  const rect = element.getBoundingClientRect()
+  const isOffscreen = rect.bottom <= 0 || rect.top >= window.innerHeight
+  if (isOffscreen)
+    clearLocationHash()
 }

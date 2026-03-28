@@ -12,7 +12,7 @@ import {
 
   resolveDeferredActiveCharacterBatch,
 } from '@features/home/commission/loader/activeCharactersEvent'
-import { getHashTarget, scrollToHashTargetFromHrefWithoutHash, setLocationHash } from '@lib/navigation/hashAnchor'
+import { getHashTarget, scrollToHashTargetFromHrefWithoutHash } from '@lib/navigation/hashAnchor'
 import { dispatchSidebarSearchState } from '@lib/navigation/sidebarSearchState'
 
 const CHARACTER_PANEL_SELECTOR = '[data-commission-view-panel="character"]'
@@ -27,7 +27,6 @@ const ACTIVE_IDLE_PREFETCH_FALLBACK_DELAY_MS = 180
 interface ActiveCharactersLoaderDeps {
   dispatchSidebarSync: typeof dispatchSidebarSearchState
   scrollToHashWithoutWrite: typeof scrollToHashTargetFromHrefWithoutHash
-  setHash: typeof setLocationHash
 }
 
 interface MountActiveCharactersLoaderOptions {
@@ -46,7 +45,6 @@ type WindowWithIntersectionObserver = Window
 const defaultDeps: ActiveCharactersLoaderDeps = {
   dispatchSidebarSync: dispatchSidebarSearchState,
   scrollToHashWithoutWrite: scrollToHashTargetFromHrefWithoutHash,
-  setHash: setLocationHash,
 }
 
 function shouldLoadForSentinel(win: Window, sentinel: HTMLElement | null) {
@@ -293,14 +291,12 @@ export function mountActiveCharactersLoader({
 
     void queueLoad({ strategy: 'target', targetId: hash }).then(() => {
       // Do NOT guard on win.location.hash — it may have been transiently cleared by
-      // clearHashIfTargetMissing while the batch was loading (element not yet in DOM).
+      // clearHashIfTargetOffscreen while the batch was loading (element not yet in DOM).
       // Do NOT guard on didChange — a concurrent load may have already mounted the
       // batch (didChange=false) but the target is now in DOM.
       // Wrap in RAF so layout is committed before scroll.
       win.requestAnimationFrame(() => {
-        const scrolled = deps.scrollToHashWithoutWrite(hash)
-        if (scrolled)
-          deps.setHash(hash)
+        deps.scrollToHashWithoutWrite(hash)
       })
     })
   }

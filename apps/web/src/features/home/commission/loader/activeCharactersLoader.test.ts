@@ -70,16 +70,14 @@ describe('mountActiveCharactersLoader', () => {
         return 1
       })
     const scrollToHashWithoutWrite = vi.fn().mockReturnValue(true)
-    const setHash = vi.fn()
 
     const cleanup = mountActiveCharactersLoader({
-      deps: { scrollToHashWithoutWrite, setHash },
+      deps: { scrollToHashWithoutWrite },
     })
     await flushAsyncWork()
 
     expect(document.getElementById('section-beta')).toBeTruthy()
     expect(scrollToHashWithoutWrite).toHaveBeenCalledWith('#section-beta-20240101')
-    expect(setHash).toHaveBeenCalledWith('#section-beta-20240101')
 
     cleanup()
     requestAnimationFrameSpy.mockRestore()
@@ -100,19 +98,17 @@ describe('mountActiveCharactersLoader', () => {
         return 1
       })
     const scrollToHashWithoutWrite = vi.fn().mockReturnValue(true)
-    const setHash = vi.fn()
 
     const cleanup = mountActiveCharactersLoader({
-      deps: { scrollToHashWithoutWrite, setHash },
+      deps: { scrollToHashWithoutWrite },
     })
 
-    // Simulate clearHashIfTargetMissing clearing the URL hash before the batch loads
+    // Simulate clearHashIfTargetOffscreen clearing the URL hash before the batch loads
     window.history.replaceState(null, '', '/')
 
     await flushAsyncWork()
 
     expect(scrollToHashWithoutWrite).toHaveBeenCalledWith('#section-beta')
-    expect(setHash).toHaveBeenCalledWith('#section-beta')
 
     cleanup()
     requestAnimationFrameSpy.mockRestore()
@@ -130,16 +126,13 @@ describe('mountActiveCharactersLoader', () => {
         return 1
       })
     const scrollToHashWithoutWrite = vi.fn().mockReturnValue(true)
-    const setHash = vi.fn()
 
     const cleanup = mountActiveCharactersLoader({
-      deps: { scrollToHashWithoutWrite, setHash },
+      deps: { scrollToHashWithoutWrite },
     })
     await flushAsyncWork()
 
     expect(scrollToHashWithoutWrite).toHaveBeenCalledWith('#section-alpha')
-    // setHash not called for initial-HTML path (browser native scroll handles it)
-    expect(setHash).not.toHaveBeenCalled()
 
     cleanup()
     requestAnimationFrameSpy.mockRestore()

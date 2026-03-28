@@ -13,7 +13,7 @@ import {
 } from '@features/home/commission/loader/timelineViewEvent'
 import { readCommissionViewMode } from '@features/home/commission/viewModeState'
 import { COMMISSION_VIEW_MODE_CHANGE_EVENT } from '@features/home/events'
-import { getHashTarget, scrollToHashTargetFromHrefWithoutHash, setLocationHash } from '@lib/navigation/hashAnchor'
+import { getHashTarget, scrollToHashTargetFromHrefWithoutHash } from '@lib/navigation/hashAnchor'
 import { dispatchSidebarSearchState } from '@lib/navigation/sidebarSearchState'
 
 export const TIMELINE_VIEW_LOADED_EVENT = 'home:timeline-view-loaded'
@@ -27,7 +27,6 @@ const TIMELINE_BATCH_FETCH_CONCURRENCY = 4
 interface TimelineViewLoaderDeps {
   dispatchSidebarSync: typeof dispatchSidebarSearchState
   scrollToHashWithoutWrite: typeof scrollToHashTargetFromHrefWithoutHash
-  setHash: typeof setLocationHash
 }
 
 interface MountTimelineViewLoaderOptions {
@@ -39,7 +38,6 @@ interface MountTimelineViewLoaderOptions {
 const defaultDeps: TimelineViewLoaderDeps = {
   dispatchSidebarSync: dispatchSidebarSearchState,
   scrollToHashWithoutWrite: scrollToHashTargetFromHrefWithoutHash,
-  setHash: setLocationHash,
 }
 
 type WindowWithIntersectionObserver = Window
@@ -260,9 +258,7 @@ export function mountTimelineViewLoader({
 
     void queueLoad({ strategy: 'target', targetId: hash }).then(() => {
       win.requestAnimationFrame(() => {
-        const scrolled = deps.scrollToHashWithoutWrite(hash)
-        if (scrolled)
-          deps.setHash(hash)
+        deps.scrollToHashWithoutWrite(hash)
       })
     })
   }
@@ -288,9 +284,7 @@ export function mountTimelineViewLoader({
 
     void queueLoad({ strategy: 'target', targetId: hash }).then(() => {
       win.requestAnimationFrame(() => {
-        const scrolled = deps.scrollToHashWithoutWrite(hash)
-        if (scrolled)
-          deps.setHash(hash)
+        deps.scrollToHashWithoutWrite(hash)
       })
     })
   }

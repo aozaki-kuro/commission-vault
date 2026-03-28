@@ -23,7 +23,7 @@ import {
   writeArchivedCharactersLoadedBatchCount,
   writeArchivedCharactersState,
 } from '@features/home/commission/loader/archivedCharactersEvent'
-import { getHashTarget, scrollToHashTargetFromHrefWithoutHash, setLocationHash } from '@lib/navigation/hashAnchor'
+import { getHashTarget, scrollToHashTargetFromHrefWithoutHash } from '@lib/navigation/hashAnchor'
 import { restoreScrollPosition as restoreWindowScrollPosition } from '@lib/navigation/restoreScrollPosition'
 import { dispatchSidebarSearchState } from '@lib/navigation/sidebarSearchState'
 
@@ -41,7 +41,6 @@ const ARCHIVED_IDLE_PREFETCH_FALLBACK_DELAY_MS = 180
 
 interface ArchivedCharactersLoaderDeps {
   scrollToHashWithoutWrite: typeof scrollToHashTargetFromHrefWithoutHash
-  setHash: typeof setLocationHash
   restoreScrollPosition: (win: Window, position: { x: number, y: number }) => void
 }
 
@@ -54,7 +53,6 @@ type WindowWithIntersectionObserver = Window
 
 const defaultDeps: ArchivedCharactersLoaderDeps = {
   scrollToHashWithoutWrite: scrollToHashTargetFromHrefWithoutHash,
-  setHash: setLocationHash,
   restoreScrollPosition: restoreWindowScrollPosition,
 }
 
@@ -421,9 +419,7 @@ export function mountArchivedCharactersLoader({
       targetId: hash,
     }).then(() => {
       win.requestAnimationFrame(() => {
-        const scrolled = deps.scrollToHashWithoutWrite(hash)
-        if (scrolled)
-          deps.setHash(hash)
+        deps.scrollToHashWithoutWrite(hash)
       })
     })
   }

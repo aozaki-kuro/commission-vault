@@ -125,7 +125,6 @@ describe('mountTimelineViewLoader', () => {
     const onLoaded = vi.fn()
     const onSidebarSync = vi.fn()
     const scrollToHashWithoutWrite = vi.fn().mockReturnValue(true)
-    const setHash = vi.fn()
 
     window.addEventListener(TIMELINE_VIEW_LOADED_EVENT, onLoaded)
     window.addEventListener(SIDEBAR_SEARCH_STATE_EVENT, onSidebarSync)
@@ -133,7 +132,6 @@ describe('mountTimelineViewLoader', () => {
     const cleanup = mountTimelineViewLoader({
       deps: {
         scrollToHashWithoutWrite,
-        setHash,
       },
     })
     await flushTimelineQueue()
@@ -152,7 +150,6 @@ describe('mountTimelineViewLoader', () => {
     expect(onLoaded).toHaveBeenCalled()
     expect(onSidebarSync).toHaveBeenCalled()
     expect(scrollToHashWithoutWrite).toHaveBeenCalledWith('#timeline-year-2024')
-    expect(setHash).toHaveBeenCalledWith('#timeline-year-2024')
     expect(fetchMock).toHaveBeenCalledTimes(2)
 
     cleanup()
