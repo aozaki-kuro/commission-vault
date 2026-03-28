@@ -245,6 +245,38 @@ function extractSectionIdFromDomKey(domKey: string) {
   return separatorIndex > 0 ? domKey.slice(0, separatorIndex) : ''
 }
 
+// Probability of picking from the active pool when both pools are non-empty
+const ACTIVE_WEIGHT = 0.75
+
+function pickWeightedEntry<T extends CommissionSearchEntrySource>(
+  pool: T[],
+): T {
+  const manifest = readHomeCharacterBatchManifest(document)
+  if (!manifest || pool.length <= 1)
+    return pool[cryptoRandomIndex(pool.length)]
+
+  const activeBatch = manifest.active.targetBatchById
+  const active: T[] = []
+  const rest: T[] = []
+
+  for (const entry of pool) {
+    const sectionId = extractSectionIdFromDomKey(entry.domKey)
+    if (sectionId && sectionId in activeBatch)
+      active.push(entry)
+    else
+      rest.push(entry)
+  }
+
+  if (active.length === 0)
+    return rest[cryptoRandomIndex(rest.length)]
+  if (rest.length === 0)
+    return active[cryptoRandomIndex(active.length)]
+
+  const pickActive = cryptoRandomIndex(100) < ACTIVE_WEIGHT * 100
+  const chosen = pickActive ? active : rest
+  return chosen[cryptoRandomIndex(chosen.length)]
+}
+
 const SHUFFLE_DEFERRED_LOAD_TIMEOUT_MS = 8000
 
 function loadDeferredEntryBatch(sectionId: string): Promise<void> {
@@ -441,8 +473,7 @@ export default function CommissionSearchDeferred({
       ? candidates.filter(entry => entry.id !== lastShuffledIdRef.current)
       : candidates
 
-    const randomIndex = cryptoRandomIndex(pool.length)
-    const randomEntry = pool[randomIndex]
+    const randomEntry = pickWeightedEntry(pool)
     lastShuffledIdRef.current = randomEntry.id
 
     if (!randomEntry.domKey)
