@@ -29,6 +29,7 @@ import { restoreScrollPosition as restoreWindowScrollPosition } from '@lib/navig
 
 const HOME_SCROLL_STATE_STORAGE_KEY = 'home:scroll-state'
 const HOME_SCROLL_RESTORING_ATTRIBUTE = 'data-home-scroll-restoring'
+const HOME_HASH_RESTORING_ATTRIBUTE = 'data-home-hash-restoring'
 const RESTORE_BATCH_WINDOW = 4
 
 type Cleanup = () => void
@@ -99,6 +100,17 @@ function clearSavedState(win: Window) {
 
 function revealRestoringShell(win: Window) {
   win.document.documentElement.removeAttribute(HOME_SCROLL_RESTORING_ATTRIBUTE)
+}
+
+type WindowWithHashRestoreTimer = Window & { __homeHashRestoreTimer?: number }
+
+export function revealHashRestoreShell(win: Window) {
+  win.document.documentElement.removeAttribute(HOME_HASH_RESTORING_ATTRIBUTE)
+  const w = win as WindowWithHashRestoreTimer
+  if (w.__homeHashRestoreTimer != null) {
+    win.clearTimeout(w.__homeHashRestoreTimer)
+    delete w.__homeHashRestoreTimer
+  }
 }
 
 function persistScrollState(win: Window) {

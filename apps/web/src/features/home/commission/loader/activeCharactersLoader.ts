@@ -12,6 +12,7 @@ import {
 
   resolveDeferredActiveCharacterBatch,
 } from '@features/home/commission/loader/activeCharactersEvent'
+import { revealHashRestoreShell } from '@features/home/homeScrollRestore'
 import { getHashTarget, scrollToHashTargetFromHrefWithoutHash } from '@lib/navigation/hashAnchor'
 import { dispatchSidebarSearchState } from '@lib/navigation/sidebarSearchState'
 
@@ -281,6 +282,7 @@ export function mountActiveCharactersLoader({
       // after mount so layout has had a chance to stabilize.
       win.requestAnimationFrame(() => {
         deps.scrollToHashWithoutWrite(hash)
+        revealHashRestoreShell(win)
       })
       return
     }
@@ -297,6 +299,9 @@ export function mountActiveCharactersLoader({
       // Wrap in RAF so layout is committed before scroll.
       win.requestAnimationFrame(() => {
         deps.scrollToHashWithoutWrite(hash)
+        win.requestAnimationFrame(() => {
+          revealHashRestoreShell(win)
+        })
       })
     })
   }

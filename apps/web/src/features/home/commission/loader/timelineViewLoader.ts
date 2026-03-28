@@ -13,6 +13,7 @@ import {
 } from '@features/home/commission/loader/timelineViewEvent'
 import { readCommissionViewMode } from '@features/home/commission/viewModeState'
 import { COMMISSION_VIEW_MODE_CHANGE_EVENT } from '@features/home/events'
+import { revealHashRestoreShell } from '@features/home/homeScrollRestore'
 import { getHashTarget, scrollToHashTargetFromHrefWithoutHash } from '@lib/navigation/hashAnchor'
 import { dispatchSidebarSearchState } from '@lib/navigation/sidebarSearchState'
 
@@ -274,6 +275,7 @@ export function mountTimelineViewLoader({
     if (hashTarget?.isConnected) {
       win.requestAnimationFrame(() => {
         deps.scrollToHashWithoutWrite(hash)
+        revealHashRestoreShell(win)
       })
       return
     }
@@ -285,6 +287,9 @@ export function mountTimelineViewLoader({
     void queueLoad({ strategy: 'target', targetId: hash }).then(() => {
       win.requestAnimationFrame(() => {
         deps.scrollToHashWithoutWrite(hash)
+        win.requestAnimationFrame(() => {
+          revealHashRestoreShell(win)
+        })
       })
     })
   }

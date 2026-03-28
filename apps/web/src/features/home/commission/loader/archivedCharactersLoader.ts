@@ -23,6 +23,7 @@ import {
   writeArchivedCharactersLoadedBatchCount,
   writeArchivedCharactersState,
 } from '@features/home/commission/loader/archivedCharactersEvent'
+import { revealHashRestoreShell } from '@features/home/homeScrollRestore'
 import { getHashTarget, scrollToHashTargetFromHrefWithoutHash } from '@lib/navigation/hashAnchor'
 import { restoreScrollPosition as restoreWindowScrollPosition } from '@lib/navigation/restoreScrollPosition'
 import { dispatchSidebarSearchState } from '@lib/navigation/sidebarSearchState'
@@ -405,6 +406,7 @@ export function mountArchivedCharactersLoader({
     if (getHashTarget(hash)) {
       win.requestAnimationFrame(() => {
         deps.scrollToHashWithoutWrite(hash)
+        revealHashRestoreShell(win)
       })
       return
     }
@@ -420,6 +422,9 @@ export function mountArchivedCharactersLoader({
     }).then(() => {
       win.requestAnimationFrame(() => {
         deps.scrollToHashWithoutWrite(hash)
+        win.requestAnimationFrame(() => {
+          revealHashRestoreShell(win)
+        })
       })
     })
   }
