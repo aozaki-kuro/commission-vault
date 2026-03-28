@@ -255,13 +255,14 @@ function pickWeightedEntry<T extends CommissionSearchEntrySource>(
   if (!manifest || pool.length <= 1)
     return pool[cryptoRandomIndex(pool.length)]
 
-  const activeBatch = manifest.active.targetBatchById
+  const activeInitial = new Set(manifest.active.initialSectionIds)
+  const activeDeferred = manifest.active.targetBatchById
   const active: T[] = []
   const rest: T[] = []
 
   for (const entry of pool) {
     const sectionId = extractSectionIdFromDomKey(entry.domKey)
-    if (sectionId && sectionId in activeBatch)
+    if (sectionId && (activeInitial.has(sectionId) || sectionId in activeDeferred))
       active.push(entry)
     else
       rest.push(entry)
