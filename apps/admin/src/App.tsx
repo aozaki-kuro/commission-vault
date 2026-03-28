@@ -3,6 +3,7 @@ import { adminSections, getAdminSectionForPath, normalizeAdminPath } from './app
 import { adminActionLinkStyles, adminSurfaceStyles } from './app/ui'
 import { AdminInternalLink } from './components/AdminInternalLink'
 import { AdminPageShell, AdminRootLayout } from './components/AdminLayout'
+import { FloatingRebuildButton } from './components/FloatingRebuildButton'
 
 const AdminOverviewPage = lazy(() => import('./pages/AdminOverviewPage').then(m => ({ default: m.AdminOverviewPage })))
 const AdminCreatePage = lazy(() => import('./pages/AdminCreatePage').then(m => ({ default: m.AdminCreatePage })))
@@ -206,6 +207,7 @@ export function App() {
           {page}
         </Suspense>
       </AdminPageShell>
+      <FloatingRebuildButton />
     </AdminRootLayout>
   )
 }

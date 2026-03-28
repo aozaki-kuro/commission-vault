@@ -2,13 +2,12 @@ import type { AdminCommissionSearchRow } from '@commission-index/domain'
 import type { ReactNode } from 'react'
 import type { StatusTone } from '../app/ui'
 import type { AdminOverviewPayload } from '../lib/adminApi'
-import { useCallback, useEffect, useEffectEvent, useReducer, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useReducer, useState } from 'react'
 import {
   adminActionLinkStyles,
   adminInsetCardStyles,
   adminMetricCardStyles,
   adminSurfaceStyles,
-  getRebuildButtonStyles,
   getStatusBadgeStyles,
 } from '../app/ui'
 import { AdminInternalLink } from '../components/AdminInternalLink'
@@ -16,7 +15,6 @@ import {
   fetchAdminOverviewPayload,
   getAdminApiBaseUrl,
   readCachedAdminJson,
-  triggerRebuildDeploy,
 } from '../lib/adminApi'
 
 const LATEST_ENTRY_LIMIT = 10
@@ -185,8 +183,6 @@ function MetricCard({ title, value, children, index = 0 }: { title: string, valu
   )
 }
 
-type RebuildState = 'idle' | 'pending' | 'success' | 'error'
-
 interface AdminOverviewPageProps {
   onNavigate: (path: string) => void
 }
@@ -195,32 +191,7 @@ export function AdminOverviewPage({ onNavigate }: AdminOverviewPageProps) {
   const [state, dispatch] = useReducer(overviewReducer, undefined, createInitialOverviewState)
   const [reloadToken, setReloadToken] = useState(0)
   const apiBaseUrl = getAdminApiBaseUrl() || 'same-origin'
-  const [rebuildState, setRebuildState] = useState<RebuildState>('idle')
-  const [rebuildMessage, setRebuildMessage] = useState('')
-  const rebuildAbortRef = useRef<AbortController | null>(null)
   const hasPayload = useEffectEvent(() => state.payload !== null)
-
-  const handleRebuild = useCallback(async () => {
-    rebuildAbortRef.current?.abort()
-    const controller = new AbortController()
-    rebuildAbortRef.current = controller
-
-    setRebuildState('pending')
-    setRebuildMessage('')
-
-    try {
-      const result = await triggerRebuildDeploy(controller.signal)
-      setRebuildState('success')
-      setRebuildMessage(result.message)
-    }
-    catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        return
-      }
-      setRebuildState('error')
-      setRebuildMessage(error instanceof Error ? error.message : 'Unknown error')
-    }
-  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -348,49 +319,6 @@ export function AdminOverviewPage({ onNavigate }: AdminOverviewPageProps) {
           </AdminInternalLink>
         </div>
 
-        <div className="
-          mt-4 border-t border-gray-200/80 pt-4
-          dark:border-gray-700/80
-        "
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="
-                text-xs font-medium text-gray-700
-                dark:text-gray-200
-              "
-              >
-                Rebuild &amp; Deploy Web
-              </p>
-              <p className="
-                mt-0.5 text-xs text-gray-500
-                dark:text-gray-400
-              "
-              >
-                {rebuildState === 'idle' && 'Trigger a full data export + web deploy via GitHub Actions.'}
-                {rebuildState === 'pending' && 'Dispatching to GitHub Actions…'}
-                {rebuildState === 'success' && rebuildMessage}
-                {rebuildState === 'error' && rebuildMessage}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleRebuild}
-              disabled={rebuildState === 'pending'}
-              className={getRebuildButtonStyles(
-                rebuildState === 'error' ? 'error' : rebuildState === 'success' ? 'success' : 'default',
-              )}
-            >
-              {rebuildState === 'pending'
-                ? 'Dispatching…'
-                : rebuildState === 'success'
-                  ? 'Dispatched ✓'
-                  : rebuildState === 'error'
-                    ? 'Retry'
-                    : 'Rebuild'}
-            </button>
-          </div>
-        </div>
       </section>
 
       <section className={adminSurfaceStyles}>
