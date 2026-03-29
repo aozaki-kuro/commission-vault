@@ -4,6 +4,7 @@ import type { CharacterNavItem } from '@lib/characters/nav'
 import { STYLES } from '@features/home/nav/hamburger/constants'
 import { buildCharacterNavItems } from '@lib/characters/nav'
 import {
+  IconArrowBadgeLeftFilled,
   IconChevronDown,
   IconMenu2,
   IconX,
@@ -139,10 +140,10 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
               class={`${utilityActionButtonClassName} cursor-pointer appearance-none border-0 bg-transparent p-0 text-left text-gray-900 dark:text-white`.trim()}
             >
               <span class={utilityActionTextClassName}>{controls.byCharacter}</span>
-              <span
+              <IconArrowBadgeLeftFilled
                 data-mobile-hamburger-view-mode-indicator="true"
-                class="
-                  size-1.5 scale-100 rounded-full bg-gray-500 opacity-100
+                className="
+                  size-4 scale-100 text-gray-500 opacity-100
                   transition-all duration-300
                 "
                 aria-hidden="true"
@@ -159,10 +160,10 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
               class={`${utilityActionButtonClassName} cursor-pointer appearance-none border-0 bg-transparent p-0 text-left`.trim()}
             >
               <span class={utilityActionTextClassName}>{controls.byDate}</span>
-              <span
+              <IconArrowBadgeLeftFilled
                 data-mobile-hamburger-view-mode-indicator="true"
-                class="
-                  size-1.5 scale-0 rounded-full opacity-0 transition-all
+                className="
+                  size-4 scale-0 text-gray-500 opacity-0 transition-all
                   duration-300
                 "
                 aria-hidden="true"

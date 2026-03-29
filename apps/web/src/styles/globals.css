@@ -213,6 +213,15 @@
   .animate-reveal-up {
     animation: reveal-up 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 }
 
 /* ============================= */
