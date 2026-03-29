@@ -129,6 +129,18 @@ Key patterns:
 - Web Turbo cache must include `WEB_BUILD_CACHE_TOKEN` for remote-data invalidation
 - Deploy/rebuild workflows must not pre-run export/build before `wrangler deploy` (workspace-local custom build commands already handle it)
 
+#### Production `/admin` verification
+
+Production deployment is static-only (no Worker entrypoint). `/admin` and `/api/admin/*` must return 404 — enforced via `assets.not_found_handling = "404-page"` and explicit mappings in `apps/web/public/_redirects`. Verify after deploy:
+
+```bash
+curl -I https://<your-domain>/admin
+curl -I https://<your-domain>/admin/aliases
+curl -I https://<your-domain>/api/admin/bootstrap
+```
+
+All three should return `404`. Note: `vite preview` does not validate edge HTTP status behavior for static host routing.
+
 ### Search UX
 
 - Search UI must be layout-stable on first paint — no shell-to-content swaps

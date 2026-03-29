@@ -1,121 +1,54 @@
 # Commission Index
 
-Don't look.
+Don't look. Personal use only.
 
-Personal use only
+## Workspaces
 
-## Development
+|                     |                                            |
+| ------------------- | ------------------------------------------ |
+| `apps/web`          | Astro 6 static site (crystallize.cc)       |
+| `apps/admin`        | React 19 + Vite SPA (admin.crystallize.cc) |
+| `apps/admin-worker` | Cloudflare Worker — D1/R2 CRUD + admin API |
+| `packages/domain`   | Shared types and domain helpers            |
 
-### Fresh machine setup
-
-This repo uses Bun workspaces with a lightweight Turborepo task graph. Install dependencies once from the repository root; do not `bun install` inside each app separately.
-
-1. Install runtime tools:
-   - `mise install`
-   - If Bun is not already available: `curl -fsSL https://bun.sh/install | bash`
-2. Install workspace dependencies from the repo root:
-   - `bun install`
-3. Optional sanity checks:
-   - `bun run lint`
-   - `bun run check`
-   - `bun run test`
-
-Workspace notes:
-
-- `apps/web`, `apps/admin`, `apps/admin-worker`, and `packages/domain` all resolve dependencies through the root workspace install.
-- Root-only tooling such as ESLint, Prettier, Playwright, Vitest, and the root `better-tailwindcss` rule also comes from that same root install.
-- `turbo.json` is intentionally minimal and currently only orchestrates cacheable workspace tasks such as `build`, `check`, and `typecheck`.
-- Local Turborepo cache lives in `.turbo/`; GitHub Actions `ci` / `deploy` / `rebuild` now restore that directory between runs alongside the generated web-input cache.
-- If you add a dependency that is used by a root config file (for example `eslint.config.ts`), declare it in the root `package.json` even if app workspaces also use it.
-
-- `bun run dev` — run the public `apps/web` Astro app in development mode.
-- `bun run dev:admin` — start `apps/admin-worker` in local `wrangler dev` mode with remote D1/R2 bindings, wait until worker-backed bootstrap data is readable, then start the standalone admin frontend.
-- `bun run dev:admin:remote` — compatibility alias for `bun run dev:admin`.
-- `bun run build` — run Astro static build output to `apps/web/dist/`.
-- `bun run build:all` — run every workspace `build` task that currently participates in the Turbo graph.
-- `bun run typecheck` — run workspace `typecheck` tasks through Turbo.
-- `bun run preview` — preview static output locally.
-
-Additional workspace scripts: `bun run dev:web`, `bun run dev:admin:remote` (alias for `dev:admin`), `bun run dev:worker`, `bun run build:web`, `bun run build:admin`.
-
-## Admin
-
-- Admin UI lives in `apps/admin` (React SPA); admin API lives in `apps/admin-worker` (Cloudflare Worker with D1/R2 bindings).
-- `bun run dev:admin` starts the admin frontend plus `apps/admin-worker` in local `wrangler dev` mode against remote D1/R2, without pulling in `apps/web`.
-- The root dev orchestrator waits for a binding-backed worker API response before opening the frontend, so first-load admin pages do not race the worker startup.
-- Admin worker fails fast when `DB` or `IMAGES` bindings are missing.
-- Production admin auth is enforced by Cloudflare Zero Trust.
-
-## Cloudflare deploy layout
-
-- Do not keep a repo-root `wrangler.jsonc` for deployment. Each Worker owns its own app-local config.
-- Public site Worker config lives at `apps/web/wrangler.jsonc`.
-- Admin Worker config lives at `apps/admin-worker/wrangler.jsonc`.
-- `apps/web/wrangler.jsonc` also carries read-only `DB` / `IMAGES` bindings so the public-site build can export `generated/*` from remote D1/R2 before Astro builds static assets.
-- Manual deploy entrypoints stay at the repo root:
-  - `bun run deploy:web`
-  - `bun run deploy:admin`
-- Cloudflare Workers Builds must connect the same Git repo to two separate Workers with different root directories:
-  - `commission-index-web`
-    - Root directory: `apps/web`
-    - Build command: `bun run build`
-    - Deploy command: `bun run deploy`
-  - `commission-index-admin`
-    - Root directory: `apps/admin-worker`
-    - Build command: `bun run build:assets`
-    - Deploy command: `bun run deploy`
-- Recommended watch paths:
-  - Web: `apps/web/**`, `packages/**`, `apps/admin-worker/scripts/exportWebFactSource.ts`
-  - Admin: `apps/admin-worker/**`, `apps/admin/**`, `packages/**`
-- GitHub Actions `deploy` / `rebuild` now restore/save `.turbo/`, and the workspace-local Wrangler custom build commands delegate back to repo-root `bun run build:web` / `bun run build:admin` so those jobs can actually hit the Turbo cache instead of bypassing it.
-- Workers Builds does not infer monorepo intent from the repo root. Push-triggered builds are recognized from the Worker's Dashboard settings plus the `wrangler.jsonc` that lives under that worker's root directory.
-- `apps/web` build does not talk to D1/R2 directly at runtime. It shells into `apps/admin-worker/scripts/exportWebFactSource.ts`, but that export is now explicitly driven by `apps/web/wrangler.jsonc` during web builds so the web Worker project owns the bindings needed for push-triggered exports.
-- GitHub Actions deploy/rebuild workflows intentionally do not pre-run `web:fact-source:export` or `build:web` anymore. `wrangler deploy` already executes each workspace-local custom build command, so pre-running those steps only duplicated export/build work.
-- Web Turbo caching must include a remote-data invalidation token. GitHub Actions now passes `WEB_BUILD_CACHE_TOKEN` into web deploy/rebuild builds so `admin-data-changed` runs cannot accidentally replay a stale Astro build from unchanged source code.
-
-## Tests
-
-- `bun run test` — run the full Vitest suite.
-- `bun run test:watch` — watch tests during local development.
-- `bun run test:changed` — run changed tests only.
-
-## CI
-
-- `.github/workflows/ci.yml` is the standard verification workflow for pushes and pull requests.
-- `CI` runs on pull requests plus pushes to `master`, which avoids double-running the same validation on same-repo feature branches.
-- The `Validate` job always runs `lint`, `test`, `typecheck`, and `build:admin` from the repo root, and it now restores `apps/web/generated` so cached Astro validation can run even without Cloudflare secrets.
-- The `Web Remote Validate` job runs only when Cloudflare credentials are available in GitHub Actions, because public web `check/build` still require exporting the remote fact source first.
-- `apps/web/package.json` now exposes `check:astro` and `build:astro` for cases where generated inputs are already present and you want to avoid re-running the export wrapper.
-- `apps/web/package.json` also exposes `typecheck`, so the root Turbo `typecheck` actually covers the web workspace now instead of silently skipping it.
-- `.github/workflows/deploy.yml` and `.github/workflows/rebuild.yml` now restore/save the full `apps/web/generated` directory so later CI runs can reuse both fact-source JSON and source images, not just image files.
-- CI/deploy/rebuild workflows now write per-step durations and cache-hit status into `GITHUB_STEP_SUMMARY`, so cache decisions can be made from Actions data instead of guesswork.
-
-Asset generation is shared by Astro:
-
-- Home update summary is computed during page rendering.
-- `/search/home-search-entries.json` is served by an Astro route at request/build time.
-- `/rss.xml` is served by an Astro route at request/build time.
-- Source images are imported from `apps/web/generated/source-images/*`; in dev, generated fact-source/image changes trigger a full page reload automatically.
-
-### Dev ports
-
-- `apps/web` Astro dev defaults to `4321`.
-- `apps/admin-worker` Wrangler dev defaults to `8787`.
-- `apps/admin` Vite dev runs on `4174`.
-- `PORT` still overrides the Astro dev port when you need a different `apps/web` port.
-
-### Production `/admin` verification
-
-- Production deployment is static-only (no Worker entrypoint).
-- `/admin` and `/api/admin/*` return 404 from static `assets.not_found_handling = "404-page"`.
-- `/admin` and `/api/admin/*` are explicitly mapped to `404` in `apps/web/public/_redirects`.
-- `vite preview` does not validate edge HTTP status behavior for static host routing.
-- Verify using deployed Cloudflare URL:
+## Dev
 
 ```bash
-curl -I https://<your-domain>/admin
-curl -I https://<your-domain>/admin/aliases
-curl -I https://<your-domain>/api/admin/bootstrap
+bun run dev            # web (4321)
+bun run dev:admin      # admin worker (8787) + frontend (4174), remote D1/R2
+bun run preview        # preview apps/web/dist/ locally
 ```
 
-- Expected result: all above endpoints return `404`.
+## Build
+
+```bash
+bun run build          # Astro → apps/web/dist/
+bun run build:admin    # admin Worker + SPA assets
+bun run build:all      # all workspaces via Turbo
+bun run typecheck      # TS check all workspaces
+```
+
+## Quality
+
+```bash
+bun run lint           # ESLint, zero warnings
+bun run lint:fix
+bun run test
+bun run test:watch
+```
+
+## Setup (fresh machine)
+
+```bash
+mise install
+bun install            # from repo root only
+```
+
+## Deploy
+
+```bash
+bun run deploy:web     # → commission-index-web
+bun run deploy:admin   # → commission-index-admin
+```
+
+Push-triggered via Workers Builds — each worker owns its `wrangler.jsonc`.
