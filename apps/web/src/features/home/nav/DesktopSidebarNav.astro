@@ -7,6 +7,7 @@ import {
   IconChevronRight,
   IconChevronUp,
   IconFlare,
+  IconTimeline,
   IconZoom,
 } from '@tabler/icons-react'
 
@@ -343,6 +344,21 @@ const localeLinkClass
       </ul>
 
       <ul data-sidebar-nav-panel="timeline" class="hidden space-y-2">
+        <li>
+          <div class="
+            flex min-h-5 items-center gap-2 pb-1 text-gray-700
+            dark:text-gray-200
+          "
+          >
+            <span class={sidebarLeadSlotClass} aria-hidden="true">
+              <IconTimeline
+                className="size-4 text-gray-400"
+                stroke={1.95}
+              />
+            </span>
+            <span class="font-mono text-sm/5 font-bold">{controls.timelineTitle}</span>
+          </div>
+        </li>
         {
           monthNavItems.map(({ displayName, sectionHash, titleId, sectionId }) => (
             <li class="

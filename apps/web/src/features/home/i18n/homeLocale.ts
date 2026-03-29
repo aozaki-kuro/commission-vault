@@ -84,6 +84,7 @@ export interface HomeLocaleMessages {
     archivedCharactersCollapsedHint: string
     activeCharacters: string
     archivedCharacters: string
+    timelineTitle: string
     noActiveCharacters: string
     noArchivedCharacters: string
     sourceCharacter: string
@@ -182,6 +183,7 @@ const HOME_LOCALE_MESSAGES: Record<HomeLocale, HomeLocaleMessages> = {
       archivedCharactersCollapsedHint: 'Expand only when you want to browse the older entries.',
       activeCharacters: 'Active',
       archivedCharacters: 'Archived',
+      timelineTitle: 'Timeline',
       noActiveCharacters: 'No active characters.',
       noArchivedCharacters: 'No archived characters.',
       sourceCharacter: 'character',
@@ -297,6 +299,7 @@ const HOME_LOCALE_MESSAGES: Record<HomeLocale, HomeLocaleMessages> = {
       archivedCharactersCollapsedHint: '想查看較舊的委託時，再展開即可。',
       activeCharacters: '活躍角色',
       archivedCharacters: '停更角色',
+      timelineTitle: '時間軸',
       noActiveCharacters: '目前沒有活躍角色。',
       noArchivedCharacters: '目前沒有停更角色。',
       sourceCharacter: '角色',
@@ -410,6 +413,7 @@ const HOME_LOCALE_MESSAGES: Record<HomeLocale, HomeLocaleMessages> = {
       archivedCharactersCollapsedHint: '過去のコミッションを見たいときだけ展開できます。',
       activeCharacters: '活動中キャラクター',
       archivedCharacters: '停止中キャラクター',
+      timelineTitle: 'タイムライン',
       noActiveCharacters: '活動中のキャラクターはありません。',
       noArchivedCharacters: '停止中のキャラクターはありません。',
       sourceCharacter: 'キャラクター',
