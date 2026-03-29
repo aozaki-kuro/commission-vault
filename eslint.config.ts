@@ -9,6 +9,7 @@ const eslintConfig = antfu({
   formatters: {
     css: true,
     html: true,
+    markdown: 'prettier',
   },
 })
 
