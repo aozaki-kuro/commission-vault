@@ -3,7 +3,6 @@ import type { HomeLocaleMessages, HomeLocaleOption } from '@features/home/i18n/h
 import type { CharacterNavItem } from '@lib/characters/nav'
 import { buildCharacterNavItems } from '@lib/characters/nav'
 import {
-  IconChevronDown,
   IconChevronRight,
   IconChevronUp,
   IconFlare,
@@ -37,6 +36,8 @@ const sidebarLabelClass
 const localeLabelClass = 'font-mono text-sm leading-5 font-bold no-underline transition-colors duration-200'
 const sidebarNavLinkClass
   = 'flex items-center gap-2 font-mono text-sm no-underline transition-colors duration-200 mb-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400 rounded-sm'
+const localeLinkClass
+  = 'flex items-center gap-2 text-sm no-underline transition-colors duration-200 mb-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400 rounded-sm'
 ---
 
 <aside
@@ -76,7 +77,7 @@ const sidebarNavLinkClass
         </a>
       </div>
 
-      <details data-sidebar-locale-menu class="group relative">
+      <details data-sidebar-locale-menu class="group">
         <summary
           data-link-style="true"
           class="
@@ -89,12 +90,11 @@ const sidebarNavLinkClass
           aria-label={localeSwitcherLabel}
         >
           <span class={sidebarLeadSlotClass} aria-hidden="true">
-            <IconChevronDown
+            <IconChevronRight
               className={`
                 ${sidebarIconClass}
-                text-gray-400 transition-colors duration-200
-                group-hover:text-gray-500
-                dark:group-hover:text-gray-300
+                text-gray-400 transition-transform duration-200
+                group-open:rotate-90
               `}
               stroke={2.2}
             />
@@ -102,40 +102,32 @@ const sidebarNavLinkClass
           <span class={localeLabelClass}>{localeSwitcherLabel}</span>
         </summary>
 
-        <ul
-          data-sidebar-locale-panel="true"
-          class="
-            absolute top-full left-0 z-95 mt-2 w-48 space-y-1 rounded-xl border
-            border-gray-200/80 bg-white p-2 shadow-[0_8px_30px_rgb(0,0,0,0.12)]
-            dark:border-white/10 dark:bg-gray-900
-          "
-        >
+        <ul class="mt-3 space-y-2">
           {
             localeOptions.map((option) => {
               const isActive = option.locale === locale
               return (
-                <li>
+                <li class={`
+                  text-gray-700
+                  hover:text-gray-900
+                  dark:text-gray-200
+                  dark:hover:text-white
+                `}
+                >
                   <a
                     href={option.href}
                     aria-current={isActive ? 'page' : undefined}
-                    class={`group flex w-full items-center justify-between rounded-lg px-4 py-1 text-sm no-underline transition-colors duration-150 ${
-                      isActive
-                        ? 'text-gray-900 dark:text-white'
-                        : 'text-gray-700 hover:bg-white/70 dark:text-gray-200 dark:hover:bg-white/10'
-                    }`.trim()}
+                    class={localeLinkClass}
                   >
-                    <span>{option.label}</span>
-                    {isActive
-? (
-                      <span
-                        aria-hidden="true"
-                        class="
-                          size-1.5 rounded-full bg-gray-500/80
-                          dark:bg-gray-300/80
-                        "
+                    <span class={sidebarLeadSlotClass} aria-hidden="true">
+                      <span class={`
+                        size-1.5 rounded-full bg-gray-500/80 transition-all duration-300
+                        dark:bg-gray-300/80
+                        ${isActive ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}
+                      `}
                       />
-                    )
-: null}
+                    </span>
+                    {option.label}
                   </a>
                 </li>
               )
@@ -415,62 +407,3 @@ const sidebarNavLinkClass
   </div>
 </aside>
 
-<script>
-const localeMenu = document.querySelector('[data-sidebar-locale-menu]')
-
-if (localeMenu instanceof HTMLDetailsElement) {
-  const localePanel = localeMenu.querySelector<HTMLElement>('[data-sidebar-locale-panel="true"]')
-
-  const syncLocalePanelState = () => {
-    if (!localePanel)
-      return
-
-    localePanel.classList.toggle('pointer-events-auto', localeMenu.open)
-    localePanel.classList.toggle('opacity-100', localeMenu.open)
-    localePanel.classList.toggle('translate-y-0', localeMenu.open)
-    localePanel.classList.toggle('scale-100', localeMenu.open)
-
-    localePanel.classList.toggle('pointer-events-none', !localeMenu.open)
-    localePanel.classList.toggle('opacity-0', !localeMenu.open)
-    localePanel.classList.toggle('-translate-y-1', !localeMenu.open)
-    localePanel.classList.toggle('scale-95', !localeMenu.open)
-  }
-
-  const closeMenu = (event: Event) => {
-    const target = event.target
-    if (target instanceof Node && localeMenu.contains(target))
-      return
-    localeMenu.open = false
-  }
-
-  const closeOnEscape = (event: KeyboardEvent) => {
-    if (event.key !== 'Escape')
-      return
-    localeMenu.open = false
-  }
-
-  if (localePanel) {
-    localePanel.classList.add(
-      'origin-top-left',
-      'transition-[opacity,transform]',
-      'duration-220',
-      'ease-out',
-    )
-  }
-
-  localeMenu.addEventListener('toggle', syncLocalePanelState)
-  document.addEventListener('click', closeMenu)
-  document.addEventListener('keydown', closeOnEscape)
-  syncLocalePanelState()
-
-  window.addEventListener(
-    'pagehide',
-    () => {
-      localeMenu.removeEventListener('toggle', syncLocalePanelState)
-      document.removeEventListener('click', closeMenu)
-      document.removeEventListener('keydown', closeOnEscape)
-    },
-    { once: true },
-  )
-}
-</script>
