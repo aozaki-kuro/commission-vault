@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { hasDisplayableLinks, selectDisplayLinks } from './linkDisplay'
 
 describe('linkDisplay', () => {
-  it('selects links by priority and normalizes x.com', () => {
+  it('selects links by priority', () => {
     const result = selectDisplayLinks({
       links: [
         'https://pixiv.net/artworks/1',
@@ -13,7 +13,7 @@ describe('linkDisplay', () => {
     })
 
     expect(result.mainLinks).toEqual([
-      { type: 'Twitter', url: 'https://twitter.com/example/status/1' },
+      { type: 'Twitter', url: 'https://x.com/example/status/1' },
       { type: 'Pixiv', url: 'https://pixiv.net/artworks/1' },
       { type: 'Patreon', url: 'https://patreon.com/post/1' },
     ])
@@ -34,7 +34,7 @@ describe('linkDisplay', () => {
       { type: 'Twitter', url: 'https://twitter.com/example/status/1' },
       { type: 'Pixiv', url: 'https://pixiv.net/artworks/1' },
     ])
-    expect(result.designLink).toBe('https://twitter.com/example/status/2')
+    expect(result.designLink).toBe('https://x.com/example/status/2')
   })
 
   it('reports whether any displayable link exists', () => {

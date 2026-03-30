@@ -26,10 +26,6 @@ const LINK_PRIORITY: Array<{ type: string, patterns: string[] }> = [
   { type: 'Hedao', patterns: ['hedaoapp.com'] },
 ]
 
-export function sanitizeDisplayUrl(url: string): string {
-  return url.includes('x.com') ? url.replace('x.com', 'twitter.com') : url
-}
-
 export function selectDisplayLinks({
   links,
   designLink,
@@ -38,12 +34,10 @@ export function selectDisplayLinks({
   const maxLinks = hasDesign ? 2 : 3
 
   const selected: Record<string, string> = {}
-  for (const rawLink of links) {
-    const sanitizedLink = sanitizeDisplayUrl(rawLink)
-
+  for (const url of links) {
     for (const { type, patterns } of LINK_PRIORITY) {
-      if (patterns.some(pattern => sanitizedLink.includes(pattern)) && !selected[type]) {
-        selected[type] = sanitizedLink
+      if (patterns.some(pattern => url.includes(pattern)) && !selected[type]) {
+        selected[type] = url
         break
       }
     }
@@ -54,7 +48,7 @@ export function selectDisplayLinks({
     mainLinks: LINK_PRIORITY.filter(priority => priority.type in selected)
       .slice(0, maxLinks)
       .map(({ type }) => ({ type, url: selected[type] })),
-    designLink: hasDesign ? sanitizeDisplayUrl(designLink!) : null,
+    designLink: hasDesign ? designLink! : null,
   }
 }
 
