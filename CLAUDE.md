@@ -168,3 +168,7 @@ Allowed types: `feat`, `fix`, `docs`, `refactor`, `chore`, `test`, `style`, `per
 | apps/web (Astro)             | 4321 |
 | apps/admin (Vite)            | 4174 |
 | apps/admin-worker (Wrangler) | 8787 |
+
+### Special Note
+
+Update the corresponding sections of this file when you discover new project conventions or pitfalls during development.
