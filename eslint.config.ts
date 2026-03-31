@@ -5,7 +5,7 @@ const eslintConfig = antfu({
   typescript: true,
   test: true,
   react: true,
-  ignores: ['**/.wrangler/**', '**/.claude/**', 'docs/**'],
+  ignores: ['**/.wrangler/**', '**/.claude/**', 'docs/**', '.superpowers/**'],
   formatters: {
     css: true,
     html: true,
