@@ -330,21 +330,33 @@ export function useCommissionSearchModel({
   const didAutoShowArchivedRef = useRef(false)
 
   useEffect(() => {
-    syncDeferredAllLoadRequest({
-      didRequestRef: didAutoShowArchivedRef,
-      request: () => requestArchivedCharactersVisibility(window, 'visible'),
-      shouldRequest:
-        !disableDomFiltering
-        && mode === 'character'
-        && hasDeferredQuery
-        && !archivedVisible
-        && visibleMatchedCount === 0
-        && hiddenArchivedMatchedCount > 0,
-    })
+    // Reset suppression when query context changes away from "archived-only results".
+    // Intentionally does NOT reset when archivedVisible flips — that would cause re-trigger
+    // immediately after the user manually collapses the archived section.
+    if (!hasDeferredQuery || visibleMatchedCount > 0) {
+      // Reset dedup ref so the next archived-only query can auto-show again.
+      // Clearing the query does not hide the archived section — that's a separate
+      // user-initiated action; this effect only shows, never hides.
+      didAutoShowArchivedRef.current = false
+      return
+    }
+
+    if (didAutoShowArchivedRef.current)
+      return
+
+    if (
+      !disableDomFiltering
+      && mode === 'character'
+      && !archivedVisible
+      && hiddenArchivedMatchedCount > 0
+    ) {
+      didAutoShowArchivedRef.current = true
+      requestArchivedCharactersVisibility(window, 'visible')
+    }
   }, [
     disableDomFiltering,
-    mode,
     hasDeferredQuery,
+    mode,
     archivedVisible,
     visibleMatchedCount,
     hiddenArchivedMatchedCount,
