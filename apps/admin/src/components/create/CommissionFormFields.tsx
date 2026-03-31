@@ -1,6 +1,12 @@
 import type { ChangeEvent, ComponentPropsWithoutRef } from 'react'
-import { IconChevronDown } from '@tabler/icons-react'
 import { formControlStyles } from '../../app/ui'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select'
 
 const fieldLabelStyles
   = 'text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-300'
@@ -31,19 +37,6 @@ function bindTextareaValue(value?: string, onChange?: (value: string) => void): 
   }
 }
 
-function SelectChevron() {
-  return (
-    <IconChevronDown
-      className="
-        pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2
-        text-gray-400
-      "
-      stroke={1.7}
-      aria-hidden="true"
-    />
-  )
-}
-
 interface CharacterSelectOption {
   id: number
   name: string
@@ -70,30 +63,23 @@ export function CommissionCharacterField({
       <label className={fieldLabelStyles} htmlFor="create-commission-character">
         Character
       </label>
-      <div className="relative">
-        <select
-          id="create-commission-character"
-          name="characterId"
-          value={selectedCharacterId === null ? '' : String(selectedCharacterId)}
-          onChange={event => onChange(event.target.value ? Number(event.target.value) : null)}
-          disabled={isDisabled}
-          aria-label="Character"
-          className={`
-            ${formControlStyles}
-            h-auto appearance-none py-2.5 pr-10
-          `}
-        >
-          <option value="" disabled>
-            {hasCharacters ? 'Select character' : 'No characters available'}
-          </option>
+      <Select
+        value={selectedCharacterId === null ? '' : String(selectedCharacterId)}
+        onValueChange={value => onChange(value ? Number(value) : null)}
+        disabled={isDisabled}
+        name="characterId"
+      >
+        <SelectTrigger id="create-commission-character" aria-label="Character">
+          <SelectValue placeholder={hasCharacters ? 'Select character' : 'No characters available'} />
+        </SelectTrigger>
+        <SelectContent>
           {options.map(option => (
-            <option key={option.id} value={option.id}>
+            <SelectItem key={option.id} value={String(option.id)}>
               {option.name}
-            </option>
+            </SelectItem>
           ))}
-        </select>
-        <SelectChevron />
-      </div>
+        </SelectContent>
+      </Select>
       <p className={fieldDescriptionStyles}>Choose the character this commission belongs to.</p>
     </div>
   )

@@ -1,4 +1,3 @@
-import { IconChevronDown } from '@tabler/icons-react'
 import { useActionState, useEffect, useState } from 'react'
 import { formControlStyles } from '../../app/ui'
 import { addCharacterAction } from '../../lib/adminActions'
@@ -7,6 +6,13 @@ import { INITIAL_FORM_STATE } from '../../lib/formState'
 import { markPendingRebuild } from '../../lib/pendingRebuildSignal'
 import { FormStatusIndicator } from '../FormStatusIndicator'
 import { SubmitButton } from '../SubmitButton'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select'
 
 type StatusValue = 'active' | 'archived'
 
@@ -94,32 +100,22 @@ export function AddCharacterForm() {
           >
             Status
           </label>
-          <div className="relative">
-            <select
-              id="add-character-status"
-              name="status"
-              value={status}
-              onChange={event => setStatus(event.target.value as StatusValue)}
-              className={`
-                ${formControlStyles}
-                h-auto appearance-none py-2.5 pr-10
-              `}
-            >
+          <Select
+            value={status}
+            onValueChange={value => setStatus(value as StatusValue)}
+            name="status"
+          >
+            <SelectTrigger id="add-character-status">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
               {statusOptions.map(option => (
-                <option key={option.value} value={option.value}>
+                <SelectItem key={option.value} value={option.value}>
                   {option.label}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-            <IconChevronDown
-              className="
-                pointer-events-none absolute top-1/2 right-3 size-4
-                -translate-y-1/2 text-gray-400
-              "
-              stroke={1.7}
-              aria-hidden="true"
-            />
-          </div>
+            </SelectContent>
+          </Select>
           <p className="
             text-xs text-gray-500
             dark:text-gray-400
