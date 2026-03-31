@@ -4,6 +4,7 @@ import { clearHomeCharacterBatchManifestCacheForTests } from '@features/home/com
 import { ACTIVE_CHARACTERS_LOAD_REQUEST_EVENT } from '@features/home/commission/loader/activeCharactersEvent'
 import {
   ARCHIVED_CHARACTERS_COLLAPSE_REQUEST_EVENT,
+  ARCHIVED_CHARACTERS_COLLAPSED_EVENT,
   ARCHIVED_CHARACTERS_LOAD_REQUEST_EVENT,
   ARCHIVED_CHARACTERS_LOADED_EVENT,
   ARCHIVED_CHARACTERS_SHOW_REQUEST_EVENT,
@@ -709,6 +710,84 @@ describe('commissionSearch', () => {
 
       await new Promise(r => setTimeout(r, 50))
 
+      expect(
+        dispatchEventSpy.mock.calls.some(
+          ([event]) =>
+            event instanceof Event && event.type === ARCHIVED_CHARACTERS_SHOW_REQUEST_EVENT,
+        ),
+      ).toBe(false)
+    }
+    finally {
+      dispatchEventSpy.mockRestore()
+    }
+  })
+
+  it('does not re-auto-show archived after user manually collapses during archived-only search', async () => {
+    document.body.innerHTML = `
+      <div
+        data-commission-view-panel="character"
+        data-commission-view-active="true"
+        data-archived-loaded="false"
+        data-archived-visibility="hidden"
+      >
+        <section id="active-char" data-character-section="true" data-character-status="active">
+          <div
+            data-commission-entry="true"
+            data-character-section-id="active-char"
+            data-commission-search-key="active-char::20240101_alpha"
+            data-search-text="alpha active"
+          ></div>
+        </section>
+      </div>
+    `
+
+    const dispatchEventSpy = vi.spyOn(window, 'dispatchEvent')
+    const entries: CommissionSearchEntrySource[] = [
+      { id: 1, domKey: 'active-char::20240101_alpha', searchText: 'alpha active' },
+      { id: 2, domKey: 'archived-char::20240102_beta', searchText: 'betaword archived' },
+    ]
+
+    try {
+      renderSearchWithDomFiltering(entries)
+
+      // Type a query that only matches the archived entry
+      fireEvent.input(screen.getByLabelText('Search commissions'), {
+        target: { value: 'betaword' },
+      })
+
+      // Wait for auto-show to fire
+      await waitFor(() => {
+        expect(
+          dispatchEventSpy.mock.calls.some(
+            ([event]) =>
+              event instanceof Event && event.type === ARCHIVED_CHARACTERS_SHOW_REQUEST_EVENT,
+          ),
+        ).toBe(true)
+      })
+
+      // Simulate the archived section becoming visible (what the loader does in response)
+      const panel = document.querySelector<HTMLElement>('[data-commission-view-panel="character"]')!
+      panel.dataset.archivedVisibility = 'visible'
+      window.dispatchEvent(
+        new CustomEvent(ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT, {
+          detail: { visibility: 'visible', loaded: false },
+        }),
+      )
+
+      // Wait for React to process the state change
+      await new Promise(r => setTimeout(r, 50))
+
+      // Clear the spy call history so we can detect a fresh dispatch
+      dispatchEventSpy.mockClear()
+
+      // Simulate user manually collapsing archived
+      panel.dataset.archivedVisibility = 'hidden'
+      window.dispatchEvent(new Event(ARCHIVED_CHARACTERS_COLLAPSED_EVENT))
+
+      // Wait for effects to settle
+      await new Promise(r => setTimeout(r, 50))
+
+      // The auto-show must NOT fire again after manual collapse
       expect(
         dispatchEventSpy.mock.calls.some(
           ([event]) =>
