@@ -1,7 +1,10 @@
 import type { CommissionSearchEntrySource, SearchIndex, SearchSuggestionAliasGroup } from '@features/home/search/commissionSearchIndex'
 import type { SuggestionViewModel } from '@features/home/search/CommissionSearchSuggestionDropdown'
 import { requestActiveCharactersLoad } from '@features/home/commission/loader/activeCharactersEvent'
-import { requestArchivedCharactersLoad } from '@features/home/commission/loader/archivedCharactersEvent'
+import {
+  requestArchivedCharactersLoad,
+  requestArchivedCharactersVisibility,
+} from '@features/home/commission/loader/archivedCharactersEvent'
 import { requestTimelineViewLoad } from '@features/home/commission/loader/timelineViewEvent'
 import { LOAD_ARCHIVED_COMMAND_VALUE } from '@features/home/search/commissionSearchConstants'
 import {
@@ -323,6 +326,35 @@ export function useCommissionSearchModel({
       }),
     [disableDomFiltering, hasDeferredQuery, matchedIds, mode, resolvedIndex, archivedLoaded],
   )
+
+  const didAutoShowArchivedRef = useRef(false)
+
+  useEffect(() => {
+    const shouldAutoShow
+      = !disableDomFiltering
+        && mode === 'character'
+        && hasDeferredQuery
+        && !archivedVisible
+        && visibleMatchedCount === 0
+        && hiddenArchivedMatchedCount > 0
+
+    if (!shouldAutoShow) {
+      didAutoShowArchivedRef.current = false
+      return
+    }
+
+    if (didAutoShowArchivedRef.current)
+      return
+    didAutoShowArchivedRef.current = true
+    requestArchivedCharactersVisibility(window, 'visible')
+  }, [
+    disableDomFiltering,
+    mode,
+    hasDeferredQuery,
+    archivedVisible,
+    visibleMatchedCount,
+    hiddenArchivedMatchedCount,
+  ])
 
   const suggestionContextMatchedIds = useMemo(() => {
     return resolveSuggestionContextMatchedIds({
