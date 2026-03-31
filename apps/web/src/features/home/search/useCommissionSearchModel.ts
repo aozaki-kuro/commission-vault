@@ -330,23 +330,17 @@ export function useCommissionSearchModel({
   const didAutoShowArchivedRef = useRef(false)
 
   useEffect(() => {
-    const shouldAutoShow
-      = !disableDomFiltering
+    syncDeferredAllLoadRequest({
+      didRequestRef: didAutoShowArchivedRef,
+      request: () => requestArchivedCharactersVisibility(window, 'visible'),
+      shouldRequest:
+        !disableDomFiltering
         && mode === 'character'
         && hasDeferredQuery
         && !archivedVisible
         && visibleMatchedCount === 0
-        && hiddenArchivedMatchedCount > 0
-
-    if (!shouldAutoShow) {
-      didAutoShowArchivedRef.current = false
-      return
-    }
-
-    if (didAutoShowArchivedRef.current)
-      return
-    didAutoShowArchivedRef.current = true
-    requestArchivedCharactersVisibility(window, 'visible')
+        && hiddenArchivedMatchedCount > 0,
+    })
   }, [
     disableDomFiltering,
     mode,
