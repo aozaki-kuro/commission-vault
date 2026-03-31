@@ -6,6 +6,7 @@ import {
   ARCHIVED_CHARACTERS_COLLAPSE_REQUEST_EVENT,
   ARCHIVED_CHARACTERS_LOAD_REQUEST_EVENT,
   ARCHIVED_CHARACTERS_LOADED_EVENT,
+  ARCHIVED_CHARACTERS_SHOW_REQUEST_EVENT,
   ARCHIVED_CHARACTERS_STATE_CHANGE_EVENT,
 } from '@features/home/commission/loader/archivedCharactersEvent'
 import { ANALYTICS_EVENTS } from '@lib/analytics/events'
@@ -566,6 +567,154 @@ describe('commissionSearch', () => {
           ([event]) => event instanceof Event && event.type === ARCHIVED_CHARACTERS_LOAD_REQUEST_EVENT,
         ),
       ).toBe(true)
+    }
+    finally {
+      dispatchEventSpy.mockRestore()
+    }
+  })
+
+  it('auto-requests archived show when query only matches archived entries', async () => {
+    document.body.innerHTML = `
+      <div
+        data-commission-view-panel="character"
+        data-commission-view-active="true"
+        data-archived-loaded="false"
+        data-archived-visibility="hidden"
+      >
+        <section id="active-char" data-character-section="true" data-character-status="active">
+          <div
+            data-commission-entry="true"
+            data-character-section-id="active-char"
+            data-commission-search-key="active-char::20240101_alpha"
+            data-search-text="alpha active"
+          ></div>
+        </section>
+      </div>
+    `
+
+    const dispatchEventSpy = vi.spyOn(window, 'dispatchEvent')
+    const entries: CommissionSearchEntrySource[] = [
+      { id: 1, domKey: 'active-char::20240101_alpha', searchText: 'alpha active' },
+      { id: 2, domKey: 'archived-char::20240102_beta', searchText: 'betaword archived' },
+    ]
+
+    try {
+      renderSearchWithDomFiltering(entries)
+
+      fireEvent.input(screen.getByLabelText('Search commissions'), {
+        target: { value: 'betaword' },
+      })
+
+      await waitFor(() => {
+        expect(
+          dispatchEventSpy.mock.calls.some(
+            ([event]) =>
+              event instanceof Event && event.type === ARCHIVED_CHARACTERS_SHOW_REQUEST_EVENT,
+          ),
+        ).toBe(true)
+      })
+    }
+    finally {
+      dispatchEventSpy.mockRestore()
+    }
+  })
+
+  it('does not auto-request archived show when query also matches active entries', async () => {
+    document.body.innerHTML = `
+      <div
+        data-commission-view-panel="character"
+        data-commission-view-active="true"
+        data-archived-loaded="false"
+        data-archived-visibility="hidden"
+      >
+        <section id="active-char" data-character-section="true" data-character-status="active">
+          <div
+            data-commission-entry="true"
+            data-character-section-id="active-char"
+            data-commission-search-key="active-char::20240101_alpha"
+            data-search-text="sharedterm active"
+          ></div>
+        </section>
+      </div>
+    `
+
+    const dispatchEventSpy = vi.spyOn(window, 'dispatchEvent')
+    const entries: CommissionSearchEntrySource[] = [
+      { id: 1, domKey: 'active-char::20240101_alpha', searchText: 'sharedterm active' },
+      { id: 2, domKey: 'archived-char::20240102_beta', searchText: 'sharedterm archived' },
+    ]
+
+    try {
+      renderSearchWithDomFiltering(entries)
+
+      fireEvent.input(screen.getByLabelText('Search commissions'), {
+        target: { value: 'sharedterm' },
+      })
+
+      // Wait for the search to settle, then assert no auto-show
+      await waitFor(() => {
+        expect(screen.getByLabelText('Search commissions')).toHaveValue('sharedterm')
+      })
+
+      // Give any async effects time to fire
+      await new Promise(r => setTimeout(r, 50))
+
+      expect(
+        dispatchEventSpy.mock.calls.some(
+          ([event]) =>
+            event instanceof Event && event.type === ARCHIVED_CHARACTERS_SHOW_REQUEST_EVENT,
+        ),
+      ).toBe(false)
+    }
+    finally {
+      dispatchEventSpy.mockRestore()
+    }
+  })
+
+  it('does not auto-request archived show when archived section is already visible', async () => {
+    document.body.innerHTML = `
+      <div
+        data-commission-view-panel="character"
+        data-commission-view-active="true"
+        data-archived-loaded="false"
+        data-archived-visibility="visible"
+      >
+        <section id="active-char" data-character-section="true" data-character-status="active">
+          <div
+            data-commission-entry="true"
+            data-character-section-id="active-char"
+            data-commission-search-key="active-char::20240101_alpha"
+            data-search-text="alpha active"
+          ></div>
+        </section>
+      </div>
+    `
+
+    const dispatchEventSpy = vi.spyOn(window, 'dispatchEvent')
+    const entries: CommissionSearchEntrySource[] = [
+      { id: 1, domKey: 'active-char::20240101_alpha', searchText: 'alpha active' },
+      { id: 2, domKey: 'archived-char::20240102_beta', searchText: 'betaword archived' },
+    ]
+
+    try {
+      renderSearchWithDomFiltering(entries)
+
+      fireEvent.input(screen.getByLabelText('Search commissions'), {
+        target: { value: 'betaword' },
+      })
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Search commissions')).toHaveValue('betaword')
+      })
+
+      await new Promise(r => setTimeout(r, 50))
+
+      expect(
+        dispatchEventSpy.mock.calls.some(
+          ([event]) =>
+            event instanceof Event && event.type === ARCHIVED_CHARACTERS_SHOW_REQUEST_EVENT,
+        ),
+      ).toBe(false)
     }
     finally {
       dispatchEventSpy.mockRestore()
