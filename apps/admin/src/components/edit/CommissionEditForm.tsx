@@ -109,22 +109,28 @@ export function CommissionEditForm({
   // Capture latest form values so the save-success effect can read them without
   // making every field a dependency (which would cause spurious re-fires).
   const savedFormRef = useRef({
+    commissionId: commission.id,
+    commissionCharacterName: commission.characterName,
     descriptionValue,
     designValue,
     fileName,
     isHidden,
     keywordValue,
     linksValue,
+    onSaveSuccess,
     selectedCharacterId,
     sortedCharacters,
   })
   savedFormRef.current = {
+    commissionId: commission.id,
+    commissionCharacterName: commission.characterName,
     descriptionValue,
     designValue,
     fileName,
     isHidden,
     keywordValue,
     linksValue,
+    onSaveSuccess,
     selectedCharacterId,
     sortedCharacters,
   }
@@ -141,12 +147,12 @@ export function CommissionEditForm({
 
     // Update the commission in-place locally — no round-trip needed.
     const vals = savedFormRef.current
-    onSaveSuccess?.({
-      id: commission.id,
+    vals.onSaveSuccess?.({
+      id: vals.commissionId,
       characterId: vals.selectedCharacterId,
       characterName:
         vals.sortedCharacters.find(c => c.id === vals.selectedCharacterId)?.name
-        ?? commission.characterName,
+        ?? vals.commissionCharacterName,
       description: vals.descriptionValue.trim() || null,
       design: vals.designValue.trim() || null,
       fileName: vals.fileName.trim(),
@@ -154,7 +160,6 @@ export function CommissionEditForm({
       keyword: vals.keywordValue.trim() || null,
       links: vals.linksValue.split('\n').map(s => s.trim()).filter(Boolean),
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status])
 
   useEffect(() => {

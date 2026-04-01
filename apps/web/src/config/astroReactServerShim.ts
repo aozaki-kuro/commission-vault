@@ -212,7 +212,7 @@ async function check(
   let isReactComponent = false
   const renderCandidate = Component as (...args: unknown[]) => unknown
 
-  function Tester(...args: unknown[]) {
+  function tester(...args: unknown[]) {
     try {
       const vnode = renderCandidate(...args)
       if (vnode && ((vnode as { $$typeof?: symbol }).$$typeof === reactTypeof || (vnode as { $$typeof?: symbol }).$$typeof === reactTransitionalTypeof))
@@ -224,7 +224,7 @@ async function check(
     return React.createElement('div')
   }
 
-  await renderToStaticMarkup.call(this, Tester, props, children)
+  await renderToStaticMarkup.call(this, tester, props, children)
   return isReactComponent
 }
 
