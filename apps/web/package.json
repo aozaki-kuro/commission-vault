@@ -39,16 +39,11 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
     "@astrojs/react": "^5.0.2",
-    "@tailwindcss/vite": "^4.2.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
     "astro": "^6.1.1",
     "jsdom": "^29.0.1",
-    "sharp": "^0.34.5",
-    "tailwindcss": "^4.2.2",
-    "wrangler": "^4.78.0"
+    "sharp": "^0.34.5"
   },
   "overrides": {
     "vite": "^8.0.3"
