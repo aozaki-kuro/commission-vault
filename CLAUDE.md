@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Maintenance rule:** Update the corresponding sections of this file — and `docs/api-reference.md` / `docs/ai-agent-guide.md` where relevant — when you discover new project conventions, pitfalls, or API changes during development.
+
 ## Project Overview
 
 Commission Index — a personal commission listing/indexing site. Bun monorepo with Astro 6 static site (public web), React 19 SPA (admin), and Cloudflare Worker (admin API). Data lives in remote D1/R2.
@@ -86,6 +88,26 @@ Key patterns:
 
 `#layouts/*`, `#features/*`, `#components/*`, `#images/*`, `#data/*`, `#lib/*`, `#styles/*`, `#config/*`, `#admin/*`
 
+## API Documentation
+
+Two reference docs live in `docs/`:
+
+| File                     | Purpose                                                                                               |
+| ------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `docs/api-reference.md`  | Complete endpoint reference — method, path, request/response types, `curl` examples                   |
+| `docs/ai-agent-guide.md` | Integration guide — implicit behaviors, serialization quirks, retry strategy, normalization, pitfalls |
+
+**When to read:** Before calling or modifying any `/api/admin/*` endpoint, read `docs/api-reference.md` for the contract and `docs/ai-agent-guide.md` for non-obvious behaviors (links encoding, alias batch semantics, retry rules, etc.).
+
+**When to update:** Keep both docs in sync whenever:
+
+- A new endpoint is added or removed in `apps/admin-worker/src/adminApi.ts` or `adminData.ts`
+- Request/response shapes change (field names, types, required/optional status)
+- Implicit behaviors change (normalization logic, R2 lifecycle, error codes)
+- New serialization quirks or footguns are discovered
+
+Update `CLAUDE.md` at the same time for any architecture-level change.
+
 ## Validation Gates
 
 ### Local Hooks (enforced by prek)
@@ -168,7 +190,3 @@ Allowed types: `feat`, `fix`, `docs`, `refactor`, `chore`, `test`, `style`, `per
 | apps/web (Astro)             | 4321 |
 | apps/admin (Vite)            | 4174 |
 | apps/admin-worker (Wrangler) | 8787 |
-
-### Special Note
-
-Update the corresponding sections of this file when you discover new project conventions or pitfalls during development.

@@ -19,6 +19,13 @@ Standalone admin frontend: React 19 + Vite 8 SPA served from `admin.crystallize.
 - `src/pages/` — route pages (overview, create, edit, aliases, suggestion)
 - `src/components/` — migrated admin React components
 
+## API Documentation
+
+Before touching fetch logic or form actions, read:
+
+- `docs/api-reference.md` — endpoint signatures and field types
+- `docs/ai-agent-guide.md` — retry strategy, links encoding, `hidden` field quirks, alias batch semantics
+
 ## Guardrails
 
 - Route paths rooted at `/` on `admin.crystallize.cc` — no `/admin/*` public-site coupling

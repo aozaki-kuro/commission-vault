@@ -1,0 +1,737 @@
+# Commission Index — Admin API Reference
+
+**Base URL (production):** `https://admin.crystallize.cc`
+**Base URL (local dev):** `http://127.0.0.1:8787`
+
+**Auth:** All `/api/admin/*` endpoints are protected by Cloudflare Zero Trust at the network
+boundary. The worker itself performs no token validation — authenticated sessions pass through
+transparently. In local dev, CORS allows any `*.localhost` or `127.0.0.1:*` origin. No
+credentials are required when calling the worker directly at `127.0.0.1:8787` in local dev —
+Zero Trust is only enforced in production.
+
+**Response envelope (mutations):**
+
+```json
+{ "status": "success" | "error", "message": "string" }
+```
+
+**HTTP status on success:** All successful responses use `200 OK` regardless of HTTP method
+(no `201`/`204`).
+
+**Error format:** HTTP 400/404/500/503 + `{ "status": "error", "message": "..." }`.
+
+**Binding errors (503):** Returned when the D1 (`DB`) or R2 (`IMAGES`) Cloudflare binding is
+missing. Each endpoint notes which bindings it requires.
+
+---
+
+## Health & System
+
+### `GET /api/admin/health`
+
+Confirms the worker is running. Does not require any bindings.
+
+**Response `200`:**
+
+```json
+{ "status": "ok", "message": "Admin worker D1/R2 runtime is responding." }
+```
+
+```bash
+curl https://admin.crystallize.cc/api/admin/health
+```
+
+---
+
+### `POST /api/admin/rebuild`
+
+Dispatches a `repository_dispatch` event to GitHub Actions to trigger a web rebuild.
+Requires the `GITHUB_DISPATCH_TOKEN` environment variable to be set on the worker.
+
+**Request:** No body.
+
+**Response `200`:**
+
+```json
+{ "status": "success", "message": "Web rebuild dispatched to GitHub Actions." }
+```
+
+**Errors:**
+
+- `503` — `GITHUB_DISPATCH_TOKEN` not configured
+- `502` — GitHub API returned a non-204 status
+- `502` — network error reaching GitHub API (fetch failed or timed out)
+
+```bash
+curl -X POST https://admin.crystallize.cc/api/admin/rebuild
+```
+
+---
+
+## Bootstrap / Read Endpoints
+
+### `GET /api/admin/bootstrap`
+
+Loads the full admin bootstrap payload: all characters, their commission search rows, and
+creator alias data. Used by the admin UI on initial load.
+
+**Requires:** `DB`
+
+**Response `200`:**
+
+```typescript
+{
+  characters: Array<{
+    id: number
+    name: string
+    status: 'active' | 'archived'
+    sortOrder: number
+    commissionCount: number
+  }>
+  creatorAliases: Array<{
+    creatorName: string
+    aliases: string[]
+    commissionCount: number
+  }>
+  commissionSearchRows: Array<{
+    id: number
+    characterId: number
+    characterName: string
+    fileName: string
+    design: string | null
+    description: string | null
+    keyword: string | null
+  }>
+}
+```
+
+```bash
+curl https://admin.crystallize.cc/api/admin/bootstrap
+```
+
+---
+
+### `GET /api/admin/aliases/bootstrap`
+
+Loads alias data for all three alias types: characters, creators, and keywords. Used by the
+aliases admin page.
+
+**Requires:** `DB`
+
+**Response `200`:**
+
+```typescript
+{
+  characterAliases: Array<{
+    characterName: string
+    aliases: string[]
+    commissionCount: number
+  }>
+  creatorAliases: Array<{
+    creatorName: string
+    aliases: string[]
+    commissionCount: number
+  }>
+  keywordAliases: Array<{
+    baseKeyword: string
+    aliases: string[]
+    commissionCount: number
+  }>
+}
+```
+
+Note: Creator and keyword alias rows are deduplicated against character aliases by normalized
+key to avoid priority conflicts.
+
+```bash
+curl https://admin.crystallize.cc/api/admin/aliases/bootstrap
+```
+
+---
+
+### `GET /api/admin/suggestion`
+
+Loads the home search suggestion admin data: the current featured keywords list (up to 6)
+and a pool of up to 240 popular keyword options derived from commission metadata.
+
+**Requires:** `DB`
+
+**Response `200`:**
+
+```typescript
+{
+  featuredKeywords: string[]   // up to 6, from home_featured_search_keywords table
+  keywordOptions: string[]     // up to 240, ranked by frequency across all commissions
+}
+```
+
+```bash
+curl https://admin.crystallize.cc/api/admin/suggestion
+```
+
+---
+
+### `GET /api/admin/characters/:id/commissions`
+
+Returns all commissions belonging to a specific character, including full detail (links,
+hidden flag).
+
+**Requires:** `DB`
+
+**Path param:** `:id` — numeric character ID (positive integer)
+
+**Response `200`:**
+
+```typescript
+{
+  commissions: Array<{
+    id: number
+    characterId: number
+    characterName: string
+    fileName: string
+    links: string[]
+    design: string | null
+    description: string | null
+    keyword: string | null
+    hidden: boolean
+  }>
+}
+```
+
+**Errors:**
+
+- `400` — invalid (non-numeric or non-positive) character ID
+- `503` — D1 binding not available
+
+Note: Returns `{ "commissions": [] }` when no matching character or commissions exist — no 404
+is returned for a valid but non-existent character ID.
+
+```bash
+curl https://admin.crystallize.cc/api/admin/characters/3/commissions
+```
+
+---
+
+### `GET /api/admin/source-image/:fileName`
+
+Fetches a source image from R2 by commission file name. Tries `{fileName}.jpg`,
+`{fileName}.jpeg`, and `{fileName}.png` in that order (or uses the stored object key from the
+`source_images` D1 table when available).
+
+**Requires:** `IMAGES` (reads `DB` for key lookup if available, but `DB` is optional here)
+
+**Path param:** `:fileName` — URL-encoded commission file name without extension
+(format: `YYYYMMDD` or `YYYYMMDD_creator`)
+
+**Response `200`:** Raw image binary with `Content-Type: image/jpeg` or `image/png`
+
+**Errors:**
+
+- `400` — invalid file name format or forbidden characters
+- `404` — no matching object found in R2 (**plain-text** `Not Found`, not the JSON error envelope)
+
+```bash
+curl -O https://admin.crystallize.cc/api/admin/source-image/20240315_creator
+```
+
+---
+
+## Character Mutations
+
+### `POST /api/admin/characters`
+
+Creates a new character.
+
+**Requires:** `DB`
+
+**Request body (JSON):**
+
+```typescript
+{
+  name: string // required, non-empty after trim
+  status: 'active' | 'archived' // defaults to 'active' if not 'archived'
+}
+```
+
+**Response `200`:**
+
+```json
+{ "status": "success", "message": "Character \"Name\" created." }
+```
+
+**Errors:**
+
+- `400` — missing or empty name
+
+```bash
+curl -X POST https://admin.crystallize.cc/api/admin/characters \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Aria","status":"active"}'
+```
+
+---
+
+### `PATCH /api/admin/characters/:id`
+
+Updates an existing character's name and/or status.
+
+**Requires:** `DB`
+
+**Path param:** `:id` — numeric character ID
+
+**Request body (JSON):**
+
+```typescript
+{
+  name: string // required, non-empty after trim
+  status: 'active' | 'archived'
+}
+```
+
+**Response `200`:**
+
+```json
+{ "status": "success", "message": "Character \"Name\" updated." }
+```
+
+**Errors:**
+
+- `400` — invalid ID or empty name
+- `400` — character ID not found in D1 (`"Character not found."`)
+
+```bash
+curl -X PATCH https://admin.crystallize.cc/api/admin/characters/3 \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Aria","status":"archived"}'
+```
+
+---
+
+### `PUT /api/admin/characters/order`
+
+Replaces the full sort order for all characters. Both lists must together enumerate every
+character ID — omitting an ID removes it from the sort order.
+
+**Requires:** `DB`
+
+**Request body (JSON):**
+
+```typescript
+{
+  active: number[]    // ordered IDs for active characters
+  archived: number[]  // ordered IDs for archived characters
+}
+```
+
+**Response `200`:**
+
+```json
+{ "status": "success", "message": "Character order updated." }
+```
+
+**Errors / coercion behavior:**
+
+- Non-array `active`/`archived` fields are coerced to empty arrays — no validation error is
+  returned for missing or non-array values.
+- Array entries that are not finite numbers (e.g. strings, `NaN` after coercion) cause a `400`
+  error (`"Invalid character order payload."`).
+- Unknown character IDs in the payload are silently ignored (the `UPDATE` matches 0 rows).
+
+```bash
+curl -X PUT https://admin.crystallize.cc/api/admin/characters/order \
+  -H 'Content-Type: application/json' \
+  -d '{"active":[2,1,3],"archived":[4]}'
+```
+
+---
+
+### `DELETE /api/admin/characters/:id`
+
+Deletes a character by ID.
+
+**Requires:** `DB`
+
+**Path param:** `:id` — numeric character ID
+
+**Response `200`:**
+
+```json
+{ "status": "success", "message": "Character deleted." }
+```
+
+**Errors:**
+
+- `400` — invalid ID
+- `400` — character ID not found in D1 (`"Character not found."`)
+
+```bash
+curl -X DELETE https://admin.crystallize.cc/api/admin/characters/3
+```
+
+---
+
+## Commission Mutations
+
+### `POST /api/admin/commissions`
+
+Creates a new commission and uploads its source image to R2. The request must be
+`multipart/form-data`. This is the only endpoint that accepts a file upload for creation.
+
+**Requires:** `DB` + `IMAGES`
+
+**Request body (FormData):**
+
+```
+characterId    string   Numeric character ID (parsed via Number())
+fileName       string   Commission file name: YYYYMMDD or YYYYMMDD_creator
+                        Forbidden chars: < > : " / \ | ? * and ..
+links          string   Newline-separated URL list (one URL per line)
+design         string   Optional design label
+description    string   Optional description text
+keyword        string   Optional comma-separated keyword terms
+hidden         string   Send "on" to mark as hidden; omit or any other value = not hidden
+sourceImage    File     JPEG or PNG only; determined by Content-Type (image/jpeg / image/png)
+                        or by file extension (.jpg / .jpeg / .png). Must be non-empty.
+```
+
+**Response `200`:**
+
+```json
+{ "status": "success", "message": "Commission \"20240315_creator\" added to Aria." }
+```
+
+**Errors:**
+
+- `400` — missing `characterId`, missing or invalid `fileName`, missing `sourceImage`
+- `400` — source image with this file name already exists in R2 (no overwrite on create)
+- `503` — missing `DB` or `IMAGES` binding
+
+```bash
+curl -X POST https://admin.crystallize.cc/api/admin/commissions \
+  -F 'characterId=3' \
+  -F 'fileName=20240315_creator' \
+  -F 'links=https://example.com/art1' \
+  -F 'design=Casual' \
+  -F 'description=Summer outfit' \
+  -F 'keyword=casual,summer' \
+  -F 'sourceImage=@/path/to/image.jpg;type=image/jpeg'
+  # To hide from public site: add -F 'hidden=on'
+```
+
+---
+
+### `PATCH /api/admin/commissions/:id`
+
+Updates commission metadata. Does not replace the source image — use the dedicated
+source-image endpoint for that. If `fileName` changes, the source image object in R2 is
+automatically renamed and the D1 metadata record updated.
+
+**Requires:** `DB` (also needs `IMAGES` for the R2 rename when `fileName` changes)
+
+**Path param:** `:id` — numeric commission ID
+
+**Request body (JSON):**
+
+```typescript
+{
+  characterId: number    // target character ID
+  fileName: string       // commission file name
+  links: string          // newline-separated URL list (one URL per line)
+  design?: string        // optional
+  description?: string   // optional
+  keyword?: string       // optional comma-separated keyword terms
+  hidden: boolean        // true to hide from public site
+}
+```
+
+Note: `links` is a newline-separated `string` here (same as FormData), not an array.
+The worker parses it with the same line-splitting logic as the create endpoint.
+
+**Response `200`:**
+
+```json
+{ "status": "success", "message": "Commission \"20240315_creator\" updated." }
+```
+
+**Errors:**
+
+- `400` — invalid ID, missing/invalid `characterId` or `fileName`
+
+```bash
+curl -X PATCH https://admin.crystallize.cc/api/admin/commissions/12 \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "characterId": 3,
+    "fileName": "20240315_creator",
+    "links": "https://example.com/art1\nhttps://example.com/art2",
+    "design": "Casual",
+    "description": "Summer outfit",
+    "keyword": "casual,summer",
+    "hidden": false
+  }'
+```
+
+---
+
+### `DELETE /api/admin/commissions/:id`
+
+Deletes a commission record from D1. Does not remove the source image from R2.
+
+**Requires:** `DB`
+
+**Path param:** `:id` — numeric commission ID
+
+**Response `200`:**
+
+```json
+{ "status": "success", "message": "Commission deleted." }
+```
+
+**Errors:**
+
+- `400` — invalid ID
+
+```bash
+curl -X DELETE https://admin.crystallize.cc/api/admin/commissions/12
+```
+
+---
+
+### `POST /api/admin/commissions/:id/source-image`
+
+Replaces the source image for an existing commission. Overwrites any existing R2 object
+(removes old `.jpg`/`.jpeg`/`.png` variants) and updates D1 metadata.
+
+**Requires:** `DB` + `IMAGES`
+
+**Path param:** `:id` — numeric commission ID
+
+**Request body (FormData):**
+
+```
+commissionFileName   string   Required for validation; actual R2 key is resolved from D1 by commission ID
+sourceImage          File     JPEG or PNG only (same rules as POST /commissions)
+```
+
+**Response `200`:**
+
+```json
+{ "status": "success", "message": "Source image for \"20240315_creator\" replaced." }
+```
+
+**Errors:**
+
+- `400` — invalid ID, missing `commissionFileName`, missing or invalid `sourceImage`
+- `503` — missing `DB` or `IMAGES` binding
+
+```bash
+curl -X POST https://admin.crystallize.cc/api/admin/commissions/12/source-image \
+  -F 'commissionFileName=20240315_creator' \
+  -F 'sourceImage=@/path/to/new-image.png;type=image/png'
+```
+
+---
+
+## Alias Mutations
+
+### `POST /api/admin/aliases/batch`
+
+Replaces all creator alias records in bulk. Each row maps a canonical creator name to its
+aliases.
+
+**Requires:** `DB`
+
+**Request body (JSON):**
+
+```typescript
+{
+  rows: Array<{
+    creatorName: string
+    aliases: string[] | string  // array preferred; single string also accepted
+  }>
+  // Alternative: pass rows as a JSON-encoded string in rowsJson if rows is absent
+  rowsJson?: string
+}
+```
+
+Note: Each row also accepts a singular `alias` string field as an undocumented fallback
+(`aliases` takes precedence when both are present).
+
+Note: When both `rows` and `rowsJson` are present, `rows` takes precedence. Use `rowsJson`
+only when your HTTP client cannot send a JSON body (e.g., plain form posts).
+
+**Response `200`:**
+
+```json
+{ "status": "success", "message": "Creator aliases saved." }
+```
+
+```bash
+curl -X POST https://admin.crystallize.cc/api/admin/aliases/batch \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rows": [
+      {"creatorName": "creator_handle", "aliases": ["Creator Handle", "creator"]},
+      {"creatorName": "another_creator", "aliases": []}
+    ]
+  }'
+```
+
+---
+
+### `POST /api/admin/character-aliases/batch`
+
+Replaces all character alias records in bulk.
+
+**Requires:** `DB`
+
+**Request body (JSON):**
+
+```typescript
+{
+  rows: Array<{
+    characterName: string
+    aliases: string[] | string
+  }>
+  rowsJson?: string  // JSON-encoded string fallback for rows
+}
+```
+
+Note: Each row also accepts a singular `alias` string field as an undocumented fallback
+(`aliases` takes precedence when both are present).
+
+Note: When both `rows` and `rowsJson` are present, `rows` takes precedence. Use `rowsJson`
+only when your HTTP client cannot send a JSON body (e.g., plain form posts).
+
+**Response `200`:**
+
+```json
+{ "status": "success", "message": "Character aliases saved." }
+```
+
+```bash
+curl -X POST https://admin.crystallize.cc/api/admin/character-aliases/batch \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rows": [
+      {"characterName": "Aria", "aliases": ["アリア", "Aria-chan"]}
+    ]
+  }'
+```
+
+---
+
+### `POST /api/admin/keyword-aliases/batch`
+
+Replaces all keyword alias records in bulk. Keyword aliases allow alternate terms to resolve
+to a canonical keyword during search.
+
+**Requires:** `DB`
+
+**Request body (JSON):**
+
+```typescript
+{
+  rows: Array<{
+    baseKeyword: string
+    aliases: string[] | string
+  }>
+  rowsJson?: string  // JSON-encoded string fallback for rows
+}
+```
+
+Note: Each row also accepts a singular `alias` string field as an undocumented fallback
+(`aliases` takes precedence when both are present).
+
+Note: When both `rows` and `rowsJson` are present, `rows` takes precedence. Use `rowsJson`
+only when your HTTP client cannot send a JSON body (e.g., plain form posts).
+
+**Response `200`:**
+
+```json
+{ "status": "success", "message": "Keyword aliases saved." }
+```
+
+```bash
+curl -X POST https://admin.crystallize.cc/api/admin/keyword-aliases/batch \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "rows": [
+      {"baseKeyword": "casual", "aliases": ["カジュアル", "everyday"]}
+    ]
+  }'
+```
+
+---
+
+### `POST /api/admin/suggestion`
+
+Replaces the home page featured search keywords. Accepts an ordered list of up to 6
+keywords. Excess entries beyond 6 are silently discarded.
+
+**Requires:** `DB`
+
+**Request body (JSON):**
+
+```typescript
+{
+  keywords: string[]   // ordered list of featured keywords (max 6 used)
+  keywordsJson?: string  // JSON-encoded string fallback for keywords
+}
+```
+
+Note: When both `keywords` and `keywordsJson` are present, `keywords` takes precedence. Use
+`keywordsJson` only when your HTTP client cannot send a JSON body (e.g., plain form posts).
+
+**Response `200`:**
+
+```json
+{ "status": "success", "message": "Home featured keywords saved." }
+```
+
+```bash
+curl -X POST https://admin.crystallize.cc/api/admin/suggestion \
+  -H 'Content-Type: application/json' \
+  -d '{"keywords": ["casual", "summer", "winter", "fantasy"]}'
+```
+
+---
+
+## Field Reference
+
+### Commission `fileName`
+
+- Format: `YYYYMMDD` or `YYYYMMDD_creator` (e.g. `20240315` or `20240315_someartist`)
+- No image extension — the worker appends `.jpg` or `.png` when writing to R2
+- Forbidden characters: `< > : " / \ | ? *` and `..`
+- Control characters (code points ≤ 0x1F) are also forbidden
+
+### Commission `links` encoding
+
+| Endpoint                                  | Format                                     |
+| ----------------------------------------- | ------------------------------------------ |
+| `POST /api/admin/commissions` (FormData)  | Newline-separated string; one URL per line |
+| `PATCH /api/admin/commissions/:id` (JSON) | Newline-separated string; one URL per line |
+| Read responses (`GET …/commissions`)      | `string[]` (parsed array)                  |
+
+### Commission `keyword`
+
+Comma-separated keyword string (e.g. `"casual,summer,outdoor"`). The worker stores this
+as-is; term splitting occurs at query/export time via `splitKeywordTerms`.
+
+### Commission `hidden`
+
+| Endpoint                                  | Encoding                                                                 |
+| ----------------------------------------- | ------------------------------------------------------------------------ |
+| `POST /api/admin/commissions` (FormData)  | Send field value `"on"` to hide; omit or send anything else = not hidden |
+| `PATCH /api/admin/commissions/:id` (JSON) | `boolean` (`true` / `false`)                                             |
+| Read responses                            | `boolean`                                                                |
+
+### Source image formats
+
+Accepted by `POST /api/admin/commissions` and `POST /api/admin/commissions/:id/source-image`:
+
+- JPEG: `Content-Type: image/jpeg` OR file extension `.jpg` / `.jpeg`
+- PNG: `Content-Type: image/png` OR file extension `.png`
+
+Content-Type takes precedence over file extension. WebP is not supported.
