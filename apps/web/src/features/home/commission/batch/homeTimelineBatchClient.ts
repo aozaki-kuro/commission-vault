@@ -1,4 +1,5 @@
 import type { HomeTimelineBatchPayload } from '@features/home/commission/batch/homeTimelineBatchPayload'
+import type { HomeTimelineBatchManifest } from '@features/home/server/homeTimelineBatches'
 import { readHomeTimelineBatchManifest } from '@features/home/commission/batch/homeTimelineBatchManifest'
 import { renderHomeTimelineBatchPayload } from '@features/home/commission/batch/homeTimelineBatchRender'
 import { buildHomeTimelineBatchUrl } from '@features/home/server/homeTimelineBatches'
@@ -10,11 +11,13 @@ const LEGACY_TIMELINE_ROOT_TEMPLATE_SELECTOR = 'template[data-timeline-sections-
 export async function fetchHomeTimelineBatch({
   batchIndex,
   doc,
+  manifestOverride,
 }: {
   batchIndex: number
   doc: Document
+  manifestOverride?: HomeTimelineBatchManifest | null
 }) {
-  const manifest = readHomeTimelineBatchManifest(doc)
+  const manifest = manifestOverride ?? readHomeTimelineBatchManifest(doc)
   if (!manifest)
     return null
 

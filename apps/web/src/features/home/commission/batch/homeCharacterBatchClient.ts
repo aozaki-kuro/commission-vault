@@ -1,5 +1,5 @@
 import type { HomeCharacterBatchPayload } from '@features/home/commission/batch/homeCharacterBatchPayload'
-import type { HomeCharacterBatchStatus } from '@features/home/server/homeCharacterBatches'
+import type { HomeCharacterBatchManifest, HomeCharacterBatchStatus } from '@features/home/server/homeCharacterBatches'
 import { readHomeCharacterBatchManifest } from '@features/home/commission/batch/homeCharacterBatchManifest'
 import { renderHomeCharacterBatchPayload } from '@features/home/commission/batch/homeCharacterBatchRender'
 import {
@@ -69,12 +69,14 @@ export async function fetchHomeCharacterBatch({
   batchIndex,
   doc,
   status,
+  manifestOverride,
 }: {
   batchIndex: number
   doc: Document
   status: HomeCharacterBatchStatus
+  manifestOverride?: HomeCharacterBatchManifest | null
 }) {
-  const manifest = readHomeCharacterBatchManifest(doc)
+  const manifest = manifestOverride ?? readHomeCharacterBatchManifest(doc)
   if (!manifest)
     return null
 
