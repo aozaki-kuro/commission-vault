@@ -11,13 +11,14 @@ import { mountArchivedCharactersLoader } from '@features/home/commission/loader/
 import { SIDEBAR_SEARCH_STATE_EVENT } from '@lib/navigation/sidebarSearchState'
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { clearHomeCharacterBatchRequestCacheForTests } from '../batch/homeCharacterBatchClient'
+import { clearHomeCharacterBatchManifestCacheForTests } from '../batch/homeCharacterBatchManifest'
 
 async function flushAsyncWork() {
-  await Promise.resolve()
-  await Promise.resolve()
-  await Promise.resolve()
-  await Promise.resolve()
-  await Promise.resolve()
+  for (let index = 0; index < 8; index += 1) {
+    await Promise.resolve()
+    await new Promise(resolve => setTimeout(resolve, 0))
+  }
 }
 
 function setScrollEnvironment({
@@ -300,6 +301,126 @@ describe('mountArchivedCharactersLoader', () => {
     cleanup()
     requestAnimationFrameSpy.mockRestore()
     window.history.replaceState(null, '', '/')
+  })
+
+  describe('fresh manifest fallback', () => {
+    it('fetches fresh manifest when inline manifest misses hash target', async () => {
+      clearHomeCharacterBatchManifestCacheForTests()
+      document.body.innerHTML = `
+        <div data-commission-view-panel="character" data-archived-loaded="false" data-archived-visibility="hidden" data-archived-batches-loaded-count="0">
+          <div data-archived-sections-placeholder="true"></div>
+          <button type="button" data-load-archived-characters="true">Load</button>
+          <div data-archived-divider="true" class="hidden"></div>
+          <div data-archived-sections-container="true"></div>
+        </div>
+        <script type="application/json" data-home-character-batch-manifest="true">
+          {
+            "locale": "en",
+            "v": "stale-v",
+            "active": {
+              "initialSectionIds": [],
+              "totalBatches": 0,
+              "targetBatchById": {},
+              "batchVersions": []
+            },
+            "archived": {
+              "initialSectionIds": [],
+              "totalBatches": 1,
+              "targetBatchById": {
+                "section-old": 0
+              },
+              "batchVersions": ["bv0"]
+            }
+          }
+        </script>
+      `
+      clearHomeCharacterBatchManifestCacheForTests()
+
+      window.history.replaceState(null, '', '#section-new-archived-20240101')
+
+      const freshManifest = {
+        locale: 'en',
+        v: 'fresh-v',
+        active: {
+          initialSectionIds: [],
+          totalBatches: 0,
+          targetBatchById: {},
+          batchVersions: [],
+        },
+        archived: {
+          initialSectionIds: [],
+          totalBatches: 2,
+          targetBatchById: {
+            'section-old': 0,
+            'section-new-archived': 1,
+            'section-new-archived-20240101': 1,
+          },
+          batchVersions: ['bv0', 'bv1-fresh'],
+        },
+      }
+
+      const batchPayload = {
+        batchIndex: 1,
+        status: 'archived',
+        sections: [{
+          sectionId: 'section-new-archived',
+          titleId: 'title-section-new-archived',
+          sectionHash: '#section-new-archived',
+          displayName: 'New Archived',
+          totalCommissions: 1,
+          toBeAnnouncedText: 'TBA',
+          entries: [{
+            id: 'section-new-archived-20240101',
+            sectionId: 'section-new-archived',
+            searchKey: 'section-new-archived::20240101_new',
+            searchText: 'new archived 2024',
+            searchSuggest: 'Character\tNew Archived',
+            altText: '(c) 2024 New Archived & Crystallize',
+            image: null,
+            sourceImageNotFoundText: 'Source image not found',
+            timeLabel: '2024/01/01',
+            primaryText: 'New Archived',
+            secondaryText: null,
+            links: [],
+            interest: null,
+          }],
+        }],
+      }
+
+      vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
+        const url = typeof input === 'string' ? input : input.toString()
+        if (url.startsWith('/search/home-character-manifest.json'))
+          return new Response(JSON.stringify(freshManifest))
+        if (url.startsWith('/search/home-character-batches/'))
+          return new Response(JSON.stringify(batchPayload))
+        return new Response(null, { status: 404 })
+      }))
+
+      const requestAnimationFrameSpy = vi
+        .spyOn(window, 'requestAnimationFrame')
+        .mockImplementation((callback) => {
+          callback(0)
+          return 1
+        })
+
+      const scrollSpy = vi.fn()
+      const cleanup = mountArchivedCharactersLoader({
+        deps: { scrollToHashWithoutWrite: scrollSpy },
+      })
+
+      await flushAsyncWork()
+
+      expect(document.getElementById('section-new-archived-20240101')).toBeTruthy()
+      expect(scrollSpy).toHaveBeenCalledWith('#section-new-archived-20240101')
+
+      cleanup()
+      requestAnimationFrameSpy.mockRestore()
+      clearHomeCharacterBatchManifestCacheForTests()
+      clearHomeCharacterBatchRequestCacheForTests()
+      vi.unstubAllGlobals()
+      document.body.innerHTML = ''
+      window.history.replaceState(null, '', '/')
+    })
   })
 
   it('collapses loaded archived sections when requested', async () => {

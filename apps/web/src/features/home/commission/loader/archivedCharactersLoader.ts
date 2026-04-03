@@ -240,12 +240,13 @@ export function mountArchivedCharactersLoader({
   const loadBatchesThrough = async (targetBatchIndex: number, manifestOverride?: HomeCharacterBatchManifest | null) => {
     let didChange = false
     let loadedBatchCount = readLocalBatchCount()
-    if (loadedBatchCount >= archivedTotalBatchCount) {
+    const effectiveTotalBatchCount = manifestOverride?.archived.totalBatches ?? archivedTotalBatchCount
+    if (loadedBatchCount >= effectiveTotalBatchCount) {
       updateLoadedState({ loadedBatchCount, visibility: 'visible' })
       return false
     }
 
-    const finalBatchIndex = Math.min(targetBatchIndex, archivedTotalBatchCount - 1)
+    const finalBatchIndex = Math.min(targetBatchIndex, effectiveTotalBatchCount - 1)
     const payloadRequests = new Map<number, ReturnType<typeof fetchHomeCharacterBatch>>()
     const queueBatchFetch = (batchIndex: number) => {
       if (batchIndex > finalBatchIndex || payloadRequests.has(batchIndex))
@@ -433,6 +434,7 @@ export function mountArchivedCharactersLoader({
       preserveScroll: false,
       strategy: 'target',
       targetId: hash,
+      targetBatchCount: batchIndex + 1,
       manifestOverride,
     }).then(() => {
       win.requestAnimationFrame(() => {

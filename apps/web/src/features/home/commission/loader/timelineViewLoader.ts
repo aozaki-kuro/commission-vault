@@ -133,12 +133,13 @@ export function mountTimelineViewLoader({
 
   const loadBatchesThrough = async (targetBatchIndex: number, manifestOverride?: HomeTimelineBatchManifest | null) => {
     let loadedBatchCount = readLocalBatchCount()
-    if (loadedBatchCount >= totalBatchCount) {
+    const effectiveTotalBatchCount = manifestOverride?.totalBatches ?? totalBatchCount
+    if (loadedBatchCount >= effectiveTotalBatchCount) {
       updateLoadedState(loadedBatchCount)
       return false
     }
 
-    const finalBatchIndex = Math.min(targetBatchIndex, totalBatchCount - 1)
+    const finalBatchIndex = Math.min(targetBatchIndex, effectiveTotalBatchCount - 1)
     const payloadRequests = new Map<number, ReturnType<typeof fetchHomeTimelineBatch>>()
     const queueBatchFetch = (batchIndex: number) => {
       if (batchIndex > finalBatchIndex || payloadRequests.has(batchIndex))
@@ -270,7 +271,7 @@ export function mountTimelineViewLoader({
       manifestOverride = freshManifest
     }
 
-    void queueLoad({ strategy: 'target', targetId: hash, manifestOverride }).then(() => {
+    void queueLoad({ strategy: 'target', targetId: hash, targetBatchCount: targetBatchIndex + 1, manifestOverride }).then(() => {
       win.requestAnimationFrame(() => {
         deps.scrollToHashWithoutWrite(hash)
       })
@@ -308,7 +309,7 @@ export function mountTimelineViewLoader({
       manifestOverride = freshManifest
     }
 
-    void queueLoad({ strategy: 'target', targetId: hash, manifestOverride }).then(() => {
+    void queueLoad({ strategy: 'target', targetId: hash, targetBatchCount: targetBatchIndex + 1, manifestOverride }).then(() => {
       win.requestAnimationFrame(() => {
         deps.scrollToHashWithoutWrite(hash)
         win.requestAnimationFrame(() => {

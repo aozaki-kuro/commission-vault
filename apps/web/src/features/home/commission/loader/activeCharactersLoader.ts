@@ -174,13 +174,14 @@ export function mountActiveCharactersLoader({
   const loadBatchesThrough = async (targetBatchIndex: number, manifestOverride?: HomeCharacterBatchManifest | null) => {
     let didChange = false
     let loadedBatchCount = readLocalBatchCount()
+    const effectiveTotalBatchCount = manifestOverride?.active.totalBatches ?? totalBatchCount
 
-    if (loadedBatchCount >= totalBatchCount) {
+    if (loadedBatchCount >= effectiveTotalBatchCount) {
       updateLoadedState(loadedBatchCount)
       return false
     }
 
-    const finalBatchIndex = Math.min(targetBatchIndex, totalBatchCount - 1)
+    const finalBatchIndex = Math.min(targetBatchIndex, effectiveTotalBatchCount - 1)
     const payloadRequests = new Map<number, ReturnType<typeof fetchHomeCharacterBatch>>()
     const queueBatchFetch = (batchIndex: number) => {
       if (batchIndex > finalBatchIndex || payloadRequests.has(batchIndex))
@@ -305,7 +306,7 @@ export function mountActiveCharactersLoader({
       manifestOverride = freshManifest
     }
 
-    void queueLoad({ strategy: 'target', targetId: hash, manifestOverride }).then(() => {
+    void queueLoad({ strategy: 'target', targetId: hash, targetBatchCount: batchIndex + 1, manifestOverride }).then(() => {
       // Do NOT guard on win.location.hash — it may have been transiently cleared by
       // clearHashIfTargetOffscreen while the batch was loading (element not yet in DOM).
       // Do NOT guard on didChange — a concurrent load may have already mounted the

@@ -353,6 +353,58 @@ describe('mountTimelineViewLoader', () => {
     window.removeEventListener(SIDEBAR_SEARCH_STATE_EVENT, onSidebarSync)
   })
 
+  describe('fresh manifest fallback', () => {
+    it('fetches fresh manifest when inline manifest misses hash target on mode sync', async () => {
+      renderFixture()
+      window.history.replaceState(null, '', '/?view=timeline#timeline-year-2023')
+
+      const freshManifest = {
+        locale: 'en',
+        v: 'fresh-v',
+        batchVersions: ['bv0', 'bv1', 'bv2'],
+        initialSectionIds: ['timeline-year-2026'],
+        totalBatches: 3,
+        targetBatchById: {
+          'timeline-year-2025': 0,
+          'timeline-year-2024': 1,
+          'timeline-year-2023': 2,
+        },
+      }
+      const batchPayload = createTimelineBatchPayload(2, '2023')
+
+      vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
+        const url = typeof input === 'string' ? input : input.toString()
+        if (url.startsWith('/search/home-timeline-manifest.json'))
+          return new Response(JSON.stringify(freshManifest))
+        if (url.startsWith('/search/home-timeline-batches/'))
+          return new Response(JSON.stringify(batchPayload))
+        return new Response(null, { status: 404 })
+      }))
+
+      const requestAnimationFrameSpy = vi
+        .spyOn(window, 'requestAnimationFrame')
+        .mockImplementation((callback) => {
+          callback(0)
+          return 1
+        })
+
+      const scrollSpy = vi.fn()
+      const cleanup = mountTimelineViewLoader({
+        deps: { scrollToHashWithoutWrite: scrollSpy },
+      })
+
+      window.dispatchEvent(new Event(COMMISSION_VIEW_MODE_CHANGE_EVENT))
+      await flushTimelineQueue()
+
+      const container = document.querySelector('[data-timeline-sections-container="true"]')
+      expect(container?.querySelector('#character-alpha-20230101')).toBeTruthy()
+      expect(scrollSpy).toHaveBeenCalledWith('#timeline-year-2023')
+
+      requestAnimationFrameSpy.mockRestore()
+      cleanup()
+    })
+  })
+
   it('falls back to legacy template mounting when external batch manifest is missing', async () => {
     document.body.innerHTML = `
       <div data-commission-view-panel="timeline" data-timeline-loaded="false" data-timeline-batches-loaded-count="0" class="hidden">
