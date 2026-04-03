@@ -1,4 +1,6 @@
 import type { RequestActiveCharactersLoadOptions } from '@features/home/commission/loader/activeCharactersEvent'
+import type { HomeCharacterBatchManifest } from '@features/home/server/homeCharacterBatches'
+import { normalizeBatchTargetId } from '@features/home/commission/batch/batchManifest'
 import {
   fetchHomeCharacterBatch,
   getHomeCharacterBatchTotalCount,
@@ -6,6 +8,7 @@ import {
   mountLegacyHomeCharacterBatch,
   prefetchHomeCharacterBatches,
 } from '@features/home/commission/batch/homeCharacterBatchClient'
+import { fetchFreshHomeCharacterBatchManifest } from '@features/home/commission/batch/homeCharacterBatchManifest'
 import {
   ACTIVE_CHARACTERS_LOAD_REQUEST_EVENT,
   ACTIVE_CHARACTERS_LOADED_EVENT,
@@ -168,7 +171,7 @@ export function mountActiveCharactersLoader({
     syncByViewport()
   }
 
-  const loadBatchesThrough = async (targetBatchIndex: number) => {
+  const loadBatchesThrough = async (targetBatchIndex: number, manifestOverride?: HomeCharacterBatchManifest | null) => {
     let didChange = false
     let loadedBatchCount = readLocalBatchCount()
 
@@ -184,7 +187,7 @@ export function mountActiveCharactersLoader({
         return
       payloadRequests.set(
         batchIndex,
-        fetchHomeCharacterBatch({ batchIndex, doc, status: 'active' }),
+        fetchHomeCharacterBatch({ batchIndex, doc, status: 'active', manifestOverride }),
       )
     }
 
@@ -242,7 +245,7 @@ export function mountActiveCharactersLoader({
             ? (resolveDeferredActiveCharacterBatch(doc, options.targetId) ?? loadedBatchCount)
             : loadedBatchCount
 
-      const didChange = await loadBatchesThrough(targetBatchIndex)
+      const didChange = await loadBatchesThrough(targetBatchIndex, options.manifestOverride)
       if (didChange) {
         win.dispatchEvent(new Event(ACTIVE_CHARACTERS_LOADED_EVENT))
       }
@@ -270,7 +273,7 @@ export function mountActiveCharactersLoader({
     void queueLoad({ strategy: 'next' })
   }
 
-  const syncHashTarget = () => {
+  const syncHashTarget = async () => {
     const hash = win.location.hash
     if (!hash || isLocalLoaded())
       return
@@ -287,11 +290,22 @@ export function mountActiveCharactersLoader({
       return
     }
 
-    const batchIndex = resolveDeferredActiveCharacterBatch(doc, hash)
-    if (batchIndex === null)
-      return
+    let batchIndex = resolveDeferredActiveCharacterBatch(doc, hash)
+    let manifestOverride: HomeCharacterBatchManifest | null | undefined
 
-    void queueLoad({ strategy: 'target', targetId: hash }).then(() => {
+    if (batchIndex === null) {
+      const freshManifest = await fetchFreshHomeCharacterBatchManifest()
+      const targetId = normalizeBatchTargetId(hash)
+      if (!freshManifest || !targetId)
+        return
+      const freshIndex = freshManifest.active.targetBatchById[targetId]
+      if (!Number.isInteger(freshIndex))
+        return
+      batchIndex = freshIndex
+      manifestOverride = freshManifest
+    }
+
+    void queueLoad({ strategy: 'target', targetId: hash, manifestOverride }).then(() => {
       // Do NOT guard on win.location.hash — it may have been transiently cleared by
       // clearHashIfTargetOffscreen while the batch was loading (element not yet in DOM).
       // Do NOT guard on didChange — a concurrent load may have already mounted the
