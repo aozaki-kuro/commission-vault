@@ -92,3 +92,15 @@ export function resolveHomeCharacterTargetBatch({
   const batchIndex = manifest[status].targetBatchById[targetId]
   return Number.isInteger(batchIndex) ? batchIndex : null
 }
+
+export async function fetchFreshHomeCharacterBatchManifest(): Promise<HomeCharacterBatchManifest | null> {
+  try {
+    const response = await fetch(`/search/home-character-manifest.json?_t=${Date.now()}`)
+    if (!response.ok)
+      return null
+    return (await response.json()) as HomeCharacterBatchManifest
+  }
+  catch {
+    return null
+  }
+}

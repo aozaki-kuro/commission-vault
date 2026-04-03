@@ -85,3 +85,15 @@ export function resolveHomeTimelineTargetBatch({
   const batchIndex = manifest.targetBatchById[targetId]
   return Number.isInteger(batchIndex) ? batchIndex : null
 }
+
+export async function fetchFreshHomeTimelineBatchManifest(): Promise<HomeTimelineBatchManifest | null> {
+  try {
+    const response = await fetch(`/search/home-timeline-manifest.json?_t=${Date.now()}`)
+    if (!response.ok)
+      return null
+    return (await response.json()) as HomeTimelineBatchManifest
+  }
+  catch {
+    return null
+  }
+}
