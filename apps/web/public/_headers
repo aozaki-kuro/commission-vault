@@ -25,5 +25,11 @@
 /rss.xml
   Cache-Control: public, max-age=300, stale-while-revalidate=86400
 
+/search/home-character-manifest.json
+  Cache-Control: no-cache
+
+/search/home-timeline-manifest.json
+  Cache-Control: no-cache
+
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
