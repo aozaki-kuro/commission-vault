@@ -86,9 +86,10 @@ export function resolveHomeTimelineTargetBatch({
   return Number.isInteger(batchIndex) ? batchIndex : null
 }
 
-export async function fetchFreshHomeTimelineBatchManifest(): Promise<HomeTimelineBatchManifest | null> {
+export async function fetchFreshHomeTimelineBatchManifest(doc?: Document): Promise<HomeTimelineBatchManifest | null> {
   try {
-    const response = await fetch(`/search/home-timeline-manifest.json?_t=${Date.now()}`)
+    const locale = readHomeTimelineBatchManifest(doc)?.locale ?? 'en'
+    const response = await fetch(`/search/home-timeline-manifest/${locale}.json?_t=${Date.now()}`)
     if (!response.ok)
       return null
     return (await response.json()) as HomeTimelineBatchManifest

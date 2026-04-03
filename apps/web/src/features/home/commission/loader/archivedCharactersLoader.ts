@@ -419,7 +419,7 @@ export function mountArchivedCharactersLoader({
     let manifestOverride: HomeCharacterBatchManifest | null | undefined
 
     if (batchIndex === null) {
-      const freshManifest = await fetchFreshHomeCharacterBatchManifest()
+      const freshManifest = await fetchFreshHomeCharacterBatchManifest(doc)
       const targetId = normalizeBatchTargetId(hash)
       if (!freshManifest || !targetId)
         return

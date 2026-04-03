@@ -374,7 +374,7 @@ describe('mountTimelineViewLoader', () => {
 
       vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
         const url = typeof input === 'string' ? input : input.toString()
-        if (url.startsWith('/search/home-timeline-manifest.json'))
+        if (url.startsWith('/search/home-timeline-manifest/'))
           return new Response(JSON.stringify(freshManifest))
         if (url.startsWith('/search/home-timeline-batches/'))
           return new Response(JSON.stringify(batchPayload))

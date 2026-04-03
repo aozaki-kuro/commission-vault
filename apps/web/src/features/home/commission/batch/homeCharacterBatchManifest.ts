@@ -93,9 +93,10 @@ export function resolveHomeCharacterTargetBatch({
   return Number.isInteger(batchIndex) ? batchIndex : null
 }
 
-export async function fetchFreshHomeCharacterBatchManifest(): Promise<HomeCharacterBatchManifest | null> {
+export async function fetchFreshHomeCharacterBatchManifest(doc?: Document): Promise<HomeCharacterBatchManifest | null> {
   try {
-    const response = await fetch(`/search/home-character-manifest.json?_t=${Date.now()}`)
+    const locale = readHomeCharacterBatchManifest(doc)?.locale ?? 'en'
+    const response = await fetch(`/search/home-character-manifest/${locale}.json?_t=${Date.now()}`)
     if (!response.ok)
       return null
     return (await response.json()) as HomeCharacterBatchManifest

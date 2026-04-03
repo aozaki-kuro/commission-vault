@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro'
 import { getCharacterAliases } from '@data/characterAliases'
 import { getKeywordAliases } from '@data/keywordAliases'
-import { normalizeHomeLocale } from '@features/home/i18n/homeLocale'
+import { HOME_LOCALES, normalizeHomeLocale } from '@features/home/i18n/homeLocale'
 import { buildHomeCharacterBatchManifest, buildHomeCharacterBatchPlan } from '@features/home/server/homeCharacterBatches'
 import { normalizeCharacterAliasKey } from '@lib/characterAliases'
 import { buildSitePayload } from '@lib/home/buildSitePayload'
@@ -9,8 +9,12 @@ import { normalizeKeywordAliasKey } from '@lib/keywordAliases'
 import { buildCommissionDataMap, buildCreatorAliasesMap } from '@lib/sitePayload'
 import { hashString } from '@lib/utils/hash'
 
-export const GET: APIRoute = async () => {
-  const locale = normalizeHomeLocale(undefined)
+export function getStaticPaths() {
+  return HOME_LOCALES.map(locale => ({ params: { locale } }))
+}
+
+export const GET: APIRoute = async ({ params }) => {
+  const locale = normalizeHomeLocale(params.locale)
   const payload = buildSitePayload()
   const commissionMap = buildCommissionDataMap(payload.commissionData)
   const characterAliases = getCharacterAliases()

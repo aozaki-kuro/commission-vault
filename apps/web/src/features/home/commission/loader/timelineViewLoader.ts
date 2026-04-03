@@ -260,7 +260,7 @@ export function mountTimelineViewLoader({
     let manifestOverride: HomeTimelineBatchManifest | null | undefined
 
     if (targetBatchIndex === null) {
-      const freshManifest = await fetchFreshHomeTimelineBatchManifest()
+      const freshManifest = await fetchFreshHomeTimelineBatchManifest(doc)
       const targetId = normalizeBatchTargetId(hash)
       if (!freshManifest || !targetId)
         return
@@ -298,7 +298,7 @@ export function mountTimelineViewLoader({
     let manifestOverride: HomeTimelineBatchManifest | null | undefined
 
     if (targetBatchIndex === null) {
-      const freshManifest = await fetchFreshHomeTimelineBatchManifest()
+      const freshManifest = await fetchFreshHomeTimelineBatchManifest(doc)
       const targetId = normalizeBatchTargetId(hash)
       if (!freshManifest || !targetId)
         return

@@ -389,7 +389,7 @@ describe('mountArchivedCharactersLoader', () => {
 
       vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
         const url = typeof input === 'string' ? input : input.toString()
-        if (url.startsWith('/search/home-character-manifest.json'))
+        if (url.startsWith('/search/home-character-manifest/'))
           return new Response(JSON.stringify(freshManifest))
         if (url.startsWith('/search/home-character-batches/'))
           return new Response(JSON.stringify(batchPayload))

@@ -77,6 +77,7 @@ Key patterns:
 - **DOM contracts:** `data-*` attributes drive search/nav/hash navigation — preserve attribute names when editing templates
 - **`data-stale-visibility`** = stale group expanded; **`data-stale-loaded`** = deferred stale sections mounted
 - Character/stale section templates must mount with full entry list intact (no per-section entry lazy mounts above anchor targets)
+- **Stale-HTML manifest fallback:** When hash navigation fails because the inline manifest (embedded in cached HTML) doesn't contain the target, the loaders fetch a standalone manifest endpoint (`/search/home-character-manifest.json` or `/search/home-timeline-manifest.json`) with cache-busting. The fresh manifest's `targetBatchById` and `batchVersions` are threaded through the batch fetch so that new entries added after the HTML was cached can still be navigated to. The standalone manifests use `Cache-Control: no-cache` and are only fetched on the fallback path — zero overhead for the happy case.
 
 **When to update this section:** Any change to the deferred loading system requires updating the bullet points above — specifically:
 
