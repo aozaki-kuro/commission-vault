@@ -1,9 +1,12 @@
 import type { RequestTimelineViewLoadOptions } from '@features/home/commission/loader/timelineViewEvent'
+import type { HomeTimelineBatchManifest } from '@features/home/server/homeTimelineBatches'
+import { normalizeBatchTargetId } from '@features/home/commission/batch/batchManifest'
 import {
   fetchHomeTimelineBatch,
   mountHomeTimelineBatch,
   mountLegacyHomeTimelineBatch,
 } from '@features/home/commission/batch/homeTimelineBatchClient'
+import { fetchFreshHomeTimelineBatchManifest } from '@features/home/commission/batch/homeTimelineBatchManifest'
 import {
   getHomeTimelineBatchTotalCount,
   resolveDeferredTimelineBatch,
@@ -128,7 +131,7 @@ export function mountTimelineViewLoader({
     syncByViewport()
   }
 
-  const loadBatchesThrough = async (targetBatchIndex: number) => {
+  const loadBatchesThrough = async (targetBatchIndex: number, manifestOverride?: HomeTimelineBatchManifest | null) => {
     let loadedBatchCount = readLocalBatchCount()
     if (loadedBatchCount >= totalBatchCount) {
       updateLoadedState(loadedBatchCount)
@@ -140,7 +143,7 @@ export function mountTimelineViewLoader({
     const queueBatchFetch = (batchIndex: number) => {
       if (batchIndex > finalBatchIndex || payloadRequests.has(batchIndex))
         return
-      payloadRequests.set(batchIndex, fetchHomeTimelineBatch({ batchIndex, doc }))
+      payloadRequests.set(batchIndex, fetchHomeTimelineBatch({ batchIndex, doc, manifestOverride }))
     }
 
     for (
@@ -200,7 +203,7 @@ export function mountTimelineViewLoader({
             ? (resolveDeferredTimelineBatch(doc, options.targetId) ?? loadedBatchCount)
             : loadedBatchCount
 
-      const didChange = await loadBatchesThrough(targetBatchIndex)
+      const didChange = await loadBatchesThrough(targetBatchIndex, options.manifestOverride)
       syncAutoLoad()
       return didChange
     }
@@ -230,7 +233,7 @@ export function mountTimelineViewLoader({
     void queueLoad({ strategy: 'next' })
   }
 
-  const syncByMode = () => {
+  const syncByMode = async () => {
     const didSyncBefore = hasSyncedMode
     hasSyncedMode = true
 
@@ -252,19 +255,29 @@ export function mountTimelineViewLoader({
     }
 
     const hash = win.location.hash
-    const targetBatchIndex = resolveDeferredTimelineBatch(doc, hash)
+    let targetBatchIndex = resolveDeferredTimelineBatch(doc, hash)
+    let manifestOverride: HomeTimelineBatchManifest | null | undefined
+
     if (targetBatchIndex === null) {
-      return
+      const freshManifest = await fetchFreshHomeTimelineBatchManifest()
+      const targetId = normalizeBatchTargetId(hash)
+      if (!freshManifest || !targetId)
+        return
+      const freshIndex = freshManifest.targetBatchById[targetId]
+      if (!Number.isInteger(freshIndex))
+        return
+      targetBatchIndex = freshIndex
+      manifestOverride = freshManifest
     }
 
-    void queueLoad({ strategy: 'target', targetId: hash }).then(() => {
+    void queueLoad({ strategy: 'target', targetId: hash, manifestOverride }).then(() => {
       win.requestAnimationFrame(() => {
         deps.scrollToHashWithoutWrite(hash)
       })
     })
   }
 
-  const syncHashTarget = () => {
+  const syncHashTarget = async () => {
     if (readCommissionViewMode(win) !== 'timeline')
       return
 
@@ -280,11 +293,22 @@ export function mountTimelineViewLoader({
       return
     }
 
-    const targetBatchIndex = resolveDeferredTimelineBatch(doc, hash)
-    if (targetBatchIndex === null)
-      return
+    let targetBatchIndex = resolveDeferredTimelineBatch(doc, hash)
+    let manifestOverride: HomeTimelineBatchManifest | null | undefined
 
-    void queueLoad({ strategy: 'target', targetId: hash }).then(() => {
+    if (targetBatchIndex === null) {
+      const freshManifest = await fetchFreshHomeTimelineBatchManifest()
+      const targetId = normalizeBatchTargetId(hash)
+      if (!freshManifest || !targetId)
+        return
+      const freshIndex = freshManifest.targetBatchById[targetId]
+      if (!Number.isInteger(freshIndex))
+        return
+      targetBatchIndex = freshIndex
+      manifestOverride = freshManifest
+    }
+
+    void queueLoad({ strategy: 'target', targetId: hash, manifestOverride }).then(() => {
       win.requestAnimationFrame(() => {
         deps.scrollToHashWithoutWrite(hash)
         win.requestAnimationFrame(() => {

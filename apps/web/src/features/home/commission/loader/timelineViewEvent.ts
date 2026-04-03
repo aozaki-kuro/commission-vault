@@ -1,3 +1,4 @@
+import type { HomeTimelineBatchManifest } from '@features/home/server/homeTimelineBatches'
 import {
   hasConnectedTimelinePanelTargetId,
   hasDeferredHomeTimelineTarget,
@@ -17,6 +18,7 @@ export interface RequestTimelineViewLoadOptions {
   strategy?: 'next' | 'all' | 'target'
   targetId?: string
   targetBatchCount?: number
+  manifestOverride?: HomeTimelineBatchManifest | null
 }
 
 function getLegacyTimelineBatchTotalCount(doc: Document) {
