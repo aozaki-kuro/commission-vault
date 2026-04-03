@@ -1,3 +1,4 @@
+import type { HomeCharacterBatchManifest } from '@features/home/server/homeCharacterBatches'
 import {
   hasConnectedCharacterPanelTargetId,
   hasDeferredHomeCharacterTarget,
@@ -30,6 +31,7 @@ export interface RequestArchivedCharactersLoadOptions {
   strategy?: 'next' | 'all' | 'target'
   targetId?: string
   targetBatchCount?: number
+  manifestOverride?: HomeCharacterBatchManifest | null
 }
 
 export interface ArchivedCharactersState {

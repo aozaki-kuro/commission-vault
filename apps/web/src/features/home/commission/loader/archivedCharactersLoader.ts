@@ -1,4 +1,6 @@
 import type { ArchivedCharactersState, RequestArchivedCharactersLoadOptions } from '@features/home/commission/loader/archivedCharactersEvent'
+import type { HomeCharacterBatchManifest } from '@features/home/server/homeCharacterBatches'
+import { normalizeBatchTargetId } from '@features/home/commission/batch/batchManifest'
 import {
   fetchHomeCharacterBatch,
   getHomeCharacterBatchTotalCount,
@@ -6,6 +8,7 @@ import {
   mountLegacyHomeCharacterBatch,
   prefetchHomeCharacterBatches,
 } from '@features/home/commission/batch/homeCharacterBatchClient'
+import { fetchFreshHomeCharacterBatchManifest } from '@features/home/commission/batch/homeCharacterBatchManifest'
 import {
   ARCHIVED_CHARACTERS_COLLAPSE_REQUEST_EVENT,
   ARCHIVED_CHARACTERS_COLLAPSED_EVENT,
@@ -234,7 +237,7 @@ export function mountArchivedCharactersLoader({
     scheduleIdlePrefetch()
   }
 
-  const loadBatchesThrough = async (targetBatchIndex: number) => {
+  const loadBatchesThrough = async (targetBatchIndex: number, manifestOverride?: HomeCharacterBatchManifest | null) => {
     let didChange = false
     let loadedBatchCount = readLocalBatchCount()
     if (loadedBatchCount >= archivedTotalBatchCount) {
@@ -247,7 +250,7 @@ export function mountArchivedCharactersLoader({
     const queueBatchFetch = (batchIndex: number) => {
       if (batchIndex > finalBatchIndex || payloadRequests.has(batchIndex))
         return
-      payloadRequests.set(batchIndex, fetchHomeCharacterBatch({ batchIndex, doc, status: 'archived' }))
+      payloadRequests.set(batchIndex, fetchHomeCharacterBatch({ batchIndex, doc, status: 'archived', manifestOverride }))
     }
 
     for (
@@ -299,7 +302,7 @@ export function mountArchivedCharactersLoader({
       dispatchState(win, currentState)
 
       if (loadedBatchCount < archivedTotalBatchCount && targetBatchIndex >= loadedBatchCount) {
-        didChange = await loadBatchesThrough(targetBatchIndex)
+        didChange = await loadBatchesThrough(targetBatchIndex, options.manifestOverride)
         const nextState = readArchivedCharactersStateFromPanel(panel)
         if (
           nextState.visibility !== currentState.visibility
@@ -398,7 +401,7 @@ export function mountArchivedCharactersLoader({
     stopAutoLoad()
   }
 
-  const syncHashTarget = () => {
+  const syncHashTarget = async () => {
     const hash = win.location.hash
     if (!hash)
       return
@@ -411,14 +414,26 @@ export function mountArchivedCharactersLoader({
       return
     }
 
-    const batchIndex = resolveDeferredArchivedCharacterBatch(doc, hash)
-    if (batchIndex === null)
-      return
+    let batchIndex = resolveDeferredArchivedCharacterBatch(doc, hash)
+    let manifestOverride: HomeCharacterBatchManifest | null | undefined
+
+    if (batchIndex === null) {
+      const freshManifest = await fetchFreshHomeCharacterBatchManifest()
+      const targetId = normalizeBatchTargetId(hash)
+      if (!freshManifest || !targetId)
+        return
+      const freshIndex = freshManifest.archived.targetBatchById[targetId]
+      if (!Number.isInteger(freshIndex))
+        return
+      batchIndex = freshIndex
+      manifestOverride = freshManifest
+    }
 
     void queueLoad({
       preserveScroll: false,
       strategy: 'target',
       targetId: hash,
+      manifestOverride,
     }).then(() => {
       win.requestAnimationFrame(() => {
         deps.scrollToHashWithoutWrite(hash)
