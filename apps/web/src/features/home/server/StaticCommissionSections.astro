@@ -12,6 +12,7 @@ import {
   buildHomeTimelineBatchManifest,
   buildHomeTimelineBatchPlan,
 } from '@features/home/server/homeTimelineBatches'
+import { hashString } from '@lib/utils/hash'
 
 type CharacterDisplay = {
   DisplayName: string
@@ -46,7 +47,16 @@ const batchPlan = buildHomeCharacterBatchPlan({
   archivedChars,
   commissionMap,
 })
+// Hash non-commission inputs that affect batch JSON content (aliases, character names).
+// Mixed into every version hash so alias-only changes also bust the cache.
+const aliasContextHash = hashString(JSON.stringify([
+  [...characterAliasesMap],
+  [...creatorAliasesMap],
+  [...keywordAliasesMap],
+]))
 const batchManifest = buildHomeCharacterBatchManifest({
+  commissionMap,
+  contextHash: aliasContextHash,
   locale: resolvedLocale,
   plan: batchPlan,
 })
@@ -57,6 +67,7 @@ const timelineBatchPlan = buildHomeTimelineBatchPlan({
   groups: timelineGroups,
 })
 const timelineBatchManifest = buildHomeTimelineBatchManifest({
+  contextHash: aliasContextHash,
   locale: resolvedLocale,
   plan: timelineBatchPlan,
 })

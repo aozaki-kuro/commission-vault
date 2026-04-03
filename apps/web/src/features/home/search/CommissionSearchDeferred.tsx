@@ -20,8 +20,16 @@ import { startTransition, useCallback, useEffect, useMemo, useRef, useState } fr
 
 const MAX_FEATURED_KEYWORDS = 6
 const MAX_VISIBLE_POPULAR_KEYWORDS = 6
-const HOME_SEARCH_INDEX_URL = '/search/home-search-entries.json'
 const COMMISSION_ENTRY_SELECTOR = '[data-commission-entry="true"]'
+
+function buildHomeSearchIndexUrl() {
+  const manifest = readHomeCharacterBatchManifest(
+    typeof document !== 'undefined' ? document : undefined,
+  )
+  const v = manifest?.v
+  // Falls back to unversioned URL in SSR/test environments or when the manifest has no v field.
+  return v ? `/search/home-search-entries.json?v=${v}` : '/search/home-search-entries.json'
+}
 
 let cachedHomeSearchEntries: CommissionSearchEntrySource[] | null = null
 let homeSearchEntriesPromise: Promise<CommissionSearchEntrySource[]> | null = null
@@ -32,7 +40,7 @@ function ensureHomeSearchEntriesPromise() {
   }
 
   if (!homeSearchEntriesPromise) {
-    homeSearchEntriesPromise = fetch(HOME_SEARCH_INDEX_URL)
+    homeSearchEntriesPromise = fetch(buildHomeSearchIndexUrl())
       .then(async (response) => {
         if (!response.ok) {
           throw new Error(`Failed to load search index: ${response.status}`)

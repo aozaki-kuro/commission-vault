@@ -142,7 +142,16 @@ describe('buildHomeCharacterBatchManifest', () => {
       ),
     })
 
+    const commissionMap = new Map(
+      [
+        buildCharacterCommissions('Alpha', '20240101'),
+        buildCharacterCommissions('Beta', '20240102'),
+        buildCharacterCommissions('Archived One', '20240201'),
+      ].map(entry => [entry.Character, entry] satisfies [string, CharacterCommissions]),
+    )
+
     const manifest = buildHomeCharacterBatchManifest({
+      commissionMap,
       locale: 'en',
       plan,
     })

@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Maintenance rule:** Update the corresponding sections of this file — and `docs/api-reference.md` / `docs/ai-agent-guide.md` where relevant — when you discover new project conventions, pitfalls, or API changes during development.
+> **Maintenance rule:** Update the corresponding sections of this file whenever you change architecture, conventions, or non-obvious behaviors — and sync `docs/api-reference.md` / `docs/ai-agent-guide.md` for any admin API changes. Each section that can go stale has its own **When to update** note; follow it.
 
 ## Project Overview
 
@@ -73,9 +73,18 @@ Static markup is Astro templates; React is only for the search island (`Commissi
 Key patterns:
 
 - **Deferred sections:** Active/stale character sections and timeline use inline manifest + external batch JSON, lazy-loaded via script loaders
+- **Batch URL versioning:** Each batch file gets its own `?v=<hash>` from per-batch content hashing (djb2 of the serialized commission data in that batch). Editing one commission only invalidates the batch containing it, not all batches. The manifests also carry a global `v` (hash of all commissions) used by the search entries URL (`/search/home-search-entries.json`) in `CommissionSearchDeferred.tsx`. Hash inputs include full commission content (fileName, Links, Description, Design, Keyword) — so both structural and metadata changes produce new versions. Key files: `homeCharacterBatches.ts`, `homeTimelineBatches.ts`, `CommissionSearchDeferred.tsx`.
 - **DOM contracts:** `data-*` attributes drive search/nav/hash navigation — preserve attribute names when editing templates
 - **`data-stale-visibility`** = stale group expanded; **`data-stale-loaded`** = deferred stale sections mounted
 - Character/stale section templates must mount with full entry list intact (no per-section entry lazy mounts above anchor targets)
+
+**When to update this section:** Any change to the deferred loading system requires updating the bullet points above — specifically:
+
+- Adding/removing fields from `HomeCharacterBatchManifest` or `HomeTimelineBatchManifest`
+- Changing how `v` is computed (hash inputs, algorithm)
+- Changing which URL builder appends `?v=` or how search entries derive their version
+- Changing the `_headers` cache policy for `/search/*` or `/*.html`
+- Adding new deferred JSON endpoints or batch types
 
 ### Admin Architecture
 

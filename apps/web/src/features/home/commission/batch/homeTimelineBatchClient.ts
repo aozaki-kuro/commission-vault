@@ -21,6 +21,7 @@ export async function fetchHomeTimelineBatch({
   const url = buildHomeTimelineBatchUrl({
     batchIndex,
     locale: manifest.locale,
+    v: manifest.batchVersions?.[batchIndex] ?? manifest.v,
   })
 
   let request = batchRequestCache.get(url)
