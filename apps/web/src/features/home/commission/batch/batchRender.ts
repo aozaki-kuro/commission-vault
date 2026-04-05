@@ -17,7 +17,7 @@ export const INFO_TIME_LINK_CLASS
 export const INFO_SEPARATOR_CLASS = 'mx-2 select-none md:mx-4'
 export const LINKS_ROOT_CLASS = 'ml-auto flex grow justify-end gap-2 md:gap-3'
 export const TEXT_LINK_CLASS = 'select-none underline underline-offset-2'
-export const INTEREST_BUTTON_CLASS = `${TEXT_LINK_CLASS} inline-flex cursor-pointer appearance-none items-center gap-2 border-0 bg-transparent p-0 disabled:cursor-default disabled:no-underline`
+export const INTEREST_BUTTON_CLASS = `${TEXT_LINK_CLASS} inline-flex appearance-none items-center gap-2 border-0 bg-transparent p-0 disabled:cursor-default disabled:no-underline`
 
 export function appendTextElement({
   parent,

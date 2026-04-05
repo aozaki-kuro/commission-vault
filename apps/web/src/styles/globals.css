@@ -9,6 +9,17 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
+  button,
+  select,
+  summary,
+  [role='button'],
+  [type='button'],
+  [type='reset'],
+  [type='submit'],
+  ::file-selector-button {
+    cursor: pointer;
+  }
+
   :root {
     --font-sans: var(--font-ibm-plex-sans), sans-serif;
     --font-mono:

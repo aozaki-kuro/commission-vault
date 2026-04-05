@@ -95,7 +95,7 @@ function SelectItem({ ref, className, children, ...props }: React.ComponentProps
       ref={ref}
       className={cn(
         `
-          relative flex w-full cursor-pointer items-center justify-between gap-3
+          relative flex w-full items-center justify-between gap-3
           rounded-md px-3 py-2 text-sm text-gray-700 transition outline-none
           select-none
           focus:bg-gray-900/5 focus:text-gray-900

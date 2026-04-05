@@ -66,7 +66,7 @@ function CommissionSearchSuggestionDropdown({
             value={suggestion.term}
             onSelect={() => onSelectSuggestion(suggestion.term)}
             className="
-              cursor-pointer px-3 py-1.5 font-mono text-gray-700
+              px-3 py-1.5 font-mono text-gray-700
               data-[selected=true]:bg-gray-900/6
               data-[selected=true]:text-gray-900
               dark:text-gray-300
