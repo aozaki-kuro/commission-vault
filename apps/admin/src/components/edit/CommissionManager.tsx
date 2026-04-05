@@ -450,7 +450,7 @@ export function CommissionManager({
       </div>
 
       <div className="animate-[tabFade_260ms_ease-out] space-y-4">
-        <div {...dragContainerProps}>
+        <div className="space-y-4" {...dragContainerProps}>
           {list.map((item, index) => {
             if (item.type === 'divider') {
               return (
