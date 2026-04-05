@@ -50,9 +50,11 @@ interface BootstrapCommissionRow {
   characterId: number
   characterName: string
   fileName: string
+  links: string
   design?: string | null
   description?: string | null
   keyword?: string | null
+  hidden: number
 }
 
 interface CommissionDetailRow extends BootstrapCommissionRow {
@@ -639,9 +641,11 @@ async function loadAdminBootstrapData(db: D1DatabaseLike): Promise<AdminBootstra
         commissions.character_id as characterId,
         characters.name as characterName,
         commissions.file_name as fileName,
+        commissions.links as links,
         commissions.design as design,
         commissions.description as description,
-        ${keywordSelect}
+        ${keywordSelect},
+        commissions.hidden as hidden
       FROM commissions
       JOIN characters ON characters.id = commissions.character_id
       ORDER BY characters.sort_order ASC, commissions.file_name DESC
@@ -653,9 +657,11 @@ async function loadAdminBootstrapData(db: D1DatabaseLike): Promise<AdminBootstra
     characterId: Number(row.characterId),
     characterName: row.characterName,
     fileName: row.fileName,
+    links: row.links ?? '',
     design: row.design ?? null,
     description: row.description ?? null,
     keyword: row.keyword ?? null,
+    hidden: Boolean(row.hidden),
   }))
 
   return {

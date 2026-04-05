@@ -1,0 +1,197 @@
+import type { CommissionRow } from '@commission-index/domain'
+import { useMemo, useState } from 'react'
+import { getAdminApiUrl } from '../../lib/adminApi'
+
+interface CommissionThumbnailGridProps {
+  commissions: CommissionRow[]
+  selectedCommissionId: number | null
+  onSelect: (commission: CommissionRow) => void
+}
+
+function buildThumbnailSrc(fileName: string) {
+  return getAdminApiUrl(`/api/admin/source-image/${encodeURIComponent(fileName)}`)
+}
+
+function ThumbnailCard({
+  commission,
+  isSelected,
+  onSelect,
+}: {
+  commission: CommissionRow
+  isSelected: boolean
+  onSelect: () => void
+}) {
+  const [errorSrc, setErrorSrc] = useState<string | null>(null)
+  const imageSrc = useMemo(() => buildThumbnailSrc(commission.fileName), [commission.fileName])
+
+  // Read cached image version from sessionStorage on every render
+  // (shared with CommissionEditForm — must re-read after source image uploads)
+  const stored = typeof window !== 'undefined'
+    ? window.sessionStorage.getItem(`admin-preview-image-version:${commission.id}`)
+    : null
+  const parsedVersion = Number(stored)
+  const imageVersion = Number.isFinite(parsedVersion) && parsedVersion > 0 ? parsedVersion : 0
+
+  const previewSrc = imageVersion > 0 ? `${imageSrc}?v=${imageVersion}` : imageSrc
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`
+        group overflow-hidden rounded-lg border text-left transition
+        hover:shadow-md
+        focus-visible:ring-2 focus-visible:ring-blue-500
+        focus-visible:ring-offset-2 focus-visible:ring-offset-white
+        focus-visible:outline-none
+        dark:focus-visible:ring-offset-gray-900
+        ${isSelected
+      ? `
+            border-blue-500 ring-2 ring-blue-500
+            dark:border-blue-400 dark:ring-blue-400
+          `
+      : `
+            border-gray-200
+            hover:border-gray-300
+            dark:border-gray-700
+            dark:hover:border-gray-600
+          `}
+      `}
+    >
+      <div className="
+        aspect-1280/525 w-full overflow-hidden bg-gray-50
+        dark:bg-gray-900/30
+      "
+      >
+        {errorSrc === imageSrc
+          ? (
+              <div className="
+                flex size-full items-center justify-center text-xs text-gray-400
+                dark:text-gray-500
+              "
+              >
+                No image
+              </div>
+            )
+          : (
+              <img
+                src={previewSrc}
+                alt={commission.fileName}
+                loading="lazy"
+                className="
+                  size-full object-contain transition
+                  group-hover:scale-[1.02]
+                "
+                onError={() => setErrorSrc(imageSrc)}
+              />
+            )}
+      </div>
+
+      <div className={`
+        px-2 py-1.5
+        ${isSelected
+      ? `
+            bg-blue-50
+            dark:bg-blue-950/30
+          `
+      : `
+            bg-white
+            dark:bg-gray-900/40
+          `}
+      `}
+      >
+        <p className={`
+          truncate text-xs font-medium
+          ${isSelected
+      ? `
+              text-blue-700
+              dark:text-blue-300
+            `
+      : `
+              text-gray-700
+              dark:text-gray-200
+            `}
+        `}
+        >
+          {commission.fileName}
+        </p>
+        <p className="
+          text-xs text-gray-400
+          dark:text-gray-500
+        "
+        >
+          {commission.links.length}
+          {' '}
+          {commission.links.length === 1 ? 'link' : 'links'}
+        </p>
+      </div>
+    </button>
+  )
+}
+
+export function CommissionThumbnailGrid({
+  commissions,
+  selectedCommissionId,
+  onSelect,
+}: CommissionThumbnailGridProps) {
+  if (commissions.length === 0) {
+    return (
+      <p className="
+        py-4 text-sm text-gray-500
+        dark:text-gray-300
+      "
+      >
+        No commissions recorded yet.
+      </p>
+    )
+  }
+
+  return (
+    <div className="
+      grid grid-cols-2 gap-3
+      sm:grid-cols-3
+    "
+    >
+      {commissions.map(commission => (
+        <ThumbnailCard
+          key={commission.id}
+          commission={commission}
+          isSelected={selectedCommissionId === commission.id}
+          onSelect={() => onSelect(commission)}
+        />
+      ))}
+    </div>
+  )
+}
+
+export function CommissionThumbnailGridSkeleton() {
+  return (
+    <div className="
+      grid grid-cols-2 gap-3
+      sm:grid-cols-3
+    "
+    >
+      {Array.from({ length: 6 }, (_, i) => (
+        <div key={i} className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="
+            aspect-1280/525 w-full animate-pulse bg-gray-200/80
+            dark:bg-gray-800
+          "
+          />
+          <div className="space-y-1 px-2 py-1.5">
+            <div className="
+              h-3.5 w-3/4 animate-pulse rounded bg-gray-200/80
+              dark:bg-gray-800
+            "
+            />
+            <div className="
+              h-3 w-1/3 animate-pulse rounded bg-gray-200/80
+              dark:bg-gray-800
+            "
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}

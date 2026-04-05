@@ -1,6 +1,4 @@
 import type {
-  AdminCommissionSearchRow,
-  CharacterRow,
   CommissionRow,
 } from '@commission-index/domain'
 import type { KeyboardEvent } from 'react'
@@ -8,49 +6,14 @@ import type { CharacterItem } from '../../hooks/useCommissionManager'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { IconDeviceFloppy, IconGripHorizontal, IconPencil, IconTrash, IconX } from '@tabler/icons-react'
-import { CommissionEditForm } from './CommissionEditForm'
+import { CommissionThumbnailGrid, CommissionThumbnailGridSkeleton } from './CommissionThumbnailGrid'
 
 const inlineEditStyles
   = 'flex-1 min-w-0 bg-transparent px-0 py-0 text-base font-semibold text-gray-900 outline-none dark:text-gray-100'
 
-function CommissionEditFormSkeleton() {
-  return (
-    <div className="space-y-4">
-      <div className="
-        aspect-1280/525 w-full animate-pulse rounded-xl bg-gray-200/80
-        dark:bg-gray-800
-      "
-      />
-      <div className="
-        grid gap-3
-        md:grid-cols-2
-      "
-      >
-        <div className="
-          h-14 w-full animate-pulse rounded-lg bg-gray-200/80
-          dark:bg-gray-800
-        "
-        />
-        <div className="
-          h-14 w-full animate-pulse rounded-lg bg-gray-200/80
-          dark:bg-gray-800
-        "
-        />
-      </div>
-      <div className="
-        h-24 w-full animate-pulse rounded-lg bg-gray-200/80
-        dark:bg-gray-800
-      "
-      />
-    </div>
-  )
-}
-
 interface SortableCharacterCardProps {
   buttonRefFor: (id: number) => (element: HTMLButtonElement | null) => void
-  charactersForSelect: CharacterRow[]
   commissionList: CommissionRow[]
-  commissionSearchRows: AdminCommissionSearchRow[]
   disableDrag?: boolean
   editingValue: string
   isActive: boolean
@@ -61,22 +24,20 @@ interface SortableCharacterCardProps {
   isOpen: boolean
   item: CharacterItem
   onCancelEdit: () => void
-  onDeleteCommission: (commissionId: number) => void
   onRenameChange: (value: string) => void
   onRequestDelete: () => void
-  onSaveSuccess: (updated: CommissionRow) => void
+  onSelectCommission: (commission: CommissionRow) => void
   onStartEdit: () => void
   onSubmitRename: () => void
   onToggle: () => void
   reduceMotion?: boolean
+  selectedCommissionId: number | null
   totalCommissions: number
 }
 
 export function SortableCharacterCard({
   buttonRefFor,
-  charactersForSelect,
   commissionList,
-  commissionSearchRows,
   disableDrag = false,
   editingValue,
   isActive,
@@ -87,14 +48,14 @@ export function SortableCharacterCard({
   isOpen,
   item,
   onCancelEdit,
-  onDeleteCommission,
   onRenameChange,
   onRequestDelete,
-  onSaveSuccess,
+  onSelectCommission,
   onStartEdit,
   onSubmitRename,
   onToggle,
   reduceMotion = false,
+  selectedCommissionId,
   totalCommissions,
 }: SortableCharacterCardProps) {
   const character = item.data
@@ -333,50 +294,23 @@ export function SortableCharacterCard({
               {/* Show skeleton only while the card is open and loading */}
               {isOpen && (isCommissionsLoading || !isCommissionsLoaded)
                 ? (
-                    <div className="space-y-4 py-4">
-                      <CommissionEditFormSkeleton />
-                      <p className="
-                        text-sm text-gray-500
-                        dark:text-gray-300
-                      "
-                      >
-                        Loading commissions…
-                      </p>
+                    <div className="py-4">
+                      <CommissionThumbnailGridSkeleton />
                     </div>
                   )
                 : null}
 
-              {/* Keep forms mounted once loaded so images stay cached through open/close cycles */}
+              {/* Thumbnail grid once loaded */}
               {isCommissionsLoaded && !isCommissionsLoading
-                ? commissionList.length === 0
-                  ? (
-                      <p className="
-                        py-4 text-sm text-gray-500
-                        dark:text-gray-300
-                      "
-                      >
-                        No commissions recorded yet.
-                      </p>
-                    )
-                  : (
-                      <div className="
-                        divide-y divide-gray-200/80
-                        dark:divide-gray-700/80
-                      "
-                      >
-                        {commissionList.map(commission => (
-                          <div key={commission.id} className="py-5">
-                            <CommissionEditForm
-                              commission={commission}
-                              characters={charactersForSelect}
-                              commissionSearchRows={commissionSearchRows}
-                              onDelete={() => onDeleteCommission(commission.id)}
-                              onSaveSuccess={onSaveSuccess}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )
+                ? (
+                    <div className="py-4">
+                      <CommissionThumbnailGrid
+                        commissions={commissionList}
+                        selectedCommissionId={selectedCommissionId}
+                        onSelect={onSelectCommission}
+                      />
+                    </div>
+                  )
                 : null}
             </div>
           </div>

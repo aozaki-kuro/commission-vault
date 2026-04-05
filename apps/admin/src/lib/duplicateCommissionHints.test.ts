@@ -8,9 +8,11 @@ function buildCommissionRow(
   return {
     characterId: 1,
     characterName: 'Sakura',
+    links: '',
     description: null,
     design: null,
     keyword: null,
+    hidden: false,
     ...overrides,
   }
 }

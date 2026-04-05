@@ -42,6 +42,24 @@
   }
 }
 
+@keyframes drawerSlideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes drawerSlideOut {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
 @font-face {
   font-family: 'Berkeley Mono';
   font-style: normal;

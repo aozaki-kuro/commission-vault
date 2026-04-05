@@ -205,9 +205,11 @@ function createAdminReadD1Database() {
         characterId: item.characterId,
         characterName: item.characterName,
         fileName: item.fileName,
+        links: item.links,
         design: item.design,
         description: item.description,
         keyword: item.keyword,
+        hidden: item.hidden,
       }))
     }
 
@@ -927,18 +929,22 @@ describe('admin worker CRUD contract routing', () => {
           characterId: 1,
           characterName: 'Alice',
           fileName: '20250301_alice-maker',
+          links: JSON.stringify(['https://alice.example/a', 'https://alice.example/b']),
           design: 'maid outfit',
           description: 'soft lighting',
           keyword: 'maid, cafe',
+          hidden: false,
         },
         {
           id: 11,
           characterId: 2,
           characterName: 'Beta',
           fileName: '20240105_beta-maker',
+          links: JSON.stringify(['https://beta.example/1']),
           design: 'armor',
           description: 'battle scene',
           keyword: 'armor',
+          hidden: true,
         },
       ],
     })

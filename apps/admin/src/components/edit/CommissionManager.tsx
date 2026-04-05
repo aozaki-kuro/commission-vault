@@ -25,6 +25,8 @@ import {
 import { formControlStyles } from '../../app/ui'
 import { useCommissionManager } from '../../hooks/useCommissionManager'
 import { fetchCharacterCommissionsAction } from '../../lib/adminActions'
+import { notifyDataUpdate } from '../../lib/dataUpdateSignal'
+import { markPendingRebuild } from '../../lib/pendingRebuildSignal'
 import {
   buildAdminCommissionSearchEntries,
   buildCommissionToCharacterMap,
@@ -32,6 +34,8 @@ import {
   normalizeAdminSearchQuery,
 } from '../../lib/search/adminCommissionSearch'
 import { CharacterDeleteDialog } from './CharacterDeleteDialog'
+import { CommissionEditDrawer } from './CommissionEditDrawer'
+import { KeywordReplacePopover } from './KeywordReplacePopover'
 import { SortableCharacterCard } from './SortableCharacterCard'
 import { SortableDivider } from './SortableDivider'
 
@@ -52,6 +56,7 @@ export function CommissionManager({
   const [loadingCharacterIds, setLoadingCharacterIds] = useState<Set<number>>(() => new Set())
   const [loadedCharacterIds, setLoadedCharacterIds] = useState<Set<number>>(() => new Set())
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [selectedCommission, setSelectedCommission] = useState<CommissionRow | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const deferredSearchQuery = useDeferredValue(searchQuery)
   const loadedCharacterIdsRef = useRef<Set<number>>(new Set())
@@ -284,6 +289,41 @@ export function CommissionManager({
     )
   }, [])
 
+  const handleSelectCommission = useCallback((commission: CommissionRow) => {
+    setSelectedCommission(commission)
+  }, [])
+
+  const handleCloseDrawer = useCallback(() => {
+    setSelectedCommission(null)
+  }, [])
+
+  const handleKeywordReplaceComplete = useCallback(() => {
+    notifyDataUpdate()
+    markPendingRebuild()
+    // Full reload to get fresh bootstrap data — simpler than surgical updates
+    // since the replace can affect commissions across multiple characters
+    window.location.reload()
+  }, [])
+
+  const handleDrawerDelete = useCallback(() => {
+    if (!selectedCommission)
+      return
+    setLoadedCommissions(previous =>
+      previous.filter(c => c.id !== selectedCommission.id),
+    )
+    handleDeleteCommission(
+      selectedCommission.characterId,
+      selectedCommission.id,
+    )
+    setSelectedCommission(null)
+  }, [handleDeleteCommission, selectedCommission])
+
+  const handleDrawerSaveSuccess = useCallback((updated: CommissionRow) => {
+    handleCommissionSaved(updated)
+    // Keep drawer open with updated data
+    setSelectedCommission(updated)
+  }, [handleCommissionSaved])
+
   return (
     <section className="space-y-5">
       <header className="space-y-1">
@@ -334,49 +374,55 @@ export function CommissionManager({
         : null}
 
       <div className="space-y-2">
-        <div className="relative">
-          <IconSearch
-            className="
-              pointer-events-none absolute top-1/2 left-3 size-4
-              -translate-y-1/2 text-gray-400
-            "
-            stroke={1.8}
-            aria-hidden="true"
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <IconSearch
+              className="
+                pointer-events-none absolute top-1/2 left-3 size-4
+                -translate-y-1/2 text-gray-400
+              "
+              stroke={1.8}
+              aria-hidden="true"
+            />
+            <input
+              role="combobox"
+              aria-label="Search commissions"
+              aria-expanded="false"
+              value={searchQuery}
+              onChange={event => handleSearchChange(event.target.value)}
+              placeholder="Search commissions"
+              className={`
+                ${formControlStyles}
+                pr-10 pl-9
+              `}
+            />
+            {searchQuery
+              ? (
+                  <button
+                    type="button"
+                    onClick={() => handleSearchChange('')}
+                    aria-label="Clear search"
+                    className="
+                      absolute top-1/2 right-3 inline-flex size-5 -translate-y-1/2
+                      items-center justify-center rounded-full text-gray-400
+                      transition
+                      hover:bg-gray-100 hover:text-gray-600
+                      focus-visible:ring-2 focus-visible:ring-gray-400
+                      focus-visible:ring-offset-2 focus-visible:ring-offset-white
+                      focus-visible:outline-none
+                      dark:hover:bg-gray-800 dark:hover:text-gray-200
+                      dark:focus-visible:ring-offset-gray-900
+                    "
+                  >
+                    <IconX className="size-3.5" stroke={2} aria-hidden="true" />
+                  </button>
+                )
+              : null}
+          </div>
+          <KeywordReplacePopover
+            commissionSearchRows={commissionSearchRows}
+            onComplete={handleKeywordReplaceComplete}
           />
-          <input
-            role="combobox"
-            aria-label="Search commissions"
-            aria-expanded="false"
-            value={searchQuery}
-            onChange={event => handleSearchChange(event.target.value)}
-            placeholder="Search commissions"
-            className={`
-              ${formControlStyles}
-              pr-10 pl-9
-            `}
-          />
-          {searchQuery
-            ? (
-                <button
-                  type="button"
-                  onClick={() => handleSearchChange('')}
-                  aria-label="Clear search"
-                  className="
-                    absolute top-1/2 right-3 inline-flex size-5 -translate-y-1/2
-                    items-center justify-center rounded-full text-gray-400
-                    transition
-                    hover:bg-gray-100 hover:text-gray-600
-                    focus-visible:ring-2 focus-visible:ring-gray-400
-                    focus-visible:ring-offset-2 focus-visible:ring-offset-white
-                    focus-visible:outline-none
-                    dark:hover:bg-gray-800 dark:hover:text-gray-200
-                    dark:focus-visible:ring-offset-gray-900
-                  "
-                >
-                  <IconX className="size-3.5" stroke={2} aria-hidden="true" />
-                </button>
-              )
-            : null}
         </div>
 
         {hasAppliedSearchQuery
@@ -431,14 +477,8 @@ export function CommissionManager({
                   isCommissionsLoading={loadingCharacterIds.has(character.id)}
                   isOpen={shouldAutoOpen || openIds.has(character.id)}
                   onToggle={() => handleToggle(character.id)}
-                  onDeleteCommission={(commissionId) => {
-                    setLoadedCommissions(previous =>
-                      previous.filter(commission => commission.id !== commissionId),
-                    )
-                    handleDeleteCommission(character.id, commissionId)
-                  }}
-                  charactersForSelect={orderedCharacters}
-                  commissionSearchRows={commissionSearchRows}
+                  selectedCommissionId={selectedCommission?.id ?? null}
+                  onSelectCommission={handleSelectCommission}
                   buttonRefFor={buttonRefFor}
                   isEditing={editing?.id === character.id}
                   editingValue={editing?.id === character.id ? editing.value : character.name}
@@ -450,7 +490,6 @@ export function CommissionManager({
                   isDeleting={deletingId === character.id || isDeletePending}
                   disableDrag={hasAppliedSearchQuery}
                   reduceMotion={hasAppliedSearchQuery}
-                  onSaveSuccess={handleCommissionSaved}
                 />
               )
             })}
@@ -470,6 +509,16 @@ export function CommissionManager({
             performDeleteCharacter(confirmingCharacter)
           }
         }}
+      />
+
+      <CommissionEditDrawer
+        open={selectedCommission !== null}
+        commission={selectedCommission}
+        characters={orderedCharacters}
+        commissionSearchRows={commissionSearchRows}
+        onClose={handleCloseDrawer}
+        onDelete={handleDrawerDelete}
+        onSaveSuccess={handleDrawerSaveSuccess}
       />
     </section>
   )

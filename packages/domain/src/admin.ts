@@ -26,9 +26,11 @@ export interface AdminCommissionSearchRow {
   characterId: number
   characterName: string
   fileName: string
+  links: string
   design?: string | null
   description?: string | null
   keyword?: string | null
+  hidden: boolean
 }
 
 export interface AdminData {
