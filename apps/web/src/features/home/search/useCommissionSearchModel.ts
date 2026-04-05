@@ -344,9 +344,13 @@ export function useCommissionSearchModel({
     if (didAutoShowArchivedRef.current)
       return
 
+    // Wait until all active batches are loaded before deciding to auto-expand.
+    // Before that, hiddenEntryIds conflates unloaded active entries with archived
+    // entries, so hiddenArchivedMatchedCount may include false positives.
     if (
       !disableDomFiltering
       && mode === 'character'
+      && activeLoaded
       && !archivedVisible
       && hiddenArchivedMatchedCount > 0
     ) {
@@ -354,6 +358,7 @@ export function useCommissionSearchModel({
       requestArchivedCharactersVisibility(window, 'visible')
     }
   }, [
+    activeLoaded,
     disableDomFiltering,
     hasDeferredQuery,
     mode,
