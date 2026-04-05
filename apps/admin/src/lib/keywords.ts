@@ -1,10 +1,10 @@
 const NORMALIZE_SPACES_PATTERN = /\s+/g
 
-function normalizeKeyword(value: string) {
+export function normalizeKeyword(value: string) {
   return value.trim().replace(NORMALIZE_SPACES_PATTERN, ' ')
 }
 
-function normalizeKeywordKey(value: string) {
+export function normalizeKeywordKey(value: string) {
   return normalizeKeyword(value).toLowerCase()
 }
 
