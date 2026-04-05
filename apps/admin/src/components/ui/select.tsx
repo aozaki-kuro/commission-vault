@@ -59,7 +59,7 @@ function SelectContent({
         ref={ref}
         className={cn(
           `
-            relative z-50 min-w-32 overflow-hidden rounded-lg border
+            relative z-[80] min-w-32 overflow-hidden rounded-lg border
             border-gray-200 bg-white/90 p-1 text-gray-900 shadow-lg
             backdrop-blur-md ring-1 ring-black/5
             dark:border-gray-700 dark:bg-gray-900/85 dark:text-gray-100
@@ -118,7 +118,7 @@ function SelectItem({
       ref={ref}
       className={cn(
         `
-          relative flex w-full cursor-pointer items-center justify-between gap-3
+          relative flex w-full items-center justify-between gap-3
           rounded-md px-3 py-2 text-sm text-gray-700 transition outline-none
           select-none
           focus:bg-gray-900/5 focus:text-gray-900
