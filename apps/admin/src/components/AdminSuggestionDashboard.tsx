@@ -1,6 +1,6 @@
 import type { DragHandleProps } from '../hooks/useNativeDragReorder'
 import { IconGripHorizontal, IconX } from '@tabler/icons-react'
-import { Fragment, useActionState, useCallback, useEffect, useMemo, useState } from 'react'
+import { useActionState, useCallback, useEffect, useMemo, useState } from 'react'
 import { adminSurfaceStyles, formControlStyles } from '../app/ui'
 import { arrayMove, useNativeDragReorder } from '../hooks/useNativeDragReorder'
 import { saveHomeFeaturedKeywordsAction } from '../lib/adminActions'
@@ -216,17 +216,15 @@ export function AdminSuggestionDashboard({
           : (
               <div role="list" className="space-y-2" {...dragContainerProps}>
                 {selectedKeywords.map((keyword, index) => (
-                  <Fragment key={keyword}>
+                  <div key={keyword} role="listitem" className="relative" {...dragItemAttr(index)}>
                     {dropIndicatorIndex === index && <DropIndicator />}
-                    <div role="listitem" {...dragItemAttr(index)}>
-                      <KeywordItem
-                        keyword={keyword}
-                        onRemove={removeKeyword}
-                        dragHandleProps={dragHandleProps(index)}
-                        isDragging={draggingIndex === index}
-                      />
-                    </div>
-                  </Fragment>
+                    <KeywordItem
+                      keyword={keyword}
+                      onRemove={removeKeyword}
+                      dragHandleProps={dragHandleProps(index)}
+                      isDragging={draggingIndex === index}
+                    />
+                  </div>
                 ))}
                 {dropIndicatorIndex === selectedKeywords.length && <DropIndicator />}
               </div>

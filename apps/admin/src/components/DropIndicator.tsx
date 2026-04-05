@@ -3,7 +3,8 @@ export function DropIndicator() {
     <div
       aria-hidden="true"
       className="
-        pointer-events-none relative flex h-0.5 items-center
+        pointer-events-none absolute inset-x-0 -top-2.5 z-10 flex h-0.5
+        items-center
       "
     >
       <div className="
