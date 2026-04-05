@@ -1,10 +1,9 @@
 import type {
+  CharacterRow,
   CommissionRow,
 } from '@commission-index/domain'
 import type { KeyboardEvent } from 'react'
-import type { CharacterItem } from '../../hooks/useCommissionManager'
-import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
+import type { DragHandleProps } from '../../hooks/useNativeDragReorder'
 import { IconDeviceFloppy, IconGripHorizontal, IconPencil, IconTrash, IconX } from '@tabler/icons-react'
 import { CommissionThumbnailGrid, CommissionThumbnailGridSkeleton } from './CommissionThumbnailGrid'
 
@@ -13,16 +12,18 @@ const inlineEditStyles
 
 interface SortableCharacterCardProps {
   buttonRefFor: (id: number) => (element: HTMLButtonElement | null) => void
+  character: CharacterRow
   commissionList: CommissionRow[]
   disableDrag?: boolean
+  dragHandleProps: DragHandleProps
   editingValue: string
   isActive: boolean
   isCommissionsLoaded: boolean
   isCommissionsLoading: boolean
   isDeleting: boolean
+  isDragging: boolean
   isEditing: boolean
   isOpen: boolean
-  item: CharacterItem
   onCancelEdit: () => void
   onRenameChange: (value: string) => void
   onRequestDelete: () => void
@@ -37,16 +38,18 @@ interface SortableCharacterCardProps {
 
 export function SortableCharacterCard({
   buttonRefFor,
+  character,
   commissionList,
   disableDrag = false,
+  dragHandleProps,
   editingValue,
   isActive,
   isCommissionsLoaded,
   isCommissionsLoading,
   isDeleting,
+  isDragging,
   isEditing,
   isOpen,
-  item,
   onCancelEdit,
   onRenameChange,
   onRequestDelete,
@@ -58,26 +61,16 @@ export function SortableCharacterCard({
   selectedCommissionId,
   totalCommissions,
 }: SortableCharacterCardProps) {
-  const character = item.data
   const sectionId = `admin-character-${character.id}`
   const panelId = `${sectionId}-panel`
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    disabled: disableDrag || isDeleting,
-    id: character.id,
-  })
 
   return (
     <div
-      ref={setNodeRef}
       id={sectionId}
       data-character-section="true"
       data-character-status={isActive ? 'active' : 'archived'}
       data-total-commissions={totalCommissions}
-      style={{
-        opacity: isDragging ? 0.55 : 1,
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
+      className={isDragging ? 'opacity-55' : ''}
     >
       <div className="
         overflow-hidden rounded-2xl border border-gray-200 bg-white/95 shadow-sm
@@ -103,8 +96,7 @@ export function SortableCharacterCard({
         >
           <button
             type="button"
-            {...attributes}
-            {...listeners}
+            {...dragHandleProps}
             disabled={isDeleting || disableDrag}
             onClick={event => event.stopPropagation()}
             aria-label={disableDrag

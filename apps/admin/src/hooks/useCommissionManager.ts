@@ -3,15 +3,7 @@ import type {
   CharacterStatus,
   CommissionRow,
 } from '@commission-index/domain'
-import type { DragOverEvent } from '@dnd-kit/core'
 import type { FormState } from '../lib/formState'
-import {
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
-import { arrayMove as dndArrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import {
   useCallback,
   useEffect,
@@ -29,6 +21,7 @@ import {
 } from '../lib/adminActions'
 import { notifyDataUpdate } from '../lib/dataUpdateSignal'
 import { markPendingRebuild } from '../lib/pendingRebuildSignal'
+import { arrayMove } from './useNativeDragReorder'
 
 const disclosureStorageKey = 'admin-existing-open'
 const expiryMs = 30 * 60 * 1000
@@ -410,38 +403,10 @@ export function useCommissionManager({
     })
   }, [])
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  )
-
-  const handleDragOver = useCallback((event: DragOverEvent) => {
-    const { active, over } = event
-    if (!over || active.id === over.id) {
-      return
-    }
-
-    const activeIndex = list.findIndex(item =>
-      item.type === 'character' ? item.data.id === active.id : item.id === active.id,
-    )
-    const overIndex = list.findIndex(item =>
-      item.type === 'character' ? item.data.id === over.id : item.id === over.id,
-    )
-
-    if (activeIndex === -1 || overIndex === -1) {
-      return
-    }
-
-    dispatchList({
-      type: 'set',
-      value: dndArrayMove(list, activeIndex, overIndex),
-    })
-  }, [list])
-
-  const handleDragEnd = useCallback(() => {
-    persistOrder(list)
+  const handleReorder = useCallback((fromIndex: number, toIndex: number) => {
+    const nextList = arrayMove(list, fromIndex, toIndex)
+    dispatchList({ type: 'set', value: nextList })
+    persistOrder(nextList)
   }, [list, persistOrder])
 
   const getCharacterStatus = useCallback((characterId: number): CharacterStatus => {
@@ -575,11 +540,6 @@ export function useCommissionManager({
     [list],
   )
 
-  const itemIds = useMemo(
-    () => list.map(item => (item.type === 'character' ? item.data.id : item.id)),
-    [list],
-  )
-
   const activeCount = useMemo(() => {
     const dividerIndex = list.findIndex(item => item.type === 'divider')
     return dividerIndex === -1 ? 0 : dividerIndex
@@ -605,17 +565,14 @@ export function useCommissionManager({
     editing,
     feedback,
     handleDeleteCommission,
-    handleDragEnd,
-    handleDragOver,
     handleRenameChange,
+    handleReorder,
     handleRequestDelete,
     isDeletePending,
-    itemIds,
     list,
     openIds,
     orderedCharacters,
     performDeleteCharacter,
-    sensors,
     startEditingName,
     submitRename,
     toggleCharacterOpen,
