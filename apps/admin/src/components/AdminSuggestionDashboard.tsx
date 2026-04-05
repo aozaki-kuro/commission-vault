@@ -1,7 +1,8 @@
+import type { DragHandleProps } from '../hooks/useNativeDragReorder'
 import { IconGripHorizontal, IconX } from '@tabler/icons-react'
 import { useActionState, useCallback, useEffect, useMemo, useState } from 'react'
 import { adminSurfaceStyles, formControlStyles } from '../app/ui'
-import { useNativeDragReorder } from '../hooks/useNativeDragReorder'
+import { arrayMove, useNativeDragReorder } from '../hooks/useNativeDragReorder'
 import { saveHomeFeaturedKeywordsAction } from '../lib/adminActions'
 import { INITIAL_FORM_STATE } from '../lib/formState'
 import { dedupeKeywords, normalizeKeyword, normalizeKeywordKey } from '../lib/keywords'
@@ -9,13 +10,6 @@ import { markPendingRebuild } from '../lib/pendingRebuildSignal'
 import { DropIndicator } from './DropIndicator'
 import { FormStatusIndicator } from './FormStatusIndicator'
 import { SaveButton } from './SaveButton'
-
-function arrayMove<T>(array: T[], fromIndex: number, toIndex: number): T[] {
-  const next = [...array]
-  const [removed] = next.splice(fromIndex, 1)
-  next.splice(toIndex, 0, removed)
-  return next
-}
 
 interface AdminSuggestionDashboardProps {
   featuredKeywords: string[]
@@ -25,7 +19,7 @@ interface AdminSuggestionDashboardProps {
 const MAX_FEATURED_KEYWORDS = 6
 
 interface KeywordItemProps {
-  dragHandleProps: Record<string, unknown>
+  dragHandleProps: DragHandleProps
   isDragging: boolean
   keyword: string
   onRemove: (keyword: string) => void

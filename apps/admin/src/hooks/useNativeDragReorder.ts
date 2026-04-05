@@ -1,4 +1,3 @@
-// apps/admin/src/hooks/useNativeDragReorder.ts
 import type { DragEvent } from 'react'
 import { useCallback, useRef, useState } from 'react'
 
@@ -6,6 +5,17 @@ interface UseNativeDragReorderOptions {
   itemCount: number
   onReorder: (fromIndex: number, toIndex: number) => void
   disabled?: boolean
+}
+
+export type DragHandleProps
+  = | { 'aria-disabled': true, 'draggable': false }
+    | { draggable: true, onDragEnd: () => void, onDragStart: (e: DragEvent) => void }
+
+export function arrayMove<T>(array: T[], fromIndex: number, toIndex: number): T[] {
+  const next = [...array]
+  const [removed] = next.splice(fromIndex, 1)
+  next.splice(toIndex, 0, removed)
+  return next
 }
 
 const DRAG_ITEM_ATTR = 'data-drag-item-index'

@@ -3,6 +3,7 @@ import type {
   CommissionRow,
 } from '@commission-index/domain'
 import type { KeyboardEvent } from 'react'
+import type { DragHandleProps } from '../../hooks/useNativeDragReorder'
 import { IconDeviceFloppy, IconGripHorizontal, IconPencil, IconTrash, IconX } from '@tabler/icons-react'
 import { CommissionThumbnailGrid, CommissionThumbnailGridSkeleton } from './CommissionThumbnailGrid'
 
@@ -14,7 +15,7 @@ interface SortableCharacterCardProps {
   character: CharacterRow
   commissionList: CommissionRow[]
   disableDrag?: boolean
-  dragHandleProps: Record<string, unknown>
+  dragHandleProps: DragHandleProps
   editingValue: string
   isActive: boolean
   isCommissionsLoaded: boolean

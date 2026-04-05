@@ -21,6 +21,7 @@ import {
 } from '../lib/adminActions'
 import { notifyDataUpdate } from '../lib/dataUpdateSignal'
 import { markPendingRebuild } from '../lib/pendingRebuildSignal'
+import { arrayMove } from './useNativeDragReorder'
 
 const disclosureStorageKey = 'admin-existing-open'
 const expiryMs = 30 * 60 * 1000
@@ -249,13 +250,6 @@ function listReducer(state: ListItem[], action: ListAction): ListItem[] {
       ? { ...item, data: { ...item.data, name: action.name } }
       : item,
   )
-}
-
-function arrayMove<T>(array: T[], fromIndex: number, toIndex: number): T[] {
-  const next = [...array]
-  const [removed] = next.splice(fromIndex, 1)
-  next.splice(toIndex, 0, removed)
-  return next
 }
 
 interface UseCommissionManagerParams {
