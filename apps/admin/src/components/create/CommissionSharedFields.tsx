@@ -51,7 +51,7 @@ export function CommissionSharedFields({
   onKeywordChange,
 }: CommissionSharedFieldsProps) {
   return (
-    <>
+    <div className="space-y-5">
       <div className="
         grid gap-4
         md:grid-cols-2
@@ -69,22 +69,28 @@ export function CommissionSharedFields({
         />
       </div>
 
-      <CommissionLinksField
-        value={linksValue}
-        onChange={onLinksChange}
-        rows={linksRows}
-      />
+      <div className="
+        space-y-4 border-t border-gray-200/60 pt-5
+        dark:border-gray-700/60
+      "
+      >
+        <CommissionLinksField
+          value={linksValue}
+          onChange={onLinksChange}
+          rows={linksRows}
+        />
 
-      <CommissionDesignDescriptionFields
-        designValue={designValue}
-        onDesignChange={onDesignChange}
-        descriptionValue={descriptionValue}
-        onDescriptionChange={onDescriptionChange}
-        designPlaceholder={designPlaceholder}
-        descriptionPlaceholder={descriptionPlaceholder}
-      />
+        <CommissionDesignDescriptionFields
+          designValue={designValue}
+          onDesignChange={onDesignChange}
+          descriptionValue={descriptionValue}
+          onDescriptionChange={onDescriptionChange}
+          designPlaceholder={designPlaceholder}
+          descriptionPlaceholder={descriptionPlaceholder}
+        />
 
-      <CommissionKeywordField value={keywordValue} onChange={onKeywordChange} />
-    </>
+        <CommissionKeywordField value={keywordValue} onChange={onKeywordChange} />
+      </div>
+    </div>
   )
 }

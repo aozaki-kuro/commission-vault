@@ -1,7 +1,8 @@
 import type { CharacterAliasRow, CreatorAliasRow, KeywordAliasRow } from '@commission-index/domain'
+import type { KeyboardEvent } from 'react'
 import type { AliasRow } from './AliasPanel'
 import { hasCjkCharacter } from '@commission-index/domain'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import {
   saveCharacterAliasesBatchAction,
   saveCreatorAliasesBatchAction,
@@ -17,14 +18,7 @@ interface AdminAliasesDashboardProps {
 
 type AliasTab = 'character' | 'creator' | 'keyword'
 
-const tabListStyles
-  = 'grid w-full grid-cols-3 gap-2 rounded-2xl border border-gray-200 bg-white/90 p-1.5 shadow-sm ring-1 ring-gray-900/5 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/40 dark:ring-white/10'
-const tabTriggerStyles
-  = 'inline-flex items-center justify-between gap-2 rounded-xl border border-transparent px-3 py-2.5 text-sm text-gray-700 transition focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none hover:border-gray-300/80 hover:bg-white dark:text-gray-300 dark:hover:border-gray-600 dark:hover:bg-gray-800/70 dark:focus-visible:ring-offset-gray-900'
-const activeTabTriggerStyles
-  = 'border-gray-900/15 bg-white text-gray-900 shadow-sm dark:border-gray-100/20 dark:bg-gray-100 dark:text-gray-900'
-const tabCountStyles
-  = 'hidden min-w-7 items-center justify-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700 sm:inline-flex dark:bg-gray-800 dark:text-gray-200'
+const aliasTabs: AliasTab[] = ['character', 'creator', 'keyword']
 
 function toCharacterAliasRows(characters: CharacterAliasRow[]): AliasRow[] {
   return characters.map(row => ({
@@ -94,12 +88,42 @@ function TabButton({ activeTab, count, label, onSelect, tab }: TabButtonProps) {
       tabIndex={isActive ? 0 : -1}
       onClick={() => onSelect(tab)}
       className={`
-        ${tabTriggerStyles}
-        ${isActive ? activeTabTriggerStyles : ''}
+        relative inline-flex items-center gap-2 px-1 pb-2.5 text-sm font-medium
+        transition
+        focus-visible:outline-none
+        focus-visible:ring-2 focus-visible:ring-gray-400
+        focus-visible:ring-offset-2 focus-visible:ring-offset-white
+        focus-visible:rounded-sm
+        dark:focus-visible:ring-offset-neutral-900
+        ${isActive
+      ? `text-gray-900 dark:text-gray-100`
+      : `text-gray-500 hover:text-gray-700
+         dark:text-gray-400 dark:hover:text-gray-200`}
       `}
     >
-      <span>{label}</span>
-      <span className={tabCountStyles}>{count}</span>
+      {label}
+      <span className={`
+        inline-flex min-w-5 items-center justify-center rounded-full
+        px-1.5 py-0.5 text-[11px] font-semibold leading-none
+        ${isActive
+      ? `bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900`
+      : `bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300`}
+      `}
+      >
+        {count}
+      </span>
+      {isActive
+        ? (
+            <span
+              aria-hidden="true"
+              className="
+                absolute right-0 bottom-0 left-0 h-0.5 rounded-full
+                bg-gray-900
+                dark:bg-gray-100
+              "
+            />
+          )
+        : null}
     </button>
   )
 }
@@ -110,6 +134,7 @@ export function AdminAliasesDashboard({
   keywords,
 }: AdminAliasesDashboardProps) {
   const [activeTab, setActiveTab] = useState<AliasTab>('character')
+  const tablistRef = useRef<HTMLDivElement>(null)
 
   const characterRows = useMemo(() => toCharacterAliasRows(characters), [characters])
   const creatorRows = useMemo(() => toCreatorAliasRows(creators), [creators])
@@ -119,6 +144,37 @@ export function AdminAliasesDashboard({
   const buildCharacter = useCallback(buildCharacterPayload, [])
   const buildCreator = useCallback(buildCreatorPayload, [])
   const buildKeyword = useCallback(buildKeywordPayload, [])
+
+  const handleTabKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    const currentIndex = aliasTabs.indexOf(activeTab)
+    let nextIndex: number | null = null
+
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault()
+      nextIndex = (currentIndex + 1) % aliasTabs.length
+    }
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      nextIndex = (currentIndex - 1 + aliasTabs.length) % aliasTabs.length
+    }
+    else if (event.key === 'Home') {
+      event.preventDefault()
+      nextIndex = 0
+    }
+    else if (event.key === 'End') {
+      event.preventDefault()
+      nextIndex = aliasTabs.length - 1
+    }
+
+    if (nextIndex !== null) {
+      const nextTab = aliasTabs[nextIndex]
+      setActiveTab(nextTab)
+      const nextButton = tablistRef.current?.querySelector<HTMLButtonElement>(
+        `#aliases-tab-${nextTab}`,
+      )
+      nextButton?.focus()
+    }
+  }, [activeTab])
 
   return (
     <section className="space-y-5">
@@ -139,7 +195,16 @@ export function AdminAliasesDashboard({
         </p>
       </header>
 
-      <div role="tablist" aria-label="Alias mapping sections" className={tabListStyles}>
+      <div
+        ref={tablistRef}
+        role="tablist"
+        aria-label="Alias mapping sections"
+        onKeyDown={handleTabKeyDown}
+        className="
+          flex gap-5 border-b border-gray-200
+          dark:border-gray-700
+        "
+      >
         <TabButton
           activeTab={activeTab}
           count={characterRows.length}
@@ -163,7 +228,7 @@ export function AdminAliasesDashboard({
         />
       </div>
 
-      <div className="mt-5 space-y-6">
+      <div className="space-y-6">
         {activeTab === 'character' && (
           <div
             key="character"

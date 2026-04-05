@@ -365,7 +365,7 @@ export function SortableCharacterCard({
                       "
                       >
                         {commissionList.map(commission => (
-                          <div key={commission.id} className="py-4">
+                          <div key={commission.id} className="py-5">
                             <CommissionEditForm
                               commission={commission}
                               characters={charactersForSelect}

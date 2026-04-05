@@ -72,7 +72,7 @@ export function AdminPageShell({
       <div
         key={current}
         className="
-          space-y-6
+          space-y-8
           motion-safe:animate-[tabFade_240ms_ease-out]
         "
       >

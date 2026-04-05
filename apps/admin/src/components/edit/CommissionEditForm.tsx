@@ -273,7 +273,7 @@ export function CommissionEditForm({
   return (
     <form
       action={formAction}
-      className="space-y-4"
+      className="space-y-5"
     >
       <input type="hidden" name="id" value={commission.id} />
       <input type="hidden" name="characterId" value={selectedCharacterId} />

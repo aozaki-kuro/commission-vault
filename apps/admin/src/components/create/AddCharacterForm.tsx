@@ -126,7 +126,11 @@ export function AddCharacterForm() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="
+        flex flex-wrap items-center gap-3 border-t border-gray-200/60 pt-5
+        dark:border-gray-700/60
+      "
+      >
         <div className="flex items-center gap-3">
           <SubmitButton>Save character</SubmitButton>
           <FormStatusIndicator

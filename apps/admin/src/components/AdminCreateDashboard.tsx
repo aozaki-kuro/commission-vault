@@ -22,7 +22,7 @@ export function AdminCreateDashboard({
   commissionSearchRows,
 }: AdminCreateDashboardProps) {
   return (
-    <section className="space-y-4">
+    <section className="space-y-8">
       <AddCharacterForm />
       <AddCommissionForm
         characters={characters}
