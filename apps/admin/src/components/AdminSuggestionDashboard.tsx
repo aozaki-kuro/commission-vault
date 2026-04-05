@@ -1,29 +1,21 @@
-import type { DragEndEvent } from '@dnd-kit/core'
-import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { IconGripHorizontal, IconX } from '@tabler/icons-react'
-import { useActionState, useEffect, useMemo, useState } from 'react'
+import { useActionState, useCallback, useEffect, useMemo, useState } from 'react'
 import { adminSurfaceStyles, formControlStyles } from '../app/ui'
+import { useNativeDragReorder } from '../hooks/useNativeDragReorder'
 import { saveHomeFeaturedKeywordsAction } from '../lib/adminActions'
 import { INITIAL_FORM_STATE } from '../lib/formState'
 import { dedupeKeywords, normalizeKeyword, normalizeKeywordKey } from '../lib/keywords'
 import { markPendingRebuild } from '../lib/pendingRebuildSignal'
+import { DropIndicator } from './DropIndicator'
 import { FormStatusIndicator } from './FormStatusIndicator'
 import { SaveButton } from './SaveButton'
+
+function arrayMove<T>(array: T[], fromIndex: number, toIndex: number): T[] {
+  const next = [...array]
+  const [removed] = next.splice(fromIndex, 1)
+  next.splice(toIndex, 0, removed)
+  return next
+}
 
 interface AdminSuggestionDashboardProps {
   featuredKeywords: string[]
@@ -32,43 +24,37 @@ interface AdminSuggestionDashboardProps {
 
 const MAX_FEATURED_KEYWORDS = 6
 
-interface SortableKeywordItemProps {
+interface KeywordItemProps {
+  dragHandleProps: Record<string, unknown>
+  isDragging: boolean
   keyword: string
   onRemove: (keyword: string) => void
 }
 
-function SortableKeywordItem({ keyword, onRemove }: SortableKeywordItemProps) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-    id: keyword,
-  })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
-
+function KeywordItem({ dragHandleProps, isDragging, keyword, onRemove }: KeywordItemProps) {
   return (
-    <li
-      ref={setNodeRef}
-      style={style}
-      className="
+    <div
+      role="listitem"
+      className={`
         flex items-center gap-2 rounded-lg border border-gray-200 bg-white/80
         px-3 py-2
         dark:border-gray-700 dark:bg-gray-900/50
-      "
+        ${isDragging ? 'opacity-55' : ''}
+      `}
     >
       <button
         type="button"
         className="
           inline-flex size-7 shrink-0 items-center justify-center rounded-md
           border border-transparent text-gray-400 transition
+          cursor-grab
           hover:text-gray-700
+          active:cursor-grabbing
           dark:text-gray-500
           dark:hover:text-gray-200
         "
         aria-label={`Drag ${keyword}`}
-        {...attributes}
-        {...listeners}
+        {...dragHandleProps}
       >
         <IconGripHorizontal className="size-4" stroke={2} aria-hidden="true" />
       </button>
@@ -96,7 +82,7 @@ function SortableKeywordItem({ keyword, onRemove }: SortableKeywordItemProps) {
       >
         <IconX className="size-4" stroke={2} aria-hidden="true" />
       </button>
-    </li>
+    </div>
   )
 }
 
@@ -138,12 +124,20 @@ export function AdminSuggestionDashboard({
   const keywordsJson = useMemo(() => JSON.stringify(selectedKeywords), [selectedKeywords])
   const canAddMore = selectedKeywords.length < MAX_FEATURED_KEYWORDS
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  )
+  const handleReorder = useCallback((fromIndex: number, toIndex: number) => {
+    setSelectedKeywords(prev => arrayMove(prev, fromIndex, toIndex))
+  }, [])
+
+  const {
+    containerProps: dragContainerProps,
+    dragHandleProps,
+    dragItemAttr,
+    draggingIndex,
+    dropIndicatorIndex,
+  } = useNativeDragReorder({
+    itemCount: selectedKeywords.length,
+    onReorder: handleReorder,
+  })
 
   const addKeyword = (rawKeyword: string) => {
     const keyword = normalizeKeyword(rawKeyword)
@@ -176,20 +170,6 @@ export function AdminSuggestionDashboard({
   const handleManualAdd = () => {
     addKeyword(manualInput)
     setManualInput('')
-  }
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-    if (!over || active.id === over.id)
-      return
-
-    setSelectedKeywords((prev) => {
-      const oldIndex = prev.findIndex(kw => kw === active.id)
-      const newIndex = prev.findIndex(kw => kw === over.id)
-      if (oldIndex < 0 || newIndex < 0)
-        return prev
-      return arrayMove(prev, oldIndex, newIndex)
-    })
   }
 
   return (
@@ -228,40 +208,34 @@ export function AdminSuggestionDashboard({
 
       {/* Edit zone: sortable list + manual add */}
       <div className="space-y-3">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={selectedKeywords}
-            strategy={verticalListSortingStrategy}
-          >
-            {selectedKeywords.length === 0
-              ? (
-                  <div
-                    className="
-                      rounded-lg border border-dashed border-gray-300/80 px-4
-                      py-6 text-sm text-gray-500
-                      dark:border-gray-700 dark:text-gray-400
-                    "
-                  >
-                    No featured keywords yet. Add up to six.
+        {selectedKeywords.length === 0
+          ? (
+              <div
+                className="
+                  rounded-lg border border-dashed border-gray-300/80 px-4
+                  py-6 text-sm text-gray-500
+                  dark:border-gray-700 dark:text-gray-400
+                "
+              >
+                No featured keywords yet. Add up to six.
+              </div>
+            )
+          : (
+              <div role="list" className="space-y-2" {...dragContainerProps}>
+                {selectedKeywords.map((keyword, index) => (
+                  <div key={keyword} {...dragItemAttr(index)}>
+                    {dropIndicatorIndex === index && <DropIndicator />}
+                    <KeywordItem
+                      keyword={keyword}
+                      onRemove={removeKeyword}
+                      dragHandleProps={dragHandleProps(index)}
+                      isDragging={draggingIndex === index}
+                    />
                   </div>
-                )
-              : (
-                  <ol className="space-y-2">
-                    {selectedKeywords.map(keyword => (
-                      <SortableKeywordItem
-                        key={keyword}
-                        keyword={keyword}
-                        onRemove={removeKeyword}
-                      />
-                    ))}
-                  </ol>
-                )}
-          </SortableContext>
-        </DndContext>
+                ))}
+                {dropIndicatorIndex === selectedKeywords.length && <DropIndicator />}
+              </div>
+            )}
 
         <div className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
