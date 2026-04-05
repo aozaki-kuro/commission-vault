@@ -7,7 +7,7 @@ import type { KeyboardEvent } from 'react'
 import type { CharacterItem } from '../../hooks/useCommissionManager'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { IconGripHorizontal, IconPencil, IconX } from '@tabler/icons-react'
+import { IconDeviceFloppy, IconGripHorizontal, IconPencil, IconTrash, IconX } from '@tabler/icons-react'
 import { CommissionEditForm } from './CommissionEditForm'
 
 const inlineEditStyles
@@ -124,11 +124,21 @@ export function SortableCharacterCard({
         dark:border-gray-700 dark:bg-gray-900/40 dark:ring-white/10
       "
       >
-        <div className="
-          flex items-center gap-2 bg-white/90 px-3 py-2.5
-          sm:gap-3 sm:px-5 sm:py-3
-          dark:bg-gray-900/40
-        "
+        <div
+          role={isEditing ? undefined : 'button'}
+          tabIndex={isEditing ? undefined : -1}
+          onClick={isEditing
+            ? undefined
+            : (event) => {
+                event.preventDefault()
+                onToggle()
+              }}
+          className={`
+            flex items-center gap-2 bg-white/90 px-3 py-2.5
+            sm:gap-3 sm:px-5 sm:py-3
+            dark:bg-gray-900/40
+            ${isEditing ? '' : 'cursor-pointer'}
+          `}
         >
           <button
             type="button"
@@ -159,15 +169,29 @@ export function SortableCharacterCard({
             <IconGripHorizontal className="size-5" stroke={2} aria-hidden="true" />
           </button>
 
-          {isEditing
-            ? (
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <span
-                    aria-hidden="true"
-                    className={isActive
-                      ? 'size-2.5 shrink-0 rounded-full bg-blue-500/90'
-                      : 'size-2.5 shrink-0 rounded-full bg-gray-400/80'}
-                  />
+          {/* 名字/输入区域 — 统一结构，编辑时原地替换内容 */}
+          <button
+            ref={isEditing ? undefined : buttonRefFor(character.id)}
+            type="button"
+            aria-expanded={isEditing ? undefined : isOpen}
+            aria-controls={isEditing ? undefined : panelId}
+            tabIndex={isEditing ? -1 : undefined}
+            className="
+              flex flex-1 items-center gap-3 rounded-lg text-left
+              focus-visible:ring-2 focus-visible:ring-gray-400
+              focus-visible:ring-offset-2
+              focus-visible:ring-offset-white focus-visible:outline-none
+              dark:focus-visible:ring-offset-gray-900
+            "
+          >
+            <span
+              aria-hidden="true"
+              className={isActive
+                ? 'size-2.5 shrink-0 rounded-full bg-blue-500/90'
+                : 'size-2.5 shrink-0 rounded-full bg-gray-400/80'}
+            />
+            {isEditing
+              ? (
                   <input
                     type="text"
                     autoFocus
@@ -188,132 +212,99 @@ export function SortableCharacterCard({
                     }}
                     className={inlineEditStyles}
                   />
+                )
+              : (
                   <span className="
-                    text-right font-mono text-xs font-normal text-gray-500
-                    dark:text-gray-300
+                    truncate text-base font-semibold text-gray-800
+                    dark:text-gray-100
                   "
                   >
-                    {totalCommissions}
-                    <span className="
-                      hidden
-                      sm:inline
-                    "
-                    >
-                      {' '}
-                      entries
-                    </span>
+                    {character.name}
                   </span>
-                </div>
-              )
-            : (
-                <>
-                  <button
-                    ref={buttonRefFor(character.id)}
-                    type="button"
-                    onClick={(event) => {
-                      event.preventDefault()
-                      onToggle()
-                    }}
-                    aria-expanded={isOpen}
-                    aria-controls={panelId}
-                    className="
-                      flex flex-1 items-center justify-between gap-3 rounded-lg
-                      text-left
-                      focus-visible:ring-2 focus-visible:ring-gray-400
-                      focus-visible:ring-offset-2
-                      focus-visible:ring-offset-white focus-visible:outline-none
-                      dark:focus-visible:ring-offset-gray-900
-                    "
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span
-                        aria-hidden="true"
-                        className={isActive
-                          ? 'size-2.5 shrink-0 rounded-full bg-blue-500/90'
-                          : 'size-2.5 shrink-0 rounded-full bg-gray-400/80'}
-                      />
-                      <span className="
-                        truncate text-base font-semibold text-gray-800
-                        dark:text-gray-100
-                      "
-                      >
-                        {character.name}
-                      </span>
-                    </div>
+                )}
+          </button>
 
-                    <span className="
-                      shrink-0 text-right font-mono text-xs font-normal
-                      text-gray-500
-                      dark:text-gray-300
-                    "
-                    >
-                      {totalCommissions}
-                      <span className="
-                        hidden
-                        sm:inline
-                      "
-                      >
-                        {' '}
-                        entries
-                      </span>
-                    </span>
-                  </button>
+          <span className="
+            shrink-0 text-right font-mono text-xs font-normal text-gray-500
+            dark:text-gray-300
+          "
+          >
+            {totalCommissions}
+            <span className="
+              hidden
+              sm:inline
+            "
+            >
+              {' '}
+              entries
+            </span>
+          </span>
 
-                  <div className="flex shrink-0 items-center gap-0.5">
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onStartEdit()
-                      }}
-                      disabled={isDeleting}
-                      aria-label={`Rename ${character.name}`}
-                      className="
-                        inline-flex size-7 shrink-0 items-center justify-center
-                        rounded-lg border border-transparent text-gray-400
-                        transition
-                        hover:text-gray-600
-                        focus-visible:ring-2 focus-visible:ring-gray-400
-                        focus-visible:ring-offset-2
-                        focus-visible:ring-offset-white
-                        focus-visible:outline-none
-                        disabled:cursor-not-allowed disabled:text-gray-300
-                        dark:hover:text-gray-200
-                        dark:focus-visible:ring-offset-gray-900
-                        dark:disabled:text-gray-600
-                      "
-                    >
-                      <IconPencil className="size-4" stroke={2} aria-hidden="true" />
-                    </button>
+          {/* 操作按钮 — 位置尺寸固定，编辑时只换图标和功能 */}
+          <div className="flex shrink-0 items-center gap-0.5">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                if (isEditing)
+                  onSubmitRename()
+                else
+                  onStartEdit()
+              }}
+              disabled={isDeleting}
+              aria-label={isEditing ? `Save name for ${character.name}` : `Rename ${character.name}`}
+              className="
+                inline-flex size-7 shrink-0 items-center justify-center
+                rounded-lg border border-transparent text-gray-400
+                transition
+                hover:text-gray-600
+                focus-visible:ring-2 focus-visible:ring-gray-400
+                focus-visible:ring-offset-2
+                focus-visible:ring-offset-white
+                focus-visible:outline-none
+                disabled:cursor-not-allowed disabled:text-gray-300
+                dark:hover:text-gray-200
+                dark:focus-visible:ring-offset-gray-900
+                dark:disabled:text-gray-600
+              "
+            >
+              {isEditing
+                ? <IconDeviceFloppy className="size-4" stroke={2} aria-hidden="true" />
+                : <IconPencil className="size-4" stroke={2} aria-hidden="true" />}
+            </button>
 
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onRequestDelete()
-                      }}
-                      disabled={isDeleting}
-                      aria-label={`Remove ${character.name}`}
-                      className="
-                        inline-flex size-8 shrink-0 items-center justify-center
-                        rounded-lg border border-transparent text-gray-400
-                        transition
-                        hover:text-red-500
-                        focus-visible:ring-2 focus-visible:ring-red-400
-                        focus-visible:ring-offset-2
-                        focus-visible:ring-offset-white
-                        focus-visible:outline-none
-                        disabled:cursor-not-allowed disabled:text-gray-300
-                        dark:hover:text-red-300
-                        dark:focus-visible:ring-offset-gray-900
-                        dark:disabled:text-gray-600
-                      "
-                    >
-                      <IconX className="size-4" stroke={2} aria-hidden="true" />
-                    </button>
-                  </div>
-                </>
-              )}
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                if (isEditing)
+                  onCancelEdit()
+                else
+                  onRequestDelete()
+              }}
+              disabled={isDeleting}
+              aria-label={isEditing ? `Cancel renaming ${character.name}` : `Remove ${character.name}`}
+              className={`
+                inline-flex size-8 shrink-0 items-center justify-center
+                rounded-lg border border-transparent text-gray-400
+                transition
+                focus-visible:ring-2 focus-visible:ring-offset-2
+                focus-visible:ring-offset-white focus-visible:outline-none
+                disabled:cursor-not-allowed disabled:text-gray-300
+                dark:focus-visible:ring-offset-gray-900
+                dark:disabled:text-gray-600
+                ${isEditing
+      ? `hover:text-gray-600 focus-visible:ring-gray-400
+         dark:hover:text-gray-200`
+      : `hover:text-red-500 focus-visible:ring-red-400
+         dark:hover:text-red-300`}
+              `}
+            >
+              {isEditing
+                ? <IconX className="size-4" stroke={2} aria-hidden="true" />
+                : <IconTrash className="size-4" stroke={2} aria-hidden="true" />}
+            </button>
+          </div>
         </div>
 
         <div
