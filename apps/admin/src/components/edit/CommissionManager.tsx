@@ -11,8 +11,6 @@ import {
   getMatchedEntryIds,
   hydrateSearchIndexFuse,
 } from '@commission-index/domain'
-import { closestCenter, DndContext } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { IconSearch, IconX } from '@tabler/icons-react'
 import {
   useCallback,
@@ -24,6 +22,7 @@ import {
 } from 'react'
 import { formControlStyles } from '../../app/ui'
 import { useCommissionManager } from '../../hooks/useCommissionManager'
+import { useNativeDragReorder } from '../../hooks/useNativeDragReorder'
 import { fetchCharacterCommissionsAction } from '../../lib/adminActions'
 import { notifyDataUpdate } from '../../lib/dataUpdateSignal'
 import { markPendingRebuild } from '../../lib/pendingRebuildSignal'
@@ -33,6 +32,7 @@ import {
   collectMatchedCharacterIds,
   normalizeAdminSearchQuery,
 } from '../../lib/search/adminCommissionSearch'
+import { DropIndicator } from '../DropIndicator'
 import { CharacterDeleteDialog } from './CharacterDeleteDialog'
 import { CommissionEditDrawer } from './CommissionEditDrawer'
 import { KeywordReplacePopover } from './KeywordReplacePopover'
@@ -74,17 +74,14 @@ export function CommissionManager({
     editing,
     feedback,
     handleDeleteCommission,
-    handleDragEnd,
-    handleDragOver,
     handleRenameChange,
+    handleReorder,
     handleRequestDelete,
     isDeletePending,
-    itemIds,
     list,
     openIds,
     orderedCharacters,
     performDeleteCharacter,
-    sensors,
     startEditingName,
     submitRename,
     toggleCharacterOpen,
@@ -182,6 +179,18 @@ export function CommissionManager({
     return next
   }, [effectiveMatchedCommissionIds, hasAppliedSearchQuery, sortedLoadedCommissionsByCharacter])
   const dividerIndex = list.findIndex(item => item.type === 'divider')
+
+  const {
+    containerProps: dragContainerProps,
+    dragHandleProps,
+    dragItemAttr,
+    draggingIndex,
+    dropIndicatorIndex,
+  } = useNativeDragReorder({
+    itemCount: list.length,
+    onReorder: handleReorder,
+    disabled: hasAppliedSearchQuery,
+  })
 
   const buttonRefFor = useCallback(
     (characterId: number) => (element: HTMLButtonElement | null) => {
@@ -441,35 +450,29 @@ export function CommissionManager({
       </div>
 
       <div className="animate-[tabFade_260ms_ease-out] space-y-4">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-            {list.map((item, index) => {
-              if (item.type === 'divider') {
-                return (
-                  <SortableDivider
-                    key="divider"
-                    activeCount={activeCount}
-                    dividerId="divider"
-                  />
-                )
-              }
-
-              const character = item.data
-              const visibleCharacterCommissions
-                = visibleCommissionsByCharacter.get(character.id) ?? []
-              const isActive = dividerIndex === -1 ? true : index < dividerIndex
-              const shouldAutoOpen
-                = hasAppliedSearchQuery && autoLoadSearchCharacterIds.has(character.id)
-
+        <div {...dragContainerProps}>
+          {list.map((item, index) => {
+            if (item.type === 'divider') {
               return (
+                <div key="divider" {...dragItemAttr(index)}>
+                  {dropIndicatorIndex === index && <DropIndicator />}
+                  <SortableDivider activeCount={activeCount} />
+                </div>
+              )
+            }
+
+            const character = item.data
+            const visibleCharacterCommissions
+              = visibleCommissionsByCharacter.get(character.id) ?? []
+            const isActive = dividerIndex === -1 ? true : index < dividerIndex
+            const shouldAutoOpen
+              = hasAppliedSearchQuery && autoLoadSearchCharacterIds.has(character.id)
+
+            return (
+              <div key={character.id} {...dragItemAttr(index)}>
+                {dropIndicatorIndex === index && <DropIndicator />}
                 <SortableCharacterCard
-                  key={character.id}
-                  item={item}
+                  character={character}
                   isActive={isActive}
                   totalCommissions={character.commissionCount}
                   commissionList={visibleCharacterCommissions}
@@ -488,13 +491,16 @@ export function CommissionManager({
                   onSubmitRename={submitRename}
                   onRequestDelete={() => handleRequestDelete(character)}
                   isDeleting={deletingId === character.id || isDeletePending}
+                  isDragging={draggingIndex === index}
+                  dragHandleProps={dragHandleProps(index)}
                   disableDrag={hasAppliedSearchQuery}
                   reduceMotion={hasAppliedSearchQuery}
                 />
-              )
-            })}
-          </SortableContext>
-        </DndContext>
+              </div>
+            )
+          })}
+          {dropIndicatorIndex === list.length && <DropIndicator />}
+        </div>
       </div>
 
       <CharacterDeleteDialog
