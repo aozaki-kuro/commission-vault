@@ -51,7 +51,7 @@ packages/domain     Shared types and pure domain helpers (no app imports)
 
 ### Tech Stack
 
-- **Runtime:** Node 24 (mise) + Bun (package manager + scripts)
+- **Runtime:** Node 24 (mise) + Bun (package manager + scripts; new scripts use `.ts` not `.mjs`)
 - **Build orchestration:** Turbo (cacheable tasks only; deploy stays outside Turbo)
 - **Public site:** Astro 6 + Tailwind CSS 4 + React 19 islands (selective hydration)
 - **Admin frontend:** React 19 + Vite 8 + Tailwind CSS + shadcn/ui
@@ -78,6 +78,10 @@ Key patterns:
 - **`data-stale-visibility`** = stale group expanded; **`data-stale-loaded`** = deferred stale sections mounted
 - Character/stale section templates must mount with full entry list intact (no per-section entry lazy mounts above anchor targets)
 - **Stale-HTML manifest fallback:** When hash navigation fails because the inline manifest (embedded in cached HTML) doesn't contain the target, the loaders fetch a standalone manifest endpoint (`/search/home-character-manifest.json` or `/search/home-timeline-manifest.json`) with cache-busting. The fresh manifest's `targetBatchById` and `batchVersions` are threaded through the batch fetch so that new entries added after the HTML was cached can still be navigated to. The standalone manifests use `Cache-Control: no-cache` and are only fetched on the fallback path — zero overhead for the happy case.
+- **Re-hydration on append:** Deferred batch DOM appended after initial mount must trigger re-hydration / re-binding of interactive controls — a single first-paint hydrate pass is not enough
+- **Hidden DOM + observers:** Sections rendered with `display: none` must not be marked "entered viewport" by reveal/lazy observers while hidden; toggling visibility must re-scan
+- **Scroll stability:** Never lazy-load content above an anchor target on the navigation path — browser scroll restoration and lazy injection fight each other. If above-anchor height cannot be fully fixed, keep the lazy load off the nav critical path
+- **Search index freshness:** Search rebuild after batch mount must include batch mount count (or structural change counter) in its snapshot key, not just a `visible/loaded` boolean — otherwise newly injected DOM briefly shows unfiltered
 
 **When to update this section:** Any change to the deferred loading system requires updating the bullet points above — specifically:
 
@@ -116,7 +120,11 @@ Two reference docs live in `docs/`:
 - Implicit behaviors change (normalization logic, R2 lifecycle, error codes)
 - New serialization quirks or footguns are discovered
 
-Update `CLAUDE.md` at the same time for any architecture-level change.
+Update `CLAUDE.md` at the same time for any architecture-level change. **This is your (Claude Code's) responsibility** — don't wait for the user to remind you. After any endpoint, schema, or behavior change, update the relevant docs in the same session.
+
+### Lessons Learned
+
+When you discover a non-obvious bug, footgun, or architecture-specific gotcha during development, add it to the relevant section of this file (not a separate lessons file). Only record insights that would prevent a future mistake — not one-time fixes or migration-era workarounds. If the lesson fits an existing guardrail section, merge it there; otherwise add it under the closest heading.
 
 ## Validation Gates
 
@@ -140,6 +148,11 @@ Update `CLAUDE.md` at the same time for any architecture-level change.
 3. `bun run build:web` — web build
 4. Deploy web + admin
 
+CI gotchas:
+
+- Multiple workflows sharing the same `actions/cache` key on the same push will race on save — deploy must wait for CI, and release workflows need a separate cache namespace + concurrency group
+- Tests that depend on `apps/web/generated/*` must guard imports behind existence checks (lazy import, not top-level) — CI may run before export
+
 ## Guardrails
 
 ### Astro 6
@@ -147,6 +160,7 @@ Update `CLAUDE.md` at the same time for any architecture-level change.
 - Keep `i18n.routing.redirectToDefaultLocale` explicit
 - Keep `apps/web/src/content.config.ts` present even when empty (suppresses dev warning)
 - Do not enable CSP (Shiki inline styles conflict; analytics needs `https://sight.crystallize.cc`)
+- Monorepo type quirk: when Astro (Vite 7) and standalone Vite 8 apps coexist, `@tailwindcss/vite` and similar plugins may resolve to the wrong Vite type defs — pin plugin results to Astro's own `vite.plugins` type surface and verify with `astro check` + real build
 
 ### Dependency Boundaries
 
@@ -160,6 +174,7 @@ Update `CLAUDE.md` at the same time for any architecture-level change.
 - Workers Builds connects same repo to two Workers with different root dirs (`apps/web` and `apps/admin-worker`)
 - Web Turbo cache must include `WEB_BUILD_CACHE_TOKEN` for remote-data invalidation
 - Deploy/rebuild workflows must not pre-run export/build before `wrangler deploy` (workspace-local custom build commands already handle it)
+- Turbo `envMode: "strict"`: credentials set in outer workflow don't auto-propagate into task subprocesses — add `CLOUDFLARE_API_TOKEN` etc. to `passThroughEnv` explicitly
 
 #### Production `/admin` verification
 
