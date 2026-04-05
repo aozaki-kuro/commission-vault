@@ -1,29 +1,12 @@
-import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-
 interface SortableDividerProps {
   activeCount: number
-  disabled?: boolean
-  dividerId: string
 }
 
 export function SortableDivider({
   activeCount,
-  disabled = true,
-  dividerId,
 }: SortableDividerProps) {
-  const { setNodeRef, transform, transition } = useSortable({
-    disabled,
-    id: dividerId,
-  })
-
   return (
     <div
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
       className="relative flex items-center gap-3 py-4"
       data-stale-divider="true"
     >
