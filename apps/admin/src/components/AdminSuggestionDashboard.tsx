@@ -1,6 +1,6 @@
 import type { DragHandleProps } from '../hooks/useNativeDragReorder'
 import { IconGripHorizontal, IconX } from '@tabler/icons-react'
-import { useActionState, useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useActionState, useCallback, useEffect, useMemo, useState } from 'react'
 import { adminSurfaceStyles, formControlStyles } from '../app/ui'
 import { arrayMove, useNativeDragReorder } from '../hooks/useNativeDragReorder'
 import { saveHomeFeaturedKeywordsAction } from '../lib/adminActions'
@@ -28,7 +28,6 @@ interface KeywordItemProps {
 function KeywordItem({ dragHandleProps, isDragging, keyword, onRemove }: KeywordItemProps) {
   return (
     <div
-      role="listitem"
       className={`
         flex items-center gap-2 rounded-lg border border-gray-200 bg-white/80
         px-3 py-2
@@ -217,15 +216,17 @@ export function AdminSuggestionDashboard({
           : (
               <div role="list" className="space-y-2" {...dragContainerProps}>
                 {selectedKeywords.map((keyword, index) => (
-                  <div key={keyword} {...dragItemAttr(index)}>
+                  <Fragment key={keyword}>
                     {dropIndicatorIndex === index && <DropIndicator />}
-                    <KeywordItem
-                      keyword={keyword}
-                      onRemove={removeKeyword}
-                      dragHandleProps={dragHandleProps(index)}
-                      isDragging={draggingIndex === index}
-                    />
-                  </div>
+                    <div role="listitem" {...dragItemAttr(index)}>
+                      <KeywordItem
+                        keyword={keyword}
+                        onRemove={removeKeyword}
+                        dragHandleProps={dragHandleProps(index)}
+                        isDragging={draggingIndex === index}
+                      />
+                    </div>
+                  </Fragment>
                 ))}
                 {dropIndicatorIndex === selectedKeywords.length && <DropIndicator />}
               </div>

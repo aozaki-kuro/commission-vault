@@ -13,6 +13,7 @@ import {
 } from '@commission-index/domain'
 import { IconSearch, IconX } from '@tabler/icons-react'
 import {
+  Fragment,
   useCallback,
   useDeferredValue,
   useEffect,
@@ -452,12 +453,18 @@ export function CommissionManager({
       <div className="animate-[tabFade_260ms_ease-out] space-y-4">
         <div className="space-y-4" {...dragContainerProps}>
           {list.map((item, index) => {
+            const indicator = dropIndicatorIndex === index
+              ? <DropIndicator />
+              : null
+
             if (item.type === 'divider') {
               return (
-                <div key="divider" {...dragItemAttr(index)}>
-                  {dropIndicatorIndex === index && <DropIndicator />}
-                  <SortableDivider activeCount={activeCount} />
-                </div>
+                <Fragment key="divider">
+                  {indicator}
+                  <div {...dragItemAttr(index)}>
+                    <SortableDivider activeCount={activeCount} />
+                  </div>
+                </Fragment>
               )
             }
 
@@ -469,34 +476,36 @@ export function CommissionManager({
               = hasAppliedSearchQuery && autoLoadSearchCharacterIds.has(character.id)
 
             return (
-              <div key={character.id} {...dragItemAttr(index)}>
-                {dropIndicatorIndex === index && <DropIndicator />}
-                <SortableCharacterCard
-                  character={character}
-                  isActive={isActive}
-                  totalCommissions={character.commissionCount}
-                  commissionList={visibleCharacterCommissions}
-                  isCommissionsLoaded={loadedCharacterIds.has(character.id)}
-                  isCommissionsLoading={loadingCharacterIds.has(character.id)}
-                  isOpen={shouldAutoOpen || openIds.has(character.id)}
-                  onToggle={() => handleToggle(character.id)}
-                  selectedCommissionId={selectedCommission?.id ?? null}
-                  onSelectCommission={handleSelectCommission}
-                  buttonRefFor={buttonRefFor}
-                  isEditing={editing?.id === character.id}
-                  editingValue={editing?.id === character.id ? editing.value : character.name}
-                  onStartEdit={() => startEditingName(character)}
-                  onRenameChange={handleRenameChange}
-                  onCancelEdit={cancelEditing}
-                  onSubmitRename={submitRename}
-                  onRequestDelete={() => handleRequestDelete(character)}
-                  isDeleting={deletingId === character.id || isDeletePending}
-                  isDragging={draggingIndex === index}
-                  dragHandleProps={dragHandleProps(index)}
-                  disableDrag={hasAppliedSearchQuery}
-                  reduceMotion={hasAppliedSearchQuery}
-                />
-              </div>
+              <Fragment key={character.id}>
+                {indicator}
+                <div {...dragItemAttr(index)}>
+                  <SortableCharacterCard
+                    character={character}
+                    isActive={isActive}
+                    totalCommissions={character.commissionCount}
+                    commissionList={visibleCharacterCommissions}
+                    isCommissionsLoaded={loadedCharacterIds.has(character.id)}
+                    isCommissionsLoading={loadingCharacterIds.has(character.id)}
+                    isOpen={shouldAutoOpen || openIds.has(character.id)}
+                    onToggle={() => handleToggle(character.id)}
+                    selectedCommissionId={selectedCommission?.id ?? null}
+                    onSelectCommission={handleSelectCommission}
+                    buttonRefFor={buttonRefFor}
+                    isEditing={editing?.id === character.id}
+                    editingValue={editing?.id === character.id ? editing.value : character.name}
+                    onStartEdit={() => startEditingName(character)}
+                    onRenameChange={handleRenameChange}
+                    onCancelEdit={cancelEditing}
+                    onSubmitRename={submitRename}
+                    onRequestDelete={() => handleRequestDelete(character)}
+                    isDeleting={deletingId === character.id || isDeletePending}
+                    isDragging={draggingIndex === index}
+                    dragHandleProps={dragHandleProps(index)}
+                    disableDrag={hasAppliedSearchQuery}
+                    reduceMotion={hasAppliedSearchQuery}
+                  />
+                </div>
+              </Fragment>
             )
           })}
           {dropIndicatorIndex === list.length && <DropIndicator />}
