@@ -217,7 +217,7 @@ export function AdminSuggestionDashboard({
               <div role="list" className="space-y-2" {...dragContainerProps}>
                 {selectedKeywords.map((keyword, index) => (
                   <div key={keyword} role="listitem" className="relative" {...dragItemAttr(index)}>
-                    {dropIndicatorIndex === index && <DropIndicator />}
+                    {dropIndicatorIndex === index && <DropIndicator offsetClass="-top-1.5" />}
                     <KeywordItem
                       keyword={keyword}
                       onRemove={removeKeyword}
@@ -226,7 +226,7 @@ export function AdminSuggestionDashboard({
                     />
                   </div>
                 ))}
-                {dropIndicatorIndex === selectedKeywords.length && <DropIndicator />}
+                {dropIndicatorIndex === selectedKeywords.length && <DropIndicator offsetClass="-top-1.5" />}
               </div>
             )}
 
