@@ -108,7 +108,7 @@ export function AdminSuggestionPage() {
   }
 
   return (
-    <section className={adminSurfaceStyles}>
+    <section className={`${adminSurfaceStyles} motion-safe:animate-[tabFade_240ms_cubic-bezier(0.25,1,0.5,1)_both]`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">
           <h2

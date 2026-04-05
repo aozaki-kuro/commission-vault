@@ -23,11 +23,18 @@ export function AdminCreateDashboard({
 }: AdminCreateDashboardProps) {
   return (
     <section className="space-y-8">
-      <AddCharacterForm />
-      <AddCommissionForm
-        characters={characters}
-        commissionSearchRows={commissionSearchRows}
-      />
+      <div className="motion-safe:animate-[tabFade_300ms_cubic-bezier(0.25,1,0.5,1)_both]">
+        <AddCharacterForm />
+      </div>
+      <div
+        className="motion-safe:animate-[tabFade_300ms_cubic-bezier(0.25,1,0.5,1)_both]"
+        style={{ animationDelay: '80ms' }}
+      >
+        <AddCommissionForm
+          characters={characters}
+          commissionSearchRows={commissionSearchRows}
+        />
+      </div>
     </section>
   )
 }

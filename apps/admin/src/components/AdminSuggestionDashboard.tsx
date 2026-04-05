@@ -166,7 +166,10 @@ export function AdminSuggestionDashboard({
   }
 
   return (
-    <form action={formAction} className={adminSurfaceStyles}>
+    <form
+      action={formAction}
+      className={`${adminSurfaceStyles} motion-safe:animate-[tabFade_300ms_cubic-bezier(0.25,1,0.5,1)_both]`}
+    >
       <input type="hidden" name="keywordsJson" value={keywordsJson} />
 
       {/* Header */}
