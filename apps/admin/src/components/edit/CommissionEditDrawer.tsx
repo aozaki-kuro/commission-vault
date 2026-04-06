@@ -6,6 +6,13 @@ import type {
 import { IconX } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import { Drawer } from 'vaul'
+import {
+  Dialog,
+  DialogCloseButton,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog'
 import { CommissionEditForm } from './CommissionEditForm'
 
 const SM_BREAKPOINT = '(min-width: 640px)'
@@ -35,6 +42,35 @@ interface CommissionEditDrawerProps {
   open: boolean
 }
 
+interface EditPanelBodyProps {
+  characters: CharacterRow[]
+  commission: CommissionRow | null
+  commissionSearchRows: AdminCommissionSearchRow[]
+  onDelete: () => void
+  onSaveSuccess: (updated: CommissionRow) => void
+}
+
+function EditPanelBody({
+  characters,
+  commission,
+  commissionSearchRows,
+  onDelete,
+  onSaveSuccess,
+}: EditPanelBodyProps) {
+  if (!commission)
+    return null
+  return (
+    <CommissionEditForm
+      key={commission.id}
+      characters={characters}
+      commission={commission}
+      commissionSearchRows={commissionSearchRows}
+      onDelete={onDelete}
+      onSaveSuccess={onSaveSuccess}
+    />
+  )
+}
+
 export function CommissionEditDrawer({
   characters,
   commission,
@@ -46,6 +82,49 @@ export function CommissionEditDrawer({
 }: CommissionEditDrawerProps) {
   const isDesktop = useIsDesktop()
 
+  if (isDesktop) {
+    return (
+      <Dialog
+        open={open}
+        onOpenChange={(isOpen) => {
+          if (!isOpen)
+            onClose()
+        }}
+      >
+        <DialogContent aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle>
+              <p className="
+                truncate text-base font-semibold text-gray-900
+                dark:text-gray-100
+              "
+              >
+                {commission?.fileName ?? ''}
+              </p>
+              <p className="
+                truncate text-sm text-gray-500
+                dark:text-gray-400
+              "
+              >
+                {commission?.characterName ?? ''}
+              </p>
+            </DialogTitle>
+            <DialogCloseButton />
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-5 py-5">
+            <EditPanelBody
+              characters={characters}
+              commission={commission}
+              commissionSearchRows={commissionSearchRows}
+              onDelete={onDelete}
+              onSaveSuccess={onSaveSuccess}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
   return (
     <Drawer.Root
       open={open}
@@ -53,7 +132,7 @@ export function CommissionEditDrawer({
         if (!isOpen)
           onClose()
       }}
-      direction={isDesktop ? 'right' : 'bottom'}
+      direction="bottom"
     >
       <Drawer.Portal>
         <Drawer.Overlay
@@ -63,19 +142,11 @@ export function CommissionEditDrawer({
         />
         <Drawer.Content
           aria-describedby={undefined}
-          className={
-            isDesktop
-              ? `
-                fixed top-0 right-0 bottom-0 z-70 flex w-full max-w-lg flex-col
-                rounded-l-2xl bg-white shadow-2xl outline-none
-                dark:bg-gray-950
-              `
-              : `
-                fixed right-0 bottom-0 left-0 z-70 flex max-h-[85dvh] flex-col
-                rounded-t-2xl bg-white shadow-2xl outline-none
-                dark:bg-gray-950
-              `
-          }
+          className="
+            fixed right-0 bottom-0 left-0 z-70 flex max-h-[85dvh] flex-col
+            rounded-t-2xl bg-white shadow-2xl outline-none
+            dark:bg-gray-950
+          "
         >
           <div className="
             flex shrink-0 items-center justify-between border-b
@@ -121,18 +192,13 @@ export function CommissionEditDrawer({
           </div>
 
           <div className="flex-1 overflow-y-auto px-5 py-5">
-            {commission
-              ? (
-                  <CommissionEditForm
-                    key={commission.id}
-                    characters={characters}
-                    commission={commission}
-                    commissionSearchRows={commissionSearchRows}
-                    onDelete={onDelete}
-                    onSaveSuccess={onSaveSuccess}
-                  />
-                )
-              : null}
+            <EditPanelBody
+              characters={characters}
+              commission={commission}
+              commissionSearchRows={commissionSearchRows}
+              onDelete={onDelete}
+              onSaveSuccess={onSaveSuccess}
+            />
           </div>
         </Drawer.Content>
       </Drawer.Portal>
