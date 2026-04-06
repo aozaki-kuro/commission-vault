@@ -12,6 +12,7 @@
   "dependencies": {
     "@commission-index/domain": "workspace:*",
     "@fontsource/ibm-plex-sans": "^5.2.8",
+    "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-popover": "^1.1.15",
     "@radix-ui/react-select": "^2.2.6",
     "@tabler/icons-react": "^3.41.0",
