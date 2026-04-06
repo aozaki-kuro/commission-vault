@@ -4,7 +4,7 @@ import type {
   CommissionRow,
 } from '@commission-index/domain'
 import { IconX } from '@tabler/icons-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Drawer } from 'vaul'
 import {
   Dialog,
@@ -82,6 +82,13 @@ export function CommissionEditDrawer({
 }: CommissionEditDrawerProps) {
   const isDesktop = useIsDesktop()
 
+  // 关闭动画期间保留上一次的 commission 数据，防止内容塌缩
+  const lastCommissionRef = useRef<CommissionRow | null>(null)
+  if (commission) {
+    lastCommissionRef.current = commission
+  }
+  const displayCommission = commission ?? lastCommissionRef.current
+
   if (isDesktop) {
     return (
       <Dialog
@@ -99,14 +106,14 @@ export function CommissionEditDrawer({
                 dark:text-gray-100
               "
               >
-                {commission?.fileName ?? ''}
+                {displayCommission?.fileName ?? ''}
               </p>
               <p className="
                 truncate text-sm text-gray-500
                 dark:text-gray-400
               "
               >
-                {commission?.characterName ?? ''}
+                {displayCommission?.characterName ?? ''}
               </p>
             </DialogTitle>
             <DialogCloseButton />
@@ -114,7 +121,7 @@ export function CommissionEditDrawer({
           <div className="flex-1 overflow-y-auto px-5 py-5">
             <EditPanelBody
               characters={characters}
-              commission={commission}
+              commission={displayCommission}
               commissionSearchRows={commissionSearchRows}
               onDelete={onDelete}
               onSaveSuccess={onSaveSuccess}
@@ -160,14 +167,14 @@ export function CommissionEditDrawer({
                 dark:text-gray-100
               "
               >
-                {commission?.fileName ?? ''}
+                {displayCommission?.fileName ?? ''}
               </p>
               <p className="
                 truncate text-sm text-gray-500
                 dark:text-gray-400
               "
               >
-                {commission?.characterName ?? ''}
+                {displayCommission?.characterName ?? ''}
               </p>
             </Drawer.Title>
             <button
@@ -194,7 +201,7 @@ export function CommissionEditDrawer({
           <div className="flex-1 overflow-y-auto px-5 py-5">
             <EditPanelBody
               characters={characters}
-              commission={commission}
+              commission={displayCommission}
               commissionSearchRows={commissionSearchRows}
               onDelete={onDelete}
               onSaveSuccess={onSaveSuccess}
