@@ -103,7 +103,7 @@ export function SortableCharacterCard({
               ? `Drag disabled while search is applied for ${character.name}`
               : `Drag ${character.name}`}
             className={`
-              inline-flex size-8 shrink-0 items-center justify-center rounded-lg
+              hidden sm:inline-flex size-8 shrink-0 items-center justify-center rounded-lg
               border border-transparent text-gray-400 transition
               focus-visible:ring-2 focus-visible:ring-gray-400
               focus-visible:ring-offset-2 focus-visible:ring-offset-white
