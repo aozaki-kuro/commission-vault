@@ -100,58 +100,6 @@ export function SortableCharacterCard({
             ${isEditing ? '' : 'cursor-pointer'}
           `}
         >
-          {/* 移动端排序箭头 — 仅在 reorder 模式下显示 */}
-          {isReorderMode && (
-            <div className="flex shrink-0 flex-col gap-0.5 sm:hidden">
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onMoveUp?.()
-                }}
-                disabled={!onMoveUp}
-                aria-label={`Move ${character.name} up`}
-                className={`
-                  inline-flex size-6 items-center justify-center rounded-md
-                  border border-transparent text-gray-400 transition
-                  focus-visible:ring-2 focus-visible:ring-gray-400
-                  focus-visible:outline-none
-                  ${onMoveUp
-              ? `
-                      hover:text-gray-600 active:bg-gray-100
-                      dark:hover:text-gray-200 dark:active:bg-gray-800
-                    `
-              : 'cursor-not-allowed opacity-30'}
-                `}
-              >
-                <IconArrowUp className="size-3.5" stroke={2.5} aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onMoveDown?.()
-                }}
-                disabled={!onMoveDown}
-                aria-label={`Move ${character.name} down`}
-                className={`
-                  inline-flex size-6 items-center justify-center rounded-md
-                  border border-transparent text-gray-400 transition
-                  focus-visible:ring-2 focus-visible:ring-gray-400
-                  focus-visible:outline-none
-                  ${onMoveDown
-              ? `
-                      hover:text-gray-600 active:bg-gray-100
-                      dark:hover:text-gray-200 dark:active:bg-gray-800
-                    `
-              : 'cursor-not-allowed opacity-30'}
-                `}
-              >
-                <IconArrowDown className="size-3.5" stroke={2.5} aria-hidden="true" />
-              </button>
-            </div>
-          )}
-
           {/* 桌面端拖拽手柄 — 移动端始终隐藏 */}
           <button
             type="button"
@@ -252,20 +200,27 @@ export function SortableCharacterCard({
             </span>
           </span>
 
-          {/* 操作按钮 — 位置尺寸固定，编辑时只换图标和功能 */}
+          {/* 操作按钮 — 位置尺寸固定，编辑/reorder 模式时原地替换图标和功能 */}
           <div className="flex shrink-0 items-center gap-0.5">
             <button
               type="button"
               onClick={(event) => {
                 event.stopPropagation()
-                if (isEditing)
+                if (isReorderMode) {
+                  onMoveUp?.()
+                }
+                else if (isEditing) {
                   onSubmitRename()
-                else
+                }
+                else {
                   onStartEdit()
+                }
               }}
-              disabled={isDeleting}
-              aria-label={isEditing ? `Save name for ${character.name}` : `Rename ${character.name}`}
-              className="
+              disabled={isReorderMode ? !onMoveUp : isDeleting}
+              aria-label={isReorderMode
+                ? `Move ${character.name} up`
+                : isEditing ? `Save name for ${character.name}` : `Rename ${character.name}`}
+              className={`
                 inline-flex size-7 shrink-0 items-center justify-center
                 rounded-lg border border-transparent text-gray-400
                 transition
@@ -278,24 +233,33 @@ export function SortableCharacterCard({
                 dark:hover:text-gray-200
                 dark:focus-visible:ring-offset-gray-900
                 dark:disabled:text-gray-600
-              "
+              `}
             >
-              {isEditing
-                ? <IconDeviceFloppy className="size-4" stroke={2} aria-hidden="true" />
-                : <IconPencil className="size-4" stroke={2} aria-hidden="true" />}
+              {isReorderMode
+                ? <IconArrowUp className="size-4" stroke={2} aria-hidden="true" />
+                : isEditing
+                  ? <IconDeviceFloppy className="size-4" stroke={2} aria-hidden="true" />
+                  : <IconPencil className="size-4" stroke={2} aria-hidden="true" />}
             </button>
 
             <button
               type="button"
               onClick={(event) => {
                 event.stopPropagation()
-                if (isEditing)
+                if (isReorderMode) {
+                  onMoveDown?.()
+                }
+                else if (isEditing) {
                   onCancelEdit()
-                else
+                }
+                else {
                   onRequestDelete()
+                }
               }}
-              disabled={isDeleting}
-              aria-label={isEditing ? `Cancel renaming ${character.name}` : `Remove ${character.name}`}
+              disabled={isReorderMode ? !onMoveDown : isDeleting}
+              aria-label={isReorderMode
+                ? `Move ${character.name} down`
+                : isEditing ? `Cancel renaming ${character.name}` : `Remove ${character.name}`}
               className={`
                 inline-flex size-8 shrink-0 items-center justify-center
                 rounded-lg border border-transparent text-gray-400
@@ -305,16 +269,21 @@ export function SortableCharacterCard({
                 disabled:cursor-not-allowed disabled:text-gray-300
                 dark:focus-visible:ring-offset-gray-900
                 dark:disabled:text-gray-600
-                ${isEditing
+                ${isReorderMode
       ? `hover:text-gray-600 focus-visible:ring-gray-400
          dark:hover:text-gray-200`
-      : `hover:text-red-500 focus-visible:ring-red-400
-         dark:hover:text-red-300`}
+      : isEditing
+        ? `hover:text-gray-600 focus-visible:ring-gray-400
+           dark:hover:text-gray-200`
+        : `hover:text-red-500 focus-visible:ring-red-400
+           dark:hover:text-red-300`}
               `}
             >
-              {isEditing
-                ? <IconX className="size-4" stroke={2} aria-hidden="true" />
-                : <IconTrash className="size-4" stroke={2} aria-hidden="true" />}
+              {isReorderMode
+                ? <IconArrowDown className="size-4" stroke={2} aria-hidden="true" />
+                : isEditing
+                  ? <IconX className="size-4" stroke={2} aria-hidden="true" />
+                  : <IconTrash className="size-4" stroke={2} aria-hidden="true" />}
             </button>
           </div>
         </div>

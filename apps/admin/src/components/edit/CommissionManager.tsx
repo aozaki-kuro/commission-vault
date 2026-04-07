@@ -437,6 +437,7 @@ export function CommissionManager({
           <button
             type="button"
             onClick={() => setIsReorderMode(prev => !prev)}
+            disabled={hasAppliedSearchQuery}
             aria-pressed={isReorderMode}
             aria-label={isReorderMode ? 'Exit reorder mode' : 'Enter reorder mode'}
             className={`
@@ -446,6 +447,7 @@ export function CommissionManager({
               focus-visible:ring-offset-2 focus-visible:ring-offset-white
               focus-visible:outline-none
               dark:focus-visible:ring-offset-gray-900
+              disabled:pointer-events-none disabled:opacity-50
               ${isReorderMode
       ? `
                   border-blue-200 bg-blue-50 text-blue-600
@@ -457,7 +459,6 @@ export function CommissionManager({
                   dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400
                   dark:hover:bg-gray-800 dark:hover:text-gray-200
                 `}
-              ${hasAppliedSearchQuery ? 'pointer-events-none opacity-50' : ''}
             `}
           >
             <IconArrowsSort className="size-4.5" stroke={2} aria-hidden="true" />
