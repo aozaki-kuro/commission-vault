@@ -229,6 +229,8 @@ export function initSearchController(root: HTMLElement) {
     if (options?.focusInput !== false) {
       suggestionCtrl.focusInputAfterSelection(nextQuery, options)
     }
+
+    scheduleRecompute()
   }
 
   function setInputQuery(value: string) {
@@ -293,7 +295,10 @@ export function initSearchController(root: HTMLElement) {
       if (value)
         applySuggestion(value)
     },
-    onDismiss: dismissSuggestionPanel,
+    onDismiss: () => {
+      dismissSuggestionPanel()
+      scheduleRecompute()
+    },
   })
 
   // ==================== Core recompute ====================
