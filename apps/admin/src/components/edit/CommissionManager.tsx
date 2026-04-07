@@ -11,7 +11,7 @@ import {
   getMatchedEntryIds,
   hydrateSearchIndexFuse,
 } from '@commission-index/domain'
-import { IconSearch, IconX } from '@tabler/icons-react'
+import { IconArrowsSort, IconSearch, IconX } from '@tabler/icons-react'
 import {
   useCallback,
   useDeferredValue,
@@ -58,6 +58,7 @@ export function CommissionManager({
   const [loadError, setLoadError] = useState<string | null>(null)
   const [selectedCommission, setSelectedCommission] = useState<CommissionRow | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isReorderMode, setIsReorderMode] = useState(false)
   const deferredSearchQuery = useDeferredValue(searchQuery)
   const loadedCharacterIdsRef = useRef<Set<number>>(new Set())
   const inFlightLoadPromisesRef = useRef<Map<number, Promise<void>>>(new Map())
@@ -259,6 +260,9 @@ export function CommissionManager({
     if (!normalizeAdminSearchQuery(value)) {
       closeAllCharacterOpen()
     }
+    if (normalizeAdminSearchQuery(value)) {
+      setIsReorderMode(false)
+    }
   }
 
   useEffect(() => {
@@ -348,7 +352,9 @@ export function CommissionManager({
           dark:text-gray-300
         "
         >
-          Drag to reprioritize characters and edit their commissions in place. Click to expand.
+          <span className="hidden sm:inline">Drag to reprioritize characters and edit their commissions in place. </span>
+          <span className="sm:hidden">Tap the sort button to reorder characters. </span>
+          Click to expand.
         </p>
       </header>
 
@@ -428,6 +434,34 @@ export function CommissionManager({
                 )
               : null}
           </div>
+          <button
+            type="button"
+            onClick={() => setIsReorderMode(prev => !prev)}
+            aria-pressed={isReorderMode}
+            aria-label={isReorderMode ? 'Exit reorder mode' : 'Enter reorder mode'}
+            className={`
+              inline-flex sm:hidden size-10 shrink-0 items-center justify-center
+              rounded-xl border text-sm font-medium transition
+              focus-visible:ring-2 focus-visible:ring-gray-400
+              focus-visible:ring-offset-2 focus-visible:ring-offset-white
+              focus-visible:outline-none
+              dark:focus-visible:ring-offset-gray-900
+              ${isReorderMode
+      ? `
+                  border-blue-200 bg-blue-50 text-blue-600
+                  dark:border-blue-800 dark:bg-blue-950 dark:text-blue-400
+                `
+      : `
+                  border-gray-200 bg-white text-gray-500
+                  hover:bg-gray-50 hover:text-gray-700
+                  dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400
+                  dark:hover:bg-gray-800 dark:hover:text-gray-200
+                `}
+              ${hasAppliedSearchQuery ? 'pointer-events-none opacity-50' : ''}
+            `}
+          >
+            <IconArrowsSort className="size-4.5" stroke={2} aria-hidden="true" />
+          </button>
           <KeywordReplacePopover
             commissionSearchRows={commissionSearchRows}
             onComplete={handleKeywordReplaceComplete}
@@ -495,6 +529,25 @@ export function CommissionManager({
                   dragHandleProps={dragHandleProps(index)}
                   disableDrag={hasAppliedSearchQuery}
                   reduceMotion={hasAppliedSearchQuery}
+                  isReorderMode={isReorderMode}
+                  onMoveUp={index === 0
+                    ? undefined
+                    : () => {
+                        const targetIndex = dividerIndex !== -1 && index - 1 === dividerIndex
+                          ? index - 2
+                          : index - 1
+                        if (targetIndex >= 0)
+                          handleReorder(index, targetIndex)
+                      }}
+                  onMoveDown={index === list.length - 1
+                    ? undefined
+                    : () => {
+                        const targetIndex = dividerIndex !== -1 && index + 1 === dividerIndex
+                          ? index + 2
+                          : index + 1
+                        if (targetIndex < list.length)
+                          handleReorder(index, targetIndex)
+                      }}
                 />
               </div>
             )

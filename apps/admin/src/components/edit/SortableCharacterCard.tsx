@@ -4,7 +4,7 @@ import type {
 } from '@commission-index/domain'
 import type { KeyboardEvent } from 'react'
 import type { DragHandleProps } from '../../hooks/useNativeDragReorder'
-import { IconDeviceFloppy, IconGripHorizontal, IconPencil, IconTrash, IconX } from '@tabler/icons-react'
+import { IconArrowDown, IconArrowUp, IconDeviceFloppy, IconGripHorizontal, IconPencil, IconTrash, IconX } from '@tabler/icons-react'
 import { CommissionThumbnailGrid, CommissionThumbnailGridSkeleton } from './CommissionThumbnailGrid'
 
 const inlineEditStyles
@@ -23,8 +23,11 @@ interface SortableCharacterCardProps {
   isDeleting: boolean
   isDragging: boolean
   isEditing: boolean
+  isReorderMode?: boolean
   isOpen: boolean
   onCancelEdit: () => void
+  onMoveDown?: () => void
+  onMoveUp?: () => void
   onRenameChange: (value: string) => void
   onRequestDelete: () => void
   onSelectCommission: (commission: CommissionRow) => void
@@ -50,7 +53,10 @@ export function SortableCharacterCard({
   isDragging,
   isEditing,
   isOpen,
+  isReorderMode = false,
   onCancelEdit,
+  onMoveDown,
+  onMoveUp,
   onRenameChange,
   onRequestDelete,
   onSelectCommission,
@@ -94,6 +100,59 @@ export function SortableCharacterCard({
             ${isEditing ? '' : 'cursor-pointer'}
           `}
         >
+          {/* 移动端排序箭头 — 仅在 reorder 模式下显示 */}
+          {isReorderMode && (
+            <div className="flex shrink-0 flex-col gap-0.5 sm:hidden">
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onMoveUp?.()
+                }}
+                disabled={!onMoveUp}
+                aria-label={`Move ${character.name} up`}
+                className={`
+                  inline-flex size-6 items-center justify-center rounded-md
+                  border border-transparent text-gray-400 transition
+                  focus-visible:ring-2 focus-visible:ring-gray-400
+                  focus-visible:outline-none
+                  ${onMoveUp
+              ? `
+                      hover:text-gray-600 active:bg-gray-100
+                      dark:hover:text-gray-200 dark:active:bg-gray-800
+                    `
+              : 'cursor-not-allowed opacity-30'}
+                `}
+              >
+                <IconArrowUp className="size-3.5" stroke={2.5} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onMoveDown?.()
+                }}
+                disabled={!onMoveDown}
+                aria-label={`Move ${character.name} down`}
+                className={`
+                  inline-flex size-6 items-center justify-center rounded-md
+                  border border-transparent text-gray-400 transition
+                  focus-visible:ring-2 focus-visible:ring-gray-400
+                  focus-visible:outline-none
+                  ${onMoveDown
+              ? `
+                      hover:text-gray-600 active:bg-gray-100
+                      dark:hover:text-gray-200 dark:active:bg-gray-800
+                    `
+              : 'cursor-not-allowed opacity-30'}
+                `}
+              >
+                <IconArrowDown className="size-3.5" stroke={2.5} aria-hidden="true" />
+              </button>
+            </div>
+          )}
+
+          {/* 桌面端拖拽手柄 — 移动端始终隐藏 */}
           <button
             type="button"
             {...dragHandleProps}
