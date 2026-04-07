@@ -299,6 +299,7 @@ export function initSearchController(root: HTMLElement) {
   // ==================== Core recompute ====================
 
   let recomputeRafId = 0
+  let prevSuggestionKey = ''
 
   function recompute() {
     // Read URL query snapshot for effective query
@@ -370,29 +371,35 @@ export function initSearchController(root: HTMLElement) {
       )
     }
 
-    // Render/hide suggestion dropdown
-    if (model.shouldShowSuggestionPanel) {
-      renderDropdown({
-        container: suggestionList,
-        suggestionViewModels: model.suggestionViewModels,
-        suggestionIsExclusion: model.suggestionIsExclusion,
-        suggestionOperator: model.suggestionOperator,
-        sourcePrefix: controls.sourcePrefix,
-        shouldShowHiddenArchivedNotice: model.shouldShowHiddenArchivedNotice,
-        hiddenArchivedNoticeMessage: model.hiddenArchivedNoticeMessage,
-        visibleStatusMessage: model.visibleStatusMessage,
-        loadArchivedCharactersLabel: controls.loadArchivedCharacters,
-        onSelectSuggestion: applySuggestion,
-        onLoadArchivedCharacters: () => {
-          requestArchivedCharactersLoad(window, { strategy: 'all', preserveScroll: true })
-        },
-      })
-      suggestionList.classList.remove('hidden')
-      listboxCtrl.reset()
-    }
-    else {
-      suggestionList.textContent = ''
-      suggestionList.classList.add('hidden')
+    // Render/hide suggestion dropdown (skip DOM rebuild if suggestions unchanged)
+    const suggestionKey = model.shouldShowSuggestionPanel
+      ? `${model.suggestionViewModels.map(s => s.term).join('\0')}:${model.shouldShowHiddenArchivedNotice}:${model.suggestionIsExclusion}:${model.suggestionOperator}`
+      : ''
+    if (suggestionKey !== prevSuggestionKey) {
+      prevSuggestionKey = suggestionKey
+      if (model.shouldShowSuggestionPanel) {
+        renderDropdown({
+          container: suggestionList,
+          suggestionViewModels: model.suggestionViewModels,
+          suggestionIsExclusion: model.suggestionIsExclusion,
+          suggestionOperator: model.suggestionOperator,
+          sourcePrefix: controls.sourcePrefix,
+          shouldShowHiddenArchivedNotice: model.shouldShowHiddenArchivedNotice,
+          hiddenArchivedNoticeMessage: model.hiddenArchivedNoticeMessage,
+          visibleStatusMessage: model.visibleStatusMessage,
+          loadArchivedCharactersLabel: controls.loadArchivedCharacters,
+          onSelectSuggestion: applySuggestion,
+          onLoadArchivedCharacters: () => {
+            requestArchivedCharactersLoad(window, { strategy: 'all', preserveScroll: true })
+          },
+        })
+        suggestionList.classList.remove('hidden')
+        listboxCtrl.reset()
+      }
+      else {
+        suggestionList.textContent = ''
+        suggestionList.classList.add('hidden')
+      }
     }
 
     // Prefetch archived batches when notice shows

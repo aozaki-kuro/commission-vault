@@ -1,6 +1,6 @@
+import type { SuggestionViewModel } from '@features/home/search/commissionSearchDropdownRenderer'
 import type { CommissionSearchEntrySource, SearchIndex, SearchSuggestionAliasGroup } from '@features/home/search/commissionSearchIndex'
 import type { PanelLoadedState } from '@features/home/search/commissionSearchPanelState'
-import type { SuggestionViewModel } from '@features/home/search/CommissionSearchSuggestionDropdown'
 import type { CommissionViewMode } from '@features/home/search/commissionViewMode'
 import type { SuggestionTokenOperator } from '@lib/search/index'
 import { requestActiveCharactersLoad } from '@features/home/commission/loader/activeCharactersEvent'
@@ -124,6 +124,10 @@ let didRequestTimelineAll = false
 let didAutoShowArchived = false
 let hasTrackedSearchUsage = false
 
+// Output memoization — skip full pipeline when inputs are unchanged
+let cachedOutputKey = ''
+let cachedOutput: SearchModelOutput | null = null
+
 /** Reset all module-level mutable state. Call in tests or on re-init. */
 export function resetModelState() {
   cachedIndexKey = ''
@@ -135,6 +139,8 @@ export function resetModelState() {
   didRequestTimelineAll = false
   didAutoShowArchived = false
   hasTrackedSearchUsage = false
+  cachedOutputKey = ''
+  cachedOutput = null
 }
 
 // ==================== Input / Output types ====================
@@ -217,6 +223,14 @@ export function computeSearchModel(input: SearchModelInput): SearchModelOutput {
     archivedBatchCount,
     timelineLoaded,
   } = panelState
+
+  // Fast-path: if all inputs that affect output are unchanged, return cached result.
+  // This avoids re-running index build, Fuse matching, suggestion filtering, and view model
+  // construction on every rAF when only the panel state listener or external subscription fired.
+  const outputKey = `${query}\0${mode}\0${isIndexReady}\0${shouldWarmFuse}\0${isSuggestionPanelDismissed}\0${activeCommandValue}\0${activeLoaded}\0${activeBatchCount}\0${archivedLoaded}\0${archivedVisible}\0${archivedBatchCount}\0${timelineLoaded}\0${externalEntries?.length ?? -1}\0${disableDomFiltering}`
+  if (cachedOutput && cachedOutputKey === outputKey) {
+    return cachedOutput
+  }
 
   const suggestionSourceLabels = {
     Character: controls.sourceCharacter,
@@ -427,7 +441,7 @@ export function computeSearchModel(input: SearchModelInput): SearchModelOutput {
     })
   }
 
-  return {
+  const output: SearchModelOutput = {
     resolvedIndex,
     matchedIds,
     hasDeferredQuery,
@@ -445,4 +459,7 @@ export function computeSearchModel(input: SearchModelInput): SearchModelOutput {
     hiddenArchivedMatchedCount,
     resolvedActiveCommandValue,
   }
+  cachedOutputKey = outputKey
+  cachedOutput = output
+  return output
 }
