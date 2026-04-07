@@ -1,6 +1,4 @@
 import type { AstroUserConfig } from 'astro'
-import { fileURLToPath } from 'node:url'
-import react from '@astrojs/react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, fontProviders } from 'astro/config'
 import { assetsPipelineIntegration } from './server/assetsPipelineAstro'
@@ -52,15 +50,12 @@ export default defineConfig({
     },
   ],
 
-  integrations: [react(), assetsPipelineIntegration()],
+  integrations: [assetsPipelineIntegration()],
   vite: {
     plugins: vitePlugins,
     resolve: {
       // @ts-expect-error Vite 6+ native option; Astro's bundled Vite types lag behind
       tsconfigPaths: true,
-      alias: {
-        '@astrojs/react/server.js': fileURLToPath(new URL('./src/config/astroReactServerShim.ts', import.meta.url)),
-      },
     },
     build: {
       rollupOptions: {
@@ -70,8 +65,6 @@ export default defineConfig({
               return
             if (id.includes('fuse.js'))
               return 'vendor-search'
-            if (id.includes('@radix-ui') || id.includes('cmdk'))
-              return 'vendor-ui'
             return 'vendor'
           },
         },
