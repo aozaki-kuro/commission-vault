@@ -81,8 +81,15 @@ const controls = resolveHomeSearchControls(locale)
           <ul
             id="search-suggestion-list"
             role="listbox"
-            class="hidden"
-          />
+            class="
+              absolute inset-x-0 top-[calc(100%+0.5rem)] z-20 hidden max-h-[min(70vh,28rem)]
+              overflow-y-auto overscroll-contain rounded-xl border border-white/20
+              bg-white/80 py-1 text-sm shadow-[0_8px_30px_rgb(0,0,0,0.12)]
+              backdrop-blur-md
+              motion-reduce:animate-none
+              dark:border-gray-700 dark:bg-black/80
+            "
+          ></ul>
         </div>
 
         {/* Help trigger button */}
