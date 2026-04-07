@@ -1,6 +1,7 @@
 ---
 import type { SearchSuggestionAliasGroup } from '@features/home/search/commissionSearchIndex'
 import { resolveHomeSearchControls } from '@features/home/i18n/homeSearchControls'
+import { Icon } from 'astro-icon/components'
 
 interface Props {
   locale?: string
@@ -27,7 +28,6 @@ const controls = resolveHomeSearchControls(locale)
   data-locale={locale}
   data-featured-keywords={JSON.stringify(featuredKeywords)}
   data-suggestion-alias-groups={JSON.stringify(suggestionAliasGroups)}
-  data-controls={JSON.stringify(controls)}
 >
   <div class="flex h-12 items-center justify-end">
     <div class="
@@ -37,25 +37,14 @@ const controls = resolveHomeSearchControls(locale)
     "
     >
       {/* Search icon */}
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+      <Icon
+        name="tabler:search"
         aria-hidden="true"
         class="
           absolute top-1/2 left-2.5 size-3.5 shrink-0 -translate-y-1/2
           opacity-70
         "
-      >
-        <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
-        <path d="M21 21l-6 -6" />
-      </svg>
+      />
 
       <div class="
         absolute inset-y-0 right-2 left-8 flex items-center gap-2
@@ -114,23 +103,7 @@ const controls = resolveHomeSearchControls(locale)
           aria-label={controls.searchHelp}
           popovertarget="search-help-popover"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-            class="size-5"
-          >
-            <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
-            <path d="M12 16v.01" />
-            <path d="M12 13a2 2 0 0 0 .914 -3.782a1.98 1.98 0 0 0 -2.414 .483" />
-          </svg>
+          <Icon name="tabler:help-circle" class="size-5" aria-hidden="true" />
         </button>
 
         {/* Help popover */}
@@ -301,39 +274,9 @@ const controls = resolveHomeSearchControls(locale)
           aria-label={controls.copySearchUrl}
         >
           {/* Share icon (visible by default) */}
-          <svg
-            data-icon="share"
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-            class="size-4.5"
-          >
-            <path d="M13 4v4c-6.575 1.028 -9.02 6.788 -10 12c-.037 .206 5.384 -5.962 10 -6v4l8 -7l-8 -7z" />
-          </svg>
+          <Icon name="tabler:share-3" data-icon="share" class="size-4.5" aria-hidden="true" />
           {/* Check icon (hidden, shown on copy success) */}
-          <svg
-            data-icon="check"
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-            class="size-4.5 hidden"
-          >
-            <path d="M5 12l5 5l10 -10" />
-          </svg>
+          <Icon name="tabler:check" data-icon="check" class="size-4.5 hidden" aria-hidden="true" />
         </button>
 
         {/* Clear button (hidden until query exists) */}
@@ -353,22 +296,7 @@ const controls = resolveHomeSearchControls(locale)
           "
           aria-label={controls.clearSearch}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-            class="size-5"
-          >
-            <path d="M18 6l-12 12" />
-            <path d="M6 6l12 12" />
-          </svg>
+          <Icon name="tabler:x" class="size-5" aria-hidden="true" />
         </button>
       </div>
     </div>
@@ -408,24 +336,7 @@ const controls = resolveHomeSearchControls(locale)
         "
         aria-label={controls.shuffleRandomEntryLabel}
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.85"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-          class="size-4"
-        >
-          <path d="M18 4l3 3l-3 3" />
-          <path d="M18 20l3 -3l-3 -3" />
-          <path d="M3 7h3a5 5 0 0 1 5 5a5 5 0 0 0 5 5h5" />
-          <path d="M21 7h-5a4.978 4.978 0 0 0 -3 1m-4 8a4.984 4.984 0 0 1 -3 1h-3" />
-        </svg>
+        <Icon name="tabler:arrows-shuffle" class="size-4" aria-hidden="true" />
       </button>
 
       {/* Rotate / refresh keywords button */}
@@ -454,22 +365,7 @@ const controls = resolveHomeSearchControls(locale)
             motion-reduce:transform-none
           "
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.85"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-            class="size-4"
-          >
-            <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
-            <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
-          </svg>
+          <Icon name="tabler:refresh" class="size-4" aria-hidden="true" />
         </span>
       </button>
     </div>

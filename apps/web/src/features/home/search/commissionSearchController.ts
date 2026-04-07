@@ -1,4 +1,3 @@
-import type { HomeSearchControls } from '@features/home/i18n/homeSearchControls'
 import type { SearchSuggestionAliasGroup } from '@features/home/search/commissionSearchIndex'
 import type { PanelLoadedState } from '@features/home/search/commissionSearchPanelState'
 import type { CommissionViewMode } from '@features/home/search/commissionViewMode'
@@ -11,6 +10,7 @@ import {
   readArchivedCharactersLoadedBatchCount,
   requestArchivedCharactersLoad,
 } from '@features/home/commission/loader/archivedCharactersEvent'
+import { resolveHomeSearchControls } from '@features/home/i18n/homeSearchControls'
 import {
   buildPopularKeywordPoolFromEntries,
   buildSearchEntriesFromDom,
@@ -117,10 +117,10 @@ function renderPopularKeywords(
 
 export function initSearchController(root: HTMLElement) {
   // 1. Parse props from data attributes
-  const _locale = root.dataset.locale ?? undefined
+  const locale = root.dataset.locale ?? undefined
   const featuredKeywords: string[] = JSON.parse(root.dataset.featuredKeywords ?? '[]')
   const suggestionAliasGroups: SearchSuggestionAliasGroup[] = JSON.parse(root.dataset.suggestionAliasGroups ?? '[]')
-  const controls: HomeSearchControls = JSON.parse(root.dataset.controls ?? '{}')
+  const controls = resolveHomeSearchControls(locale)
 
   // 2. Get DOM references
   const inputEl = root.querySelector<HTMLInputElement>('#commission-search-input')
