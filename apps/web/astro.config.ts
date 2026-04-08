@@ -1,5 +1,6 @@
 import type { AstroUserConfig } from 'astro'
 import tailwindcss from '@tailwindcss/vite'
+import icon from 'astro-icon'
 import { defineConfig, fontProviders } from 'astro/config'
 import { assetsPipelineIntegration } from './server/assetsPipelineAstro'
 
@@ -50,12 +51,15 @@ export default defineConfig({
     },
   ],
 
-  integrations: [assetsPipelineIntegration()],
+  integrations: [icon(), assetsPipelineIntegration()],
   vite: {
     plugins: vitePlugins,
     resolve: {
       // @ts-expect-error Vite 6+ native option; Astro's bundled Vite types lag behind
       tsconfigPaths: true,
+    },
+    optimizeDeps: {
+      include: ['fuse.js'],
     },
     build: {
       rollupOptions: {

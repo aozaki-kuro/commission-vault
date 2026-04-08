@@ -230,7 +230,7 @@ export function initSearchController(root: HTMLElement) {
       suggestionCtrl.focusInputAfterSelection(nextQuery, options)
     }
 
-    scheduleRecompute()
+    scheduleRecompute({ immediate: true })
   }
 
   function setInputQuery(value: string) {
@@ -297,15 +297,40 @@ export function initSearchController(root: HTMLElement) {
     },
     onDismiss: () => {
       dismissSuggestionPanel()
-      scheduleRecompute()
+      scheduleRecompute({ immediate: true })
     },
   })
 
   // ==================== Core recompute ====================
+  // Split into two paths:
+  // - Immediate (rAF): cheap UI updates (button visibility, ARIA)
+  // - Debounced (100ms): heavy computation (model, DOM sync, dropdown)
+  // This keeps typing responsive while deferring expensive work.
+
+  const RECOMPUTE_DEBOUNCE_MS = 100
 
   let recomputeRafId = 0
+  let recomputeTimerId = 0
   let prevSuggestionKey = ''
+  let prevPopularKeywordsKey = ''
 
+  /** Cheap UI updates that should run immediately on every frame */
+  function updateButtonVisibility() {
+    const hasQuery = !!normalizeQuery(query)
+    if (copyUrlBtn) {
+      copyUrlBtn.classList.toggle('pointer-events-none', !hasQuery)
+      copyUrlBtn.classList.toggle('opacity-0', !hasQuery)
+    }
+    if (clearBtn) {
+      clearBtn.classList.toggle('pointer-events-none', !hasQuery)
+      clearBtn.classList.toggle('opacity-0', !hasQuery)
+    }
+    if (helpTriggerEl) {
+      helpTriggerEl.style.right = hasQuery ? '4rem' : '0'
+    }
+  }
+
+  /** Heavy computation — debounced to avoid running on every keystroke */
   function recompute() {
     // Read URL query snapshot for effective query
     const urlQuery = getUrlQuerySnapshot()
@@ -355,20 +380,8 @@ export function initSearchController(root: HTMLElement) {
       visibleEntriesCount: model.visibleEntriesCount,
     }, domSyncRefs)
 
-    // Update button visibility based on hasQuery
-    if (copyUrlBtn) {
-      copyUrlBtn.classList.toggle('pointer-events-none', !model.hasQuery)
-      copyUrlBtn.classList.toggle('opacity-0', !model.hasQuery)
-    }
-    if (clearBtn) {
-      clearBtn.classList.toggle('pointer-events-none', !model.hasQuery)
-      clearBtn.classList.toggle('opacity-0', !model.hasQuery)
-    }
-    if (helpTriggerEl) {
-      helpTriggerEl.style.right = model.hasQuery ? '4rem' : '0'
-    }
-
-    // Update combobox aria-expanded
+    // Update button visibility + ARIA
+    updateButtonVisibility()
     if (comboboxEl) {
       comboboxEl.setAttribute(
         'aria-expanded',
@@ -412,27 +425,58 @@ export function initSearchController(root: HTMLElement) {
       prefetchDeferredBatches('archived')
     }
 
-    // Render popular keywords
-    if (keywordListEl) {
-      renderPopularKeywords(
-        keywordListEl,
-        popularKeywords,
-        prepareSearchInteraction,
-        applyPopularKeyword,
-      )
-    }
-    if (popularKeywordsEl) {
-      popularKeywordsEl.classList.toggle('hidden', popularKeywords.length === 0)
+    // Render popular keywords (skip if unchanged)
+    const popularKeywordsKey = popularKeywords.join('\0')
+    if (popularKeywordsKey !== prevPopularKeywordsKey) {
+      prevPopularKeywordsKey = popularKeywordsKey
+      if (keywordListEl) {
+        renderPopularKeywords(
+          keywordListEl,
+          popularKeywords,
+          prepareSearchInteraction,
+          applyPopularKeyword,
+        )
+      }
+      if (popularKeywordsEl) {
+        popularKeywordsEl.classList.toggle('hidden', popularKeywords.length === 0)
+      }
     }
   }
 
-  function scheduleRecompute() {
-    if (recomputeRafId)
-      cancelAnimationFrame(recomputeRafId)
-    recomputeRafId = requestAnimationFrame(() => {
-      recomputeRafId = 0
-      recompute()
-    })
+  /**
+   * Schedule recompute: immediate rAF for cheap UI, debounced for heavy work.
+   * Pass `immediate: true` for non-typing triggers (focus, suggestion select, external state)
+   * where the user expects instant feedback.
+   */
+  function scheduleRecompute(options?: { immediate?: boolean }) {
+    // Always update buttons on next frame (cheap)
+    if (!recomputeRafId) {
+      recomputeRafId = requestAnimationFrame(() => {
+        recomputeRafId = 0
+        updateButtonVisibility()
+      })
+    }
+
+    // Heavy recompute: immediate or debounced
+    if (options?.immediate) {
+      if (recomputeTimerId)
+        clearTimeout(recomputeTimerId)
+      recomputeTimerId = 0
+      // Cancel the rAF UI-only update since recompute will cover it
+      if (recomputeRafId) {
+        cancelAnimationFrame(recomputeRafId)
+        recomputeRafId = 0
+      }
+      requestAnimationFrame(recompute)
+    }
+    else {
+      if (recomputeTimerId)
+        clearTimeout(recomputeTimerId)
+      recomputeTimerId = window.setTimeout(() => {
+        recomputeTimerId = 0
+        requestAnimationFrame(recompute)
+      }, RECOMPUTE_DEBOUNCE_MS)
+    }
   }
 
   // ==================== Popular keyword interaction ====================
@@ -450,7 +494,7 @@ export function initSearchController(root: HTMLElement) {
       preventScroll: true,
       focusInput: !shouldUseTapLikeFocus(),
     })
-    scheduleRecompute()
+    scheduleRecompute({ immediate: true })
   }
 
   // ==================== Bind event listeners ====================
@@ -462,14 +506,14 @@ export function initSearchController(root: HTMLElement) {
     if (suggestionCtrl.shouldSuppressInputFocusOpen())
       return
     showSuggestionPanel()
-    scheduleRecompute()
+    scheduleRecompute({ immediate: true })
   })
   input.addEventListener('input', () => {
     prepareSearchInteraction()
     setInputQuery(normalizeQuotedTokenBoundary(input.value))
     showSuggestionPanel()
     copyState = 'idle'
-    scheduleRecompute()
+    scheduleRecompute() // debounced — heavy work deferred during rapid typing
   })
 
   // Keyboard: listbox navigation
@@ -478,7 +522,7 @@ export function initSearchController(root: HTMLElement) {
   // Outside click/escape dismissal
   suggestionCtrl.bindOutsideListeners(root, () => {
     dismissSuggestionPanel()
-    scheduleRecompute()
+    scheduleRecompute({ immediate: true })
   })
 
   // Clear button
@@ -492,7 +536,7 @@ export function initSearchController(root: HTMLElement) {
       if (!shouldUseTapLikeFocus()) {
         input.focus()
       }
-      scheduleRecompute()
+      scheduleRecompute({ immediate: true })
     })
   }
 
@@ -632,7 +676,7 @@ export function initSearchController(root: HTMLElement) {
         )
       }
 
-      scheduleRecompute()
+      scheduleRecompute({ immediate: true })
     })
   }
 
@@ -641,16 +685,16 @@ export function initSearchController(root: HTMLElement) {
     mode = nextMode
     prefetchedActive = false
     prefetchedArchived = false
-    scheduleRecompute()
+    scheduleRecompute({ immediate: true })
   })
 
   const unsubPanelState = subscribePanelState((nextState) => {
     panelState = nextState
-    scheduleRecompute()
+    scheduleRecompute({ immediate: true })
   })
 
   const unsubUrlQuery = subscribeToUrlQuerySnapshot(() => {
-    scheduleRecompute()
+    scheduleRecompute({ immediate: true })
   })
 
   // 8. Initialize
@@ -668,14 +712,14 @@ export function initSearchController(root: HTMLElement) {
     .then((entries) => {
       externalEntries = entries
       popularKeywordPool = buildPopularKeywordPoolFromEntries(entries)
-      scheduleRecompute()
+      scheduleRecompute({ immediate: true })
     })
     .catch((error) => {
       console.error(error)
     })
 
-  // Initial recompute
-  scheduleRecompute()
+  // Initial recompute (immediate — first render)
+  scheduleRecompute({ immediate: true })
 
   // Return cleanup function
   return () => {
@@ -686,6 +730,8 @@ export function initSearchController(root: HTMLElement) {
     suggestionCtrl.unbindOutsideListeners()
     if (recomputeRafId)
       cancelAnimationFrame(recomputeRafId)
+    if (recomputeTimerId)
+      clearTimeout(recomputeTimerId)
     if (copyResetTimer)
       clearTimeout(copyResetTimer)
   }

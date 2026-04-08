@@ -383,17 +383,16 @@ const controls = resolveHomeSearchControls(locale)
 </section>
 
 <script>
-import { initSearchController } from '@features/home/search/commissionSearchController'
-
-function init() {
+async function init() {
+  const { initSearchController } = await import('@features/home/search/commissionSearchController')
   const root = document.getElementById('commission-search')
   if (root)
     initSearchController(root)
 }
 if ('requestIdleCallback' in window) {
-  requestIdleCallback(init)
+  requestIdleCallback(() => void init())
 }
 else {
-  setTimeout(init, 1)
+  setTimeout(() => void init(), 1)
 }
 </script>
