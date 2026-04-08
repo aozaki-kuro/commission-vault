@@ -297,8 +297,6 @@ export function initSearchController(root: HTMLElement) {
         return
       if (value === LOAD_ARCHIVED_COMMAND_VALUE) {
         requestArchivedCharactersLoad(window, { strategy: 'all', preserveScroll: true })
-        dismissSuggestionPanel()
-        scheduleRecompute({ immediate: true })
       }
       else {
         applySuggestion(value)
