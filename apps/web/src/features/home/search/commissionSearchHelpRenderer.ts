@@ -118,7 +118,7 @@ export function renderHelpContent(
   )
   btn.setAttribute('type', 'button')
   btn.addEventListener('click', () => {
-    container.closest('[popover]')?.hidePopover()
+    ;(container.closest('[popover]') as HTMLElement | null)?.hidePopover()
   })
   btnWrap.append(btn)
   wrapper.append(btnWrap)

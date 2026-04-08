@@ -28,8 +28,8 @@ describe('createListboxController', () => {
   let input: HTMLInputElement
   let list: HTMLUListElement
   let controller: ListboxController
-  let onSelect: ReturnType<typeof vi.fn>
-  let onDismiss: ReturnType<typeof vi.fn>
+  let onSelect: ReturnType<typeof vi.fn<(index: number) => void>>
+  let onDismiss: ReturnType<typeof vi.fn<() => void>>
 
   beforeEach(() => {
     const fixture = buildFixture()

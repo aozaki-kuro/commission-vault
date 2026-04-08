@@ -1,15 +1,10 @@
 import type { SuggestionTokenOperator } from '@lib/search/index'
+import type { SuggestionViewModel } from './commissionSearchDropdownRenderer'
 import type { CommissionSearchEntrySource, SearchIndex } from './commissionSearchIndex'
 import type { PanelLoadedState } from './commissionSearchPanelState'
 import type { CommissionViewMode } from './commissionViewMode'
 
-// 前置声明，等 commissionSearchDropdownRenderer.ts 就位后迁移过去
-export interface SuggestionViewModel {
-  term: string
-  matchCountLabel: string
-  sourcesLabel: string
-  relatedTerms: string[]
-}
+export type { SuggestionViewModel }
 
 export interface SearchState {
   // Input
