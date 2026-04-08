@@ -15,7 +15,7 @@ import {
 import DesktopSidebarNav from '@features/home/nav/DesktopSidebarNav.astro'
 import MobileHamburgerMenu from '@features/home/nav/hamburger/MobileHamburgerMenu.astro'
 import MobileLanguageMenu from '@features/home/nav/hamburger/MobileLanguageMenu.astro'
-import CommissionSearchDeferred from '@features/home/search/CommissionSearchDeferred'
+import CommissionSearchIsland from '@features/home/search/CommissionSearchIsland.astro'
 import StaticCommissionSections from '@features/home/server/StaticCommissionSections.astro'
 import AgeGateScript from '@features/home/warning/AgeGateScript.astro'
 import BaseLayout from '@layouts/BaseLayout.astro'
@@ -192,8 +192,7 @@ const resolvedCanonicalPath
   />
   <div class="relative mx-auto flex justify-center">
     <div id="Main Contents" class="w-full max-w-2xl">
-      <CommissionSearchDeferred
-        client:idle
+      <CommissionSearchIsland
         locale={resolvedLocale}
         featuredKeywords={featuredSearchKeywords}
         suggestionAliasGroups={suggestionAliasGroups}

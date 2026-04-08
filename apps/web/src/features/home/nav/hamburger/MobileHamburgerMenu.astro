@@ -3,13 +3,7 @@ import type { HomeLocaleMessages } from '@features/home/i18n/homeLocale'
 import type { CharacterNavItem } from '@lib/characters/nav'
 import { STYLES } from '@features/home/nav/hamburger/constants'
 import { buildCharacterNavItems } from '@lib/characters/nav'
-import {
-  IconArrowBadgeLeftFilled,
-  IconChevronDown,
-  IconMenu2,
-  IconX,
-  IconZoom,
-} from '@tabler/icons-react'
+import { Icon } from 'astro-icon/components'
 
 interface CharacterDisplay {
   DisplayName: string
@@ -78,18 +72,8 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
       "
       aria-hidden="true"
     >
-      <IconMenu2
-        data-mobile-hamburger-icon-menu="true"
-        className="size-5"
-        stroke={2}
-        aria-hidden="true"
-      />
-      <IconX
-        data-mobile-hamburger-icon-close="true"
-        className="hidden size-5"
-        stroke={2}
-        aria-hidden="true"
-      />
+      <Icon data-mobile-hamburger-icon-menu="true" name="tabler:menu-2" class="size-5" aria-hidden="true" />
+      <Icon data-mobile-hamburger-icon-close="true" name="tabler:x" class="hidden size-5" aria-hidden="true" />
     </span>
   </button>
 
@@ -123,11 +107,7 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
               class={`${utilityActionButtonClassName} appearance-none border-0 bg-transparent p-0 text-left no-underline`.trim()}
             >
               <span class={utilityActionTextClassName}>{controls.search}</span>
-              <IconZoom
-                className="size-3.5 text-gray-500 transition-colors"
-                stroke={1.95}
-                aria-hidden="true"
-              />
+              <Icon name="tabler:search" class="size-3.5 text-gray-500 transition-colors" aria-hidden="true" />
             </button>
           </li>
 
@@ -140,14 +120,7 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
               class={`${utilityActionButtonClassName} appearance-none border-0 bg-transparent p-0 text-left text-gray-900 dark:text-white`.trim()}
             >
               <span class={utilityActionTextClassName}>{controls.byCharacter}</span>
-              <IconArrowBadgeLeftFilled
-                data-mobile-hamburger-view-mode-indicator="true"
-                className="
-                  size-4 scale-100 text-gray-400 opacity-100
-                  transition-all duration-300
-                "
-                aria-hidden="true"
-              />
+              <Icon data-mobile-hamburger-view-mode-indicator="true" name="tabler:arrow-badge-left-filled" class="size-4 scale-100 text-gray-400 opacity-100 transition-all duration-300" aria-hidden="true" />
             </button>
           </li>
 
@@ -160,14 +133,7 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
               class={`${utilityActionButtonClassName} appearance-none border-0 bg-transparent p-0 text-left`.trim()}
             >
               <span class={utilityActionTextClassName}>{controls.byDate}</span>
-              <IconArrowBadgeLeftFilled
-                data-mobile-hamburger-view-mode-indicator="true"
-                className="
-                  size-4 scale-0 text-gray-400 opacity-0 transition-all
-                  duration-300
-                "
-                aria-hidden="true"
-              />
+              <Icon data-mobile-hamburger-view-mode-indicator="true" name="tabler:arrow-badge-left-filled" class="size-4 scale-0 text-gray-400 opacity-0 transition-all duration-300" aria-hidden="true" />
             </button>
           </li>
         </ul>
@@ -204,16 +170,7 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
               >
                 {controls.activeCharacters}
               </p>
-              <IconChevronDown
-                data-mobile-character-section-chevron="true"
-                className="
-                  size-4 rotate-180 text-gray-600 transition-transform
-                  duration-200
-                  dark:text-gray-300
-                "
-                stroke={2}
-                aria-hidden="true"
-              />
+              <Icon data-mobile-character-section-chevron="true" name="tabler:chevron-down" class="size-4 rotate-180 text-gray-600 transition-transform duration-200 dark:text-gray-300" aria-hidden="true" />
             </button>
             <div
               id="mobile-active-characters"
@@ -280,15 +237,7 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
               >
                 {controls.archivedCharacters}
               </p>
-              <IconChevronDown
-                data-mobile-character-section-chevron="true"
-                className="
-                  size-4 text-gray-600 transition-transform duration-200
-                  dark:text-gray-300
-                "
-                stroke={2}
-                aria-hidden="true"
-              />
+              <Icon data-mobile-character-section-chevron="true" name="tabler:chevron-down" class="size-4 text-gray-600 transition-transform duration-200 dark:text-gray-300" aria-hidden="true" />
             </button>
             <div
               id="mobile-archived-characters"

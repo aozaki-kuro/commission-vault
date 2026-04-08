@@ -5,7 +5,7 @@ import {
   getDomSnapshotKeyForMode,
   resolveEffectiveDomSnapshotKey,
   subscribeToUrlQuerySnapshot,
-} from './useCommissionSearchModel'
+} from './commissionSearchModel'
 
 describe('getDomSnapshotKeyForMode', () => {
   it('changes character snapshot key when activeLoaded or archivedLoaded changes', () => {

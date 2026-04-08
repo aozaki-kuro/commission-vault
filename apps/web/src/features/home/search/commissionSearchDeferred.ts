@@ -1,4 +1,4 @@
-import type { CommissionSearchEntrySource, SearchSuggestionAliasGroup } from '@features/home/search/CommissionSearch'
+import type { CommissionSearchEntrySource, SearchSuggestionAliasGroup } from '@features/home/search/commissionSearchIndex'
 import {
   readHomeCharacterBatchManifest,
 } from '@features/home/commission/batch/homeCharacterBatchManifest'
@@ -10,19 +10,22 @@ import {
   ARCHIVED_CHARACTERS_LOADED_EVENT,
   requestArchivedCharactersLoad,
 } from '@features/home/commission/loader/archivedCharactersEvent'
-import { resolveHomeSearchControls } from '@features/home/i18n/homeSearchControls'
-import CommissionSearch from '@features/home/search/CommissionSearch'
 import {
   buildPopularKeywordPoolFromSuggestTexts,
   dedupeKeywords,
 } from '@lib/search/popularKeywords'
-import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-const MAX_FEATURED_KEYWORDS = 6
-const MAX_VISIBLE_POPULAR_KEYWORDS = 6
-const COMMISSION_ENTRY_SELECTOR = '[data-commission-entry="true"]'
+export { dedupeKeywords }
 
-function buildHomeSearchIndexUrl() {
+export const MAX_FEATURED_KEYWORDS = 6
+export const MAX_VISIBLE_POPULAR_KEYWORDS = 6
+export const COMMISSION_ENTRY_SELECTOR = '[data-commission-entry="true"]'
+export const SHUFFLE_DEFERRED_LOAD_TIMEOUT_MS = 8000
+
+// Probability of picking from the active pool when both pools are non-empty
+export const ACTIVE_WEIGHT = 0.75
+
+export function buildHomeSearchIndexUrl() {
   const manifest = readHomeCharacterBatchManifest(
     typeof document !== 'undefined' ? document : undefined,
   )
@@ -34,7 +37,11 @@ function buildHomeSearchIndexUrl() {
 let cachedHomeSearchEntries: CommissionSearchEntrySource[] | null = null
 let homeSearchEntriesPromise: Promise<CommissionSearchEntrySource[]> | null = null
 
-function ensureHomeSearchEntriesPromise() {
+export function getCachedHomeSearchEntries() {
+  return cachedHomeSearchEntries
+}
+
+export function ensureHomeSearchEntriesPromise() {
   if (cachedHomeSearchEntries) {
     return Promise.resolve(cachedHomeSearchEntries)
   }
@@ -60,7 +67,7 @@ function ensureHomeSearchEntriesPromise() {
   return homeSearchEntriesPromise
 }
 
-function createSeededRandom(seed: number) {
+export function createSeededRandom(seed: number) {
   let state = seed >>> 0 || 0x6D2B79F5
 
   return () => {
@@ -71,7 +78,7 @@ function createSeededRandom(seed: number) {
   }
 }
 
-function shuffleKeywords(keywords: string[], seed: number) {
+export function shuffleKeywords(keywords: string[], seed: number) {
   const shuffled = [...keywords]
   const random = createSeededRandom(seed)
 
@@ -85,7 +92,7 @@ function shuffleKeywords(keywords: string[], seed: number) {
   return shuffled
 }
 
-function getPopularKeywordBatch(keywords: string[], page: number, batchSize: number) {
+export function getPopularKeywordBatch(keywords: string[], page: number, batchSize: number) {
   if (keywords.length <= batchSize)
     return keywords
 
@@ -125,7 +132,7 @@ function buildAliasKeyLookup(aliasGroups: SearchSuggestionAliasGroup[]) {
   return keyToGroup
 }
 
-function collapseAliasKeywordVariants(keywords: string[], aliasGroups: SearchSuggestionAliasGroup[], seed: number) {
+export function collapseAliasKeywordVariants(keywords: string[], aliasGroups: SearchSuggestionAliasGroup[], seed: number) {
   if (keywords.length === 0 || aliasGroups.length === 0)
     return keywords
 
@@ -205,7 +212,7 @@ function collapseAliasKeywordVariants(keywords: string[], aliasGroups: SearchSug
   return collapsedKeywords
 }
 
-function buildSearchEntriesFromDom(): CommissionSearchEntrySource[] {
+export function buildSearchEntriesFromDom(): CommissionSearchEntrySource[] {
   if (typeof document === 'undefined')
     return []
 
@@ -229,7 +236,7 @@ function buildSearchEntriesFromDom(): CommissionSearchEntrySource[] {
   }))
 }
 
-function buildPopularKeywordPoolFromEntries(entries: CommissionSearchEntrySource[]) {
+export function buildPopularKeywordPoolFromEntries(entries: CommissionSearchEntrySource[]) {
   return buildPopularKeywordPoolFromSuggestTexts(
     entries
       .map(entry => entry.searchSuggest ?? '')
@@ -253,10 +260,7 @@ function extractSectionIdFromDomKey(domKey: string) {
   return separatorIndex > 0 ? domKey.slice(0, separatorIndex) : ''
 }
 
-// Probability of picking from the active pool when both pools are non-empty
-const ACTIVE_WEIGHT = 0.75
-
-function pickWeightedEntry<T extends CommissionSearchEntrySource>(
+export function pickWeightedEntry<T extends CommissionSearchEntrySource>(
   pool: T[],
 ): T {
   const manifest = readHomeCharacterBatchManifest(document)
@@ -286,9 +290,7 @@ function pickWeightedEntry<T extends CommissionSearchEntrySource>(
   return chosen[cryptoRandomIndex(chosen.length)]
 }
 
-const SHUFFLE_DEFERRED_LOAD_TIMEOUT_MS = 8000
-
-function loadDeferredEntryBatch(sectionId: string): Promise<void> {
+export function loadDeferredEntryBatch(sectionId: string): Promise<void> {
   const manifest = readHomeCharacterBatchManifest(document)
   if (!manifest)
     return Promise.reject(new Error('No batch manifest'))
@@ -340,7 +342,7 @@ function loadDeferredEntryBatch(sectionId: string): Promise<void> {
   })
 }
 
-function scrollAndAnimateEntry(element: HTMLElement) {
+export function scrollAndAnimateEntry(element: HTMLElement) {
   element.scrollIntoView({ behavior: 'smooth', block: 'center' })
   element.animate(
     [
@@ -348,188 +350,5 @@ function scrollAndAnimateEntry(element: HTMLElement) {
       { boxShadow: '0 0 0 12px rgba(107,114,128,0)' },
     ],
     { duration: 1100, easing: 'ease-out' },
-  )
-}
-
-interface CommissionSearchDeferredProps {
-  locale?: string
-  featuredKeywords?: string[]
-  suggestionAliasGroups?: SearchSuggestionAliasGroup[]
-}
-
-export default function CommissionSearchDeferred({
-  locale,
-  featuredKeywords = [],
-  suggestionAliasGroups = [],
-}: CommissionSearchDeferredProps = {}) {
-  const controls = resolveHomeSearchControls(locale)
-  const [popularKeywordPage, setPopularKeywordPage] = useState(0)
-  const [hasDismissedFeaturedKeywords, setHasDismissedFeaturedKeywords] = useState(false)
-  const [externalEntries, setExternalEntries] = useState<CommissionSearchEntrySource[] | null>(
-    () => {
-      if (cachedHomeSearchEntries)
-        return cachedHomeSearchEntries
-      const entries = buildSearchEntriesFromDom()
-      return entries.length > 0 ? entries : null
-    },
-  )
-  const [popularKeywordPool, setPopularKeywordPool] = useState<string[]>(() =>
-    externalEntries ? buildPopularKeywordPoolFromEntries(externalEntries) : [],
-  )
-  const [matchedIds, setMatchedIds] = useState<Set<number>>(() => new Set())
-
-  const dedupedFeaturedKeywordBatch = useMemo(
-    () => dedupeKeywords(featuredKeywords, MAX_FEATURED_KEYWORDS),
-    [featuredKeywords],
-  )
-  const featuredKeywordBatch = useMemo(
-    () =>
-      collapseAliasKeywordVariants(
-        dedupedFeaturedKeywordBatch,
-        suggestionAliasGroups,
-        popularKeywordPage ^ 0x9E3779B9,
-      ),
-    [dedupedFeaturedKeywordBatch, popularKeywordPage, suggestionAliasGroups],
-  )
-
-  useEffect(() => {
-    let active = true
-    let didApplyFetchedEntries = false
-
-    const applyEntries = (
-      entries: CommissionSearchEntrySource[],
-      source: 'dom' | 'fetch',
-    ) => {
-      if (!active)
-        return
-      if (source === 'dom' && didApplyFetchedEntries)
-        return
-      if (source === 'fetch')
-        didApplyFetchedEntries = true
-
-      startTransition(() => {
-        setExternalEntries(entries.length > 0 ? entries : null)
-        setPopularKeywordPool(buildPopularKeywordPoolFromEntries(entries))
-      })
-    }
-
-    const rafId = window.requestAnimationFrame(() => {
-      if (cachedHomeSearchEntries)
-        return
-      applyEntries(buildSearchEntriesFromDom(), 'dom')
-    })
-
-    if (cachedHomeSearchEntries) {
-      applyEntries(cachedHomeSearchEntries, 'fetch')
-    }
-    else {
-      void ensureHomeSearchEntriesPromise()
-        .then(entries => applyEntries(entries, 'fetch'))
-        .catch((error) => {
-          console.error(error)
-        })
-    }
-
-    return () => {
-      active = false
-      window.cancelAnimationFrame(rafId)
-    }
-  }, [])
-
-  const dedupedPopularKeywordPool = useMemo(
-    () =>
-      collapseAliasKeywordVariants(popularKeywordPool, suggestionAliasGroups, popularKeywordPage),
-    [popularKeywordPage, popularKeywordPool, suggestionAliasGroups],
-  )
-  const shouldUseFeaturedKeywords = !hasDismissedFeaturedKeywords && featuredKeywordBatch.length > 0
-  const popularKeywords = useMemo(
-    () =>
-      shouldUseFeaturedKeywords
-        ? featuredKeywordBatch.slice(0, MAX_VISIBLE_POPULAR_KEYWORDS)
-        : getPopularKeywordBatch(
-            dedupedPopularKeywordPool,
-            popularKeywordPage,
-            MAX_VISIBLE_POPULAR_KEYWORDS,
-          ),
-    [
-      dedupedPopularKeywordPool,
-      featuredKeywordBatch,
-      popularKeywordPage,
-      shouldUseFeaturedKeywords,
-    ],
-  )
-
-  const rotatePopularKeywords = useCallback(() => {
-    setHasDismissedFeaturedKeywords(true)
-    setPopularKeywordPage(previous => previous + 1)
-  }, [])
-
-  const lastShuffledIdRef = useRef<number | null>(null)
-
-  const shuffleRandomEntry = useCallback((matchedIds?: Set<number>) => {
-    if (!externalEntries || externalEntries.length === 0)
-      return
-
-    const candidates = matchedIds && matchedIds.size > 0
-      ? externalEntries.filter(entry => matchedIds.has(entry.id))
-      : externalEntries
-
-    if (candidates.length === 0)
-      return
-
-    // Avoid picking the same entry twice in a row
-    const pool = candidates.length > 1 && lastShuffledIdRef.current !== null
-      ? candidates.filter(entry => entry.id !== lastShuffledIdRef.current)
-      : candidates
-
-    const randomEntry = pickWeightedEntry(pool)
-    lastShuffledIdRef.current = randomEntry.id
-
-    if (!randomEntry.domKey)
-      return
-
-    // Try to find the element in DOM (already loaded)
-    const element = document.querySelector<HTMLElement>(
-      `[data-commission-search-key="${CSS.escape(randomEntry.domKey)}"]`,
-    )
-    if (element) {
-      scrollAndAnimateEntry(element)
-      return
-    }
-
-    // Entry is in a deferred batch — trigger load, then scroll
-    const sectionId = extractSectionIdFromDomKey(randomEntry.domKey)
-    if (!sectionId)
-      return
-
-    void loadDeferredEntryBatch(sectionId)
-      .then(() => {
-        // Use requestAnimationFrame so layout is committed after batch mount
-        window.requestAnimationFrame(() => {
-          const loadedElement = document.querySelector<HTMLElement>(
-            `[data-commission-search-key="${CSS.escape(randomEntry.domKey)}"]`,
-          )
-          if (loadedElement) {
-            scrollAndAnimateEntry(loadedElement)
-          }
-        })
-      })
-      .catch(() => {
-        // Deferred load failed or timed out — silently ignore
-      })
-  }, [externalEntries])
-
-  return (
-    <CommissionSearch
-      controls={controls}
-      deferIndexInit={false}
-      externalEntries={externalEntries ?? undefined}
-      popularKeywords={popularKeywords}
-      refreshPopularSearchLabel={controls.refreshPopularSearchLabel}
-      onRotatePopularKeywords={popularKeywords.length > 0 ? rotatePopularKeywords : undefined}
-      onShuffleRandomEntry={() => shuffleRandomEntry(matchedIds)}
-      onMatchedIdsChange={setMatchedIds}
-      suggestionAliasGroups={suggestionAliasGroups}
-    />
   )
 }

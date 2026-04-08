@@ -6,7 +6,7 @@ Active Astro 6 public runtime (`crystallize.cc`).
 
 - `astro.config.ts` — Astro config + dev integrations
 - `wrangler.jsonc` — public-site Worker config; must retain read-only `DB`/`IMAGES` bindings for build-time fact-source export
-- `src/config/` — site metadata and React server renderer shim
+- `src/config/` — site metadata
 - `server/` — Astro dev integrations, admin API handler bridge
 - `data/` — generated fact-source loader, public-site data access
 - `generated/` — gitignored build inputs from remote D1/R2 (fact-source JSON + source images)

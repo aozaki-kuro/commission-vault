@@ -1,6 +1,5 @@
 import type { SearchIndex } from '@features/home/search/commissionSearchIndex'
 import { dispatchSidebarSearchState } from '@lib/navigation/sidebarSearchState'
-import { useEffect, useRef } from 'react'
 
 function areSetsEqual<T>(left: Set<T>, right: Set<T>) {
   if (left === right)
@@ -181,7 +180,7 @@ function syncArchivedDividerVisibility({
   return { didLayoutChange, nextVisible: shouldShowDivider }
 }
 
-interface UseCommissionSearchDomSyncOptions {
+export interface DomSyncState {
   disableDomFiltering: boolean
   hasDeferredQuery: boolean
   hiddenArchivedMatchedCount: number
@@ -193,106 +192,26 @@ interface UseCommissionSearchDomSyncOptions {
   visibleEntriesCount: number
 }
 
-export function useCommissionSearchDomSync({
-  disableDomFiltering,
-  hasDeferredQuery,
-  hiddenArchivedMatchedCount,
-  matchedIds,
-  resolvedIndex,
-  archivedBatchCount,
-  archivedVisible,
-  statusMessage,
-  visibleEntriesCount,
-}: UseCommissionSearchDomSyncOptions) {
-  const liveRef = useRef<HTMLParagraphElement>(null)
-  const previousMatchedIdsRef = useRef<Set<number>>(new Set())
-  const previousFilterIndexRef = useRef<SearchIndex | null>(null)
-  const sectionVisibilityRef = useRef(new Map<string, boolean>())
-  const archivedDividerVisibilityRef = useRef(false)
+export interface DomSyncRefs {
+  liveElement: HTMLElement | null
+  previousMatchedIds: Set<number>
+  previousFilterIndex: SearchIndex | null
+  sectionVisibilityById: Map<string, boolean>
+  archivedDividerVisible: boolean
+}
 
-  useEffect(() => {
-    if (disableDomFiltering) {
-      if (visibleEntriesCount > 0) {
-        setTextContentIfChanged(liveRef.current, statusMessage)
-      }
-      return
-    }
+export function createDomSyncRefs(): DomSyncRefs {
+  return {
+    liveElement: null,
+    previousMatchedIds: new Set(),
+    previousFilterIndex: null,
+    sectionVisibilityById: new Map(),
+    archivedDividerVisible: false,
+  }
+}
 
-    const { entryById, sections, archivedDivider } = resolvedIndex
-    const previousMatchedIds = previousMatchedIdsRef.current
-    const matchedIdsChanged = !areSetsEqual(previousMatchedIds, matchedIds)
-    const indexChanged = previousFilterIndexRef.current !== resolvedIndex
-    const visibleSectionIds = hasDeferredQuery ? new Set<string>() : null
-    let didLayoutChange = false
-
-    if (!matchedIdsChanged && !indexChanged) {
-      setTextContentIfChanged(liveRef.current, statusMessage)
-      return
-    }
-
-    if (indexChanged) {
-      didLayoutChange
-        = syncEntryVisibilityForIndexChange({
-          entryById,
-          matchedIds,
-          hasDeferredQuery,
-          visibleSectionIds,
-        }) || didLayoutChange
-    }
-    else if (matchedIdsChanged) {
-      didLayoutChange
-        = syncEntryVisibilityForMatchedDiff({
-          entryById,
-          matchedIds,
-          previousMatchedIds,
-          indexChanged,
-          visibleSectionIds,
-        }) || didLayoutChange
-    }
-
-    previousMatchedIdsRef.current = matchedIds
-    previousFilterIndexRef.current = resolvedIndex
-
-    // Hide the archived placeholder when searching with no archived matches —
-    // keeping it visible would let users click into a section with zero results.
-    const { archivedPlaceholder } = resolvedIndex
-    if (archivedPlaceholder) {
-      const shouldHidePlaceholder = archivedVisible || (hasDeferredQuery && hiddenArchivedMatchedCount === 0)
-      if (toggleHiddenClass(archivedPlaceholder, shouldHidePlaceholder)) {
-        didLayoutChange = true
-      }
-    }
-
-    if (visibleEntriesCount === 0) {
-      return
-    }
-
-    const sectionSyncResult = syncSectionVisibility({
-      sections,
-      hasDeferredQuery,
-      visibleSectionIds,
-      sectionVisibilityById: sectionVisibilityRef.current,
-    })
-    didLayoutChange = sectionSyncResult.didLayoutChange || didLayoutChange
-
-    const dividerSyncResult = syncArchivedDividerVisibility({
-      archivedDivider,
-      hasDeferredQuery,
-      archivedBatchCount,
-      archivedVisible,
-      visibleActiveSections: sectionSyncResult.visibleActiveSections,
-      visibleArchivedSections: sectionSyncResult.visibleArchivedSections,
-      previousVisible: archivedDividerVisibilityRef.current,
-    })
-    archivedDividerVisibilityRef.current = dividerSyncResult.nextVisible
-    didLayoutChange = dividerSyncResult.didLayoutChange || didLayoutChange
-
-    setTextContentIfChanged(liveRef.current, statusMessage)
-
-    if (didLayoutChange) {
-      dispatchSidebarSearchState()
-    }
-  }, [
+export function syncDom(state: DomSyncState, refs: DomSyncRefs) {
+  const {
     disableDomFiltering,
     hasDeferredQuery,
     hiddenArchivedMatchedCount,
@@ -302,7 +221,87 @@ export function useCommissionSearchDomSync({
     archivedVisible,
     statusMessage,
     visibleEntriesCount,
-  ])
+  } = state
 
-  return { liveRef }
+  if (disableDomFiltering) {
+    if (visibleEntriesCount > 0) {
+      setTextContentIfChanged(refs.liveElement, statusMessage)
+    }
+    return
+  }
+
+  const { entryById, sections, archivedDivider } = resolvedIndex
+  const previousMatchedIds = refs.previousMatchedIds
+  const matchedIdsChanged = !areSetsEqual(previousMatchedIds, matchedIds)
+  const indexChanged = refs.previousFilterIndex !== resolvedIndex
+  const visibleSectionIds = hasDeferredQuery ? new Set<string>() : null
+  let didLayoutChange = false
+
+  if (!matchedIdsChanged && !indexChanged) {
+    setTextContentIfChanged(refs.liveElement, statusMessage)
+    return
+  }
+
+  if (indexChanged) {
+    didLayoutChange
+      = syncEntryVisibilityForIndexChange({
+        entryById,
+        matchedIds,
+        hasDeferredQuery,
+        visibleSectionIds,
+      }) || didLayoutChange
+  }
+  else if (matchedIdsChanged) {
+    didLayoutChange
+      = syncEntryVisibilityForMatchedDiff({
+        entryById,
+        matchedIds,
+        previousMatchedIds,
+        indexChanged,
+        visibleSectionIds,
+      }) || didLayoutChange
+  }
+
+  refs.previousMatchedIds = matchedIds
+  refs.previousFilterIndex = resolvedIndex
+
+  // Hide the archived placeholder when searching with no archived matches —
+  // keeping it visible would let users click into a section with zero results.
+  const { archivedPlaceholder } = resolvedIndex
+  if (archivedPlaceholder) {
+    const shouldHidePlaceholder = archivedVisible || (hasDeferredQuery && hiddenArchivedMatchedCount === 0)
+    if (toggleHiddenClass(archivedPlaceholder, shouldHidePlaceholder)) {
+      didLayoutChange = true
+    }
+  }
+
+  if (visibleEntriesCount === 0) {
+    return
+  }
+
+  const sectionSyncResult = syncSectionVisibility({
+    sections,
+    hasDeferredQuery,
+    visibleSectionIds,
+    sectionVisibilityById: refs.sectionVisibilityById,
+  })
+  didLayoutChange = sectionSyncResult.didLayoutChange || didLayoutChange
+
+  const dividerSyncResult = syncArchivedDividerVisibility({
+    archivedDivider,
+    hasDeferredQuery,
+    archivedBatchCount,
+    archivedVisible,
+    visibleActiveSections: sectionSyncResult.visibleActiveSections,
+    visibleArchivedSections: sectionSyncResult.visibleArchivedSections,
+    previousVisible: refs.archivedDividerVisible,
+  })
+  refs.archivedDividerVisible = dividerSyncResult.nextVisible
+  didLayoutChange = dividerSyncResult.didLayoutChange || didLayoutChange
+
+  setTextContentIfChanged(refs.liveElement, statusMessage)
+
+  if (didLayoutChange) {
+    dispatchSidebarSearchState()
+  }
 }
