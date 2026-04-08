@@ -411,12 +411,29 @@ export function initSearchController(root: HTMLElement) {
             requestArchivedCharactersLoad(window, { strategy: 'all', preserveScroll: true })
           },
         })
-        suggestionList.classList.remove('hidden')
+        // Animate open: remove collapsed state, enable pointer events
+        suggestionList.classList.remove('opacity-0', 'scale-y-[0.96]', 'pointer-events-none')
+        suggestionList.classList.add('opacity-100', 'scale-y-100', 'pointer-events-auto')
         listboxCtrl.reset()
       }
       else {
-        suggestionList.textContent = ''
-        suggestionList.classList.add('hidden')
+        // Animate close: collapse and disable pointer events
+        suggestionList.classList.add('opacity-0', 'scale-y-[0.96]', 'pointer-events-none')
+        suggestionList.classList.remove('opacity-100', 'scale-y-100', 'pointer-events-auto')
+        // Clear content after transition
+        const onEnd = () => {
+          if (suggestionList.classList.contains('opacity-0')) {
+            suggestionList.textContent = ''
+          }
+          suggestionList.removeEventListener('transitionend', onEnd)
+        }
+        suggestionList.addEventListener('transitionend', onEnd, { once: true })
+        // Fallback for motion-reduce (no transition fires)
+        setTimeout(() => {
+          if (suggestionList.classList.contains('opacity-0')) {
+            suggestionList.textContent = ''
+          }
+        }, 200)
       }
     }
 
@@ -438,7 +455,9 @@ export function initSearchController(root: HTMLElement) {
         )
       }
       if (popularKeywordsEl) {
-        popularKeywordsEl.classList.toggle('hidden', popularKeywords.length === 0)
+        const shouldShow = popularKeywords.length > 0
+        popularKeywordsEl.classList.toggle('invisible', !shouldShow)
+        popularKeywordsEl.classList.toggle('opacity-0', !shouldShow)
       }
     }
   }
