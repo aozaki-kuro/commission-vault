@@ -3,6 +3,7 @@ import type { HomeLocaleMessages } from '@features/home/i18n/homeLocale'
 import type { CharacterNavItem } from '@lib/characters/nav'
 import { STYLES } from '@features/home/nav/hamburger/constants'
 import { buildCharacterNavItems } from '@lib/characters/nav'
+import { Icon } from 'astro-icon/components'
 
 interface CharacterDisplay {
   DisplayName: string
@@ -71,8 +72,8 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
       "
       aria-hidden="true"
     >
-      <svg data-mobile-hamburger-icon-menu="true" class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l16 0" /><path d="M4 12l16 0" /><path d="M4 18l16 0" /></svg>
-      <svg data-mobile-hamburger-icon-close="true" class="hidden size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+      <Icon data-mobile-hamburger-icon-menu="true" name="tabler:menu-2" class="size-5" aria-hidden="true" />
+      <Icon data-mobile-hamburger-icon-close="true" name="tabler:x" class="hidden size-5" aria-hidden="true" />
     </span>
   </button>
 
@@ -106,7 +107,7 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
               class={`${utilityActionButtonClassName} appearance-none border-0 bg-transparent p-0 text-left no-underline`.trim()}
             >
               <span class={utilityActionTextClassName}>{controls.search}</span>
-              <svg class="size-3.5 text-gray-500 transition-colors" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.95" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
+              <Icon name="tabler:search" class="size-3.5 text-gray-500 transition-colors" aria-hidden="true" />
             </button>
           </li>
 
@@ -119,7 +120,7 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
               class={`${utilityActionButtonClassName} appearance-none border-0 bg-transparent p-0 text-left text-gray-900 dark:text-white`.trim()}
             >
               <span class={utilityActionTextClassName}>{controls.byCharacter}</span>
-              <svg data-mobile-hamburger-view-mode-indicator="true" class="size-4 scale-100 text-gray-400 opacity-100 transition-all duration-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M13.098 4.136a1 1 0 0 1 .902 -.136l.058 .014a1 1 0 0 1 .942 .983v14.006a1 1 0 0 1 -1.414 .91l-.058 -.024l-6 -3.5a1 1 0 0 1 -.528 -.883v-7.012a1 1 0 0 1 .528 -.883l6 -3.5z" /></svg>
+              <Icon data-mobile-hamburger-view-mode-indicator="true" name="tabler:arrow-badge-left-filled" class="size-4 scale-100 text-gray-400 opacity-100 transition-all duration-300" aria-hidden="true" />
             </button>
           </li>
 
@@ -132,7 +133,7 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
               class={`${utilityActionButtonClassName} appearance-none border-0 bg-transparent p-0 text-left`.trim()}
             >
               <span class={utilityActionTextClassName}>{controls.byDate}</span>
-              <svg data-mobile-hamburger-view-mode-indicator="true" class="size-4 scale-0 text-gray-400 opacity-0 transition-all duration-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M13.098 4.136a1 1 0 0 1 .902 -.136l.058 .014a1 1 0 0 1 .942 .983v14.006a1 1 0 0 1 -1.414 .91l-.058 -.024l-6 -3.5a1 1 0 0 1 -.528 -.883v-7.012a1 1 0 0 1 .528 -.883l6 -3.5z" /></svg>
+              <Icon data-mobile-hamburger-view-mode-indicator="true" name="tabler:arrow-badge-left-filled" class="size-4 scale-0 text-gray-400 opacity-0 transition-all duration-300" aria-hidden="true" />
             </button>
           </li>
         </ul>
@@ -169,7 +170,7 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
               >
                 {controls.activeCharacters}
               </p>
-              <svg data-mobile-character-section-chevron="true" class="size-4 rotate-180 text-gray-600 transition-transform duration-200 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6" /></svg>
+              <Icon data-mobile-character-section-chevron="true" name="tabler:chevron-down" class="size-4 rotate-180 text-gray-600 transition-transform duration-200 dark:text-gray-300" aria-hidden="true" />
             </button>
             <div
               id="mobile-active-characters"
@@ -236,7 +237,7 @@ const utilityActionTextClassName = 'font-mono text-base leading-6 font-bold no-u
               >
                 {controls.archivedCharacters}
               </p>
-              <svg data-mobile-character-section-chevron="true" class="size-4 text-gray-600 transition-transform duration-200 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6l6 -6" /></svg>
+              <Icon data-mobile-character-section-chevron="true" name="tabler:chevron-down" class="size-4 text-gray-600 transition-transform duration-200 dark:text-gray-300" aria-hidden="true" />
             </button>
             <div
               id="mobile-archived-characters"

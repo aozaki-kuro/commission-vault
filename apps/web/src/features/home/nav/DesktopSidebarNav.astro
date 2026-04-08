@@ -2,6 +2,7 @@
 import type { HomeLocaleMessages, HomeLocaleOption } from '@features/home/i18n/homeLocale'
 import type { CharacterNavItem } from '@lib/characters/nav'
 import { buildCharacterNavItems } from '@lib/characters/nav'
+import { Icon } from 'astro-icon/components'
 
 interface CharacterDisplay {
   DisplayName: string
@@ -54,7 +55,7 @@ const localeLinkClass
       "
       >
         <span class={sidebarLeadSlotClass} aria-hidden="true">
-          <svg class={`${sidebarIconClass} text-gray-400 transition-all duration-300`} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.95" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
+          <Icon name="tabler:search" class={`${sidebarIconClass} text-gray-400 transition-all duration-300`} aria-hidden="true" />
         </span>
         <a
           href="#commission-search"
@@ -78,7 +79,7 @@ const localeLinkClass
           aria-label={localeSwitcherLabel}
         >
           <span class={sidebarLeadSlotClass} aria-hidden="true">
-            <svg class={`${sidebarIconClass} text-gray-400 transition-transform duration-200 group-open:rotate-90`} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6l-6 6" /></svg>
+            <Icon name="tabler:chevron-right" class={`${sidebarIconClass} text-gray-400 transition-transform duration-200 group-open:rotate-90`} aria-hidden="true" />
           </span>
           <span class={localeLabelClass}>{localeSwitcherLabel}</span>
         </summary>
@@ -138,7 +139,7 @@ const localeLinkClass
           "
         >
           <span class={sidebarLeadSlotClass} aria-hidden="true">
-            <svg data-sidebar-view-mode-indicator class="size-4 scale-100 text-gray-400 opacity-100 transition-all duration-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.883 4.007l.058 -.007a1 1 0 0 1 .471 .122l.07 .04l6 3.5a1 1 0 0 1 .528 .883v7.012a1 1 0 0 1 -.528 .883l-6 3.5a1 1 0 0 1 -1.472 -.876l-.004 -.009v-14.012a1 1 0 0 1 .876 -.993z" /></svg>
+            <Icon data-sidebar-view-mode-indicator name="tabler:arrow-badge-right-filled" class="size-4 scale-100 text-gray-400 opacity-100 transition-all duration-300" aria-hidden="true" />
           </span>
           <span class={sidebarLabelClass}>
             {controls.byCharacter}
@@ -161,7 +162,7 @@ const localeLinkClass
           "
         >
           <span class={sidebarLeadSlotClass} aria-hidden="true">
-            <svg data-sidebar-view-mode-indicator class="size-4 scale-0 text-gray-400 opacity-0 transition-all duration-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.883 4.007l.058 -.007a1 1 0 0 1 .471 .122l.07 .04l6 3.5a1 1 0 0 1 .528 .883v7.012a1 1 0 0 1 -.528 .883l-6 3.5a1 1 0 0 1 -1.472 -.876l-.004 -.009v-14.012a1 1 0 0 1 .876 -.993z" /></svg>
+            <Icon data-sidebar-view-mode-indicator name="tabler:arrow-badge-right-filled" class="size-4 scale-0 text-gray-400 opacity-0 transition-all duration-300" aria-hidden="true" />
           </span>
           <span class={sidebarLabelClass}>
             {controls.byDate}
@@ -197,7 +198,7 @@ const localeLinkClass
               "
               >
                 <span class={sidebarLeadSlotClass} aria-hidden="true">
-                  <svg class={`${sidebarIconClass} text-gray-400`} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.95" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l3 6l6 3l-6 3l-3 6l-3 -6l-6 -3l6 -3z" /></svg>
+                  <Icon name="tabler:flare" class={`${sidebarIconClass} text-gray-400`} aria-hidden="true" />
                 </span>
                 <span class="font-mono text-sm/5 font-bold">{controls.activeCharacters}</span>
               </div>
@@ -252,7 +253,7 @@ const localeLinkClass
                   "
                 >
                   <span class={sidebarLeadSlotClass} aria-hidden="true">
-                    <svg class={`${sidebarIconClass} text-gray-400 transition-transform duration-200 group-open:rotate-90`} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6l-6 6" /></svg>
+                    <Icon name="tabler:chevron-right" class={`${sidebarIconClass} text-gray-400 transition-transform duration-200 group-open:rotate-90`} aria-hidden="true" />
                   </span>
                   <span class="font-mono text-sm/5 font-bold">{controls.archivedCharacters}</span>
                 </summary>
@@ -305,7 +306,7 @@ const localeLinkClass
           "
           >
             <span class={sidebarLeadSlotClass} aria-hidden="true">
-              <svg class="size-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.95" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 16l6 -7l5 5l5 -6" /><path d="M15 14m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M10 9m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M4 16m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M20 8m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /></svg>
+              <Icon name="tabler:timeline" class="size-4 text-gray-400" aria-hidden="true" />
             </span>
             <span class="font-mono text-sm/5 font-bold">{controls.timelineTitle}</span>
           </div>
@@ -372,10 +373,9 @@ const localeLinkClass
           dark:hover:bg-black/90 dark:hover:text-white
         "
       >
-        <svg class="size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6 -6l6 6" /></svg>
+        <Icon name="tabler:chevron-up" class="size-5" aria-hidden="true" />
         <span class="sr-only">{controls.backToTop}</span>
       </button>
     </div>
   </div>
 </aside>
-
