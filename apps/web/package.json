@@ -22,9 +22,9 @@
   },
   "dependencies": {
     "@commission-index/domain": "workspace:*",
-    "clsx": "^2.1.1",
-    "fuse.js": "^7.1.0",
-    "tailwind-merge": "^3.5.0"
+    "@iconify-json/tabler": "^1.2.33",
+    "astro-icon": "^1.1.5",
+    "fuse.js": "^7.1.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
