@@ -6,7 +6,6 @@ import type { SuggestionTokenOperator } from '@lib/search/index'
 import { requestActiveCharactersLoad } from '@features/home/commission/loader/activeCharactersEvent'
 import {
   requestArchivedCharactersLoad,
-  requestArchivedCharactersVisibility,
 } from '@features/home/commission/loader/archivedCharactersEvent'
 import { requestTimelineViewLoad } from '@features/home/commission/loader/timelineViewEvent'
 import { LOAD_ARCHIVED_COMMAND_VALUE } from '@features/home/search/commissionSearchConstants'
@@ -128,6 +127,11 @@ let hasTrackedSearchUsage = false
 let cachedOutputKey = ''
 let cachedOutput: SearchModelOutput | null = null
 
+/** Mark auto-show archived as done so it doesn't re-trigger */
+export function markAutoShowArchivedDone() {
+  didAutoShowArchived = true
+}
+
 /** Reset all module-level mutable state. Call in tests or on re-init. */
 export function resetModelState() {
   cachedIndexKey = ''
@@ -183,6 +187,8 @@ export interface SearchModelOutput {
   shouldShowSuggestionPanel: boolean
   shouldAnimateSuggestionPanel: boolean
   shouldShowHiddenArchivedNotice: boolean
+  /** True when auto-expand archived should be considered by the caller */
+  shouldAutoShowArchived: boolean
   visibleStatusMessage: string
   hiddenArchivedNoticeMessage: string
   visibleEntriesCount: number
@@ -350,20 +356,11 @@ export function computeSearchModel(input: SearchModelInput): SearchModelOutput {
     archivedLoaded,
   })
 
-  // ---- Auto-show archived (side effect) ----
+  // ---- Auto-show archived (deferred to caller — not triggered here) ----
+  // The caller (controller) handles auto-show with a longer debounce so it only
+  // fires after typing has truly stopped, not on every intermediate recompute.
   if (!hasDeferredQuery || visibleMatchedCount > 0) {
     didAutoShowArchived = false
-  }
-  else if (
-    !didAutoShowArchived
-    && !disableDomFiltering
-    && mode === 'character'
-    && activeLoaded
-    && !archivedVisible
-    && hiddenArchivedMatchedCount > 0
-  ) {
-    didAutoShowArchived = true
-    requestArchivedCharactersVisibility(window, 'visible')
   }
 
   // ---- Suggestion filtering and view models ----
@@ -384,6 +381,23 @@ export function computeSearchModel(input: SearchModelInput): SearchModelOutput {
     suggestionContextMatchedIds,
     isExclusionSuggestion: suggestionIsExclusion,
   })
+
+  // ---- Auto-show archived: only when query looks "complete" ----
+  // - Ends with a space (user finished typing a keyword and moved on)
+  // - Or exactly matches a suggestion term (e.g. "AZKi" matches perfectly)
+  const queryLooksComplete = query.endsWith(' ')
+    || filteredSuggestions.some(s => s.term.toLowerCase() === normalizedQuery.toLowerCase())
+
+  const shouldAutoShowArchived
+    = !didAutoShowArchived
+      && !disableDomFiltering
+      && mode === 'character'
+      && activeLoaded
+      && !archivedVisible
+      && hasDeferredQuery
+      && visibleMatchedCount === 0
+      && hiddenArchivedMatchedCount > 0
+      && queryLooksComplete
 
   const hasSuggestionResults = filteredSuggestions.length > 0
   const relatedSuggestionTermsMap = hasSuggestionResults
@@ -452,6 +466,7 @@ export function computeSearchModel(input: SearchModelInput): SearchModelOutput {
     shouldShowSuggestionPanel,
     shouldAnimateSuggestionPanel,
     shouldShowHiddenArchivedNotice,
+    shouldAutoShowArchived,
     visibleStatusMessage,
     hiddenArchivedNoticeMessage,
     visibleEntriesCount,

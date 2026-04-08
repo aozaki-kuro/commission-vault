@@ -9,6 +9,7 @@ import { readActiveCharactersLoadedBatchCount } from '@features/home/commission/
 import {
   readArchivedCharactersLoadedBatchCount,
   requestArchivedCharactersLoad,
+  requestArchivedCharactersVisibility,
 } from '@features/home/commission/loader/archivedCharactersEvent'
 import { resolveHomeSearchControls } from '@features/home/i18n/homeSearchControls'
 import { LOAD_ARCHIVED_COMMAND_VALUE } from '@features/home/search/commissionSearchConstants'
@@ -33,6 +34,7 @@ import {
   computeSearchModel,
   dispatchSearchQueryLocationChange,
   getUrlQuerySnapshot,
+  markAutoShowArchivedDone,
   resetModelState,
   subscribeToUrlQuerySnapshot,
 } from '@features/home/search/commissionSearchModel'
@@ -450,6 +452,12 @@ export function initSearchController(root: HTMLElement) {
     // Prefetch archived batches when notice shows
     if (model.shouldShowHiddenArchivedNotice) {
       prefetchDeferredBatches('archived')
+    }
+
+    // Auto-expand archived section when query is complete and only archived matches exist
+    if (model.shouldAutoShowArchived) {
+      markAutoShowArchivedDone()
+      requestArchivedCharactersVisibility(window, 'visible')
     }
 
     // Render popular keywords (skip if unchanged)
