@@ -53,7 +53,7 @@ packages/domain     Shared types and pure domain helpers (no app imports)
 
 - **Runtime:** Node 24 (mise) + Bun (package manager + scripts; new scripts use `.ts` not `.mjs`)
 - **Build orchestration:** Turbo (cacheable tasks only; deploy stays outside Turbo)
-- **Public site:** Astro 6 + Tailwind CSS 4 + React 19 islands (selective hydration)
+- **Public site:** Astro 6 + Tailwind CSS 4 (vanilla TS client behavior)
 - **Admin frontend:** React 19 + Vite 8 + Tailwind CSS + shadcn/ui
 - **Admin backend:** Cloudflare Worker + D1 (SQL) + R2 (images)
 - **Testing:** Vitest + Playwright (visual regression)
@@ -68,12 +68,12 @@ packages/domain     Shared types and pure domain helpers (no app imports)
 
 ### Home Page Architecture (Astro-first)
 
-Static markup is Astro templates; React is only for the search island (`CommissionSearchDeferred.tsx`). Client-side behavior uses Astro script components (`HomeClientScript.astro`) and vanilla TS modules — not React.
+Static markup is Astro templates. All client-side behavior uses Astro script components (`HomeClientScript.astro`) and vanilla TS modules — no React on the client.
 
 Key patterns:
 
 - **Deferred sections:** Active/stale character sections and timeline use inline manifest + external batch JSON, lazy-loaded via script loaders
-- **Batch URL versioning:** Each batch file gets its own `?v=<hash>` from per-batch content hashing (djb2 of the serialized commission data in that batch). Editing one commission only invalidates the batch containing it, not all batches. The manifests also carry a global `v` (hash of all commissions) used by the search entries URL (`/search/home-search-entries.json`) in `CommissionSearchDeferred.tsx`. Hash inputs include full commission content (fileName, Links, Description, Design, Keyword) — so both structural and metadata changes produce new versions. Key files: `homeCharacterBatches.ts`, `homeTimelineBatches.ts`, `CommissionSearchDeferred.tsx`.
+- **Batch URL versioning:** Each batch file gets its own `?v=<hash>` from per-batch content hashing (djb2 of the serialized commission data in that batch). Editing one commission only invalidates the batch containing it, not all batches. The manifests also carry a global `v` (hash of all commissions) used by the search entries URL (`/search/home-search-entries.json`) in the search controller. Hash inputs include full commission content (fileName, Links, Description, Design, Keyword) — so both structural and metadata changes produce new versions. Key files: `homeCharacterBatches.ts`, `homeTimelineBatches.ts`, `commissionSearchController.ts`.
 - **DOM contracts:** `data-*` attributes drive search/nav/hash navigation — preserve attribute names when editing templates
 - **`data-stale-visibility`** = stale group expanded; **`data-stale-loaded`** = deferred stale sections mounted
 - Character/stale section templates must mount with full entry list intact (no per-section entry lazy mounts above anchor targets)
@@ -192,7 +192,7 @@ All three should return `404`. Note: `vite preview` does not validate edge HTTP 
 
 - Search UI must be layout-stable on first paint — no shell-to-content swaps
 - Production search index: `/search/home-search-entries.json` (not DOM metadata)
-- Search island locale labels resolve from `homeSearchControls.ts` (not the full `homeLocale` graph)
+- Search locale labels resolve from `homeSearchControls.ts` (not the full `homeLocale` graph)
 
 ### Images
 
