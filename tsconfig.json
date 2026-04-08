@@ -2,7 +2,6 @@
   "compilerOptions": {
     "incremental": true,
     "target": "ES2022",
-    "jsx": "react-jsx",
     "lib": ["dom", "dom.iterable", "esnext"],
     "module": "ESNext",
     "moduleResolution": "bundler",

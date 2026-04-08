@@ -4,7 +4,10 @@ const eslintConfig = antfu({
   astro: true,
   typescript: true,
   test: true,
-  react: true,
+  // React rules scoped to apps/admin only (apps/web is vanilla TS)
+  react: {
+    files: ['apps/admin/**/*.{ts,tsx}'],
+  },
   ignores: ['**/.wrangler/**', '**/.claude/**', 'docs/**', '.superpowers/**'],
   formatters: {
     css: true,
