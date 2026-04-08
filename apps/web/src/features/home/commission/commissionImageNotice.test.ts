@@ -1,9 +1,24 @@
 import { ANALYTICS_EVENTS } from '@lib/analytics/events'
-import { waitFor } from '@testing-library/react'
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountCommissionImageNoticeClient } from './commissionImageNoticeClient'
 import { createCommissionImageVariantTracker } from './commissionImageVariantTracker'
+
+/** Retry an assertion until it passes (replaces @testing-library/react waitFor) */
+async function waitFor(assertion: () => void, { timeout = 1000, interval = 50 } = {}) {
+  const deadline = Date.now() + timeout
+  while (true) {
+    try {
+      assertion()
+      return
+    }
+    catch (error) {
+      if (Date.now() >= deadline)
+        throw error
+      await new Promise(r => setTimeout(r, interval))
+    }
+  }
+}
 
 function createTrackedImage(src: string, options?: { srcSet?: string, currentSrc?: string }) {
   const image = document.createElement('img')
