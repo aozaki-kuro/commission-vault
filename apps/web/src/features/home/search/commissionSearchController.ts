@@ -39,6 +39,8 @@ import {
 import { readPanelLoadedState, subscribePanelState } from '@features/home/search/commissionSearchPanelState'
 import { createSuggestionPanelController } from '@features/home/search/commissionSearchSuggestions'
 import { readViewMode, subscribeViewMode } from '@features/home/search/commissionViewMode'
+import { ANALYTICS_EVENTS } from '@lib/analytics/events'
+import { trackRybbitEvent } from '@lib/analytics/track'
 import { jumpToCommissionSearch } from '@lib/navigation/jumpToCommissionSearch'
 import {
   applySuggestionToQuery,
@@ -212,6 +214,7 @@ export function initSearchController(root: HTMLElement) {
   function applySuggestion(suggestion: string | null) {
     if (!suggestion)
       return
+    trackRybbitEvent(ANALYTICS_EVENTS.suggestionSelected, { term: suggestion })
     applySelectedQuery(applySuggestionToQuery(query, suggestion))
   }
 
@@ -515,6 +518,7 @@ export function initSearchController(root: HTMLElement) {
     if (!nextQuery.trim())
       return
 
+    trackRybbitEvent(ANALYTICS_EVENTS.popularKeywordClicked, { keyword })
     prepareSearchInteraction()
     applySelectedQuery(nextQuery, {
       preventScroll: true,
@@ -628,6 +632,7 @@ export function initSearchController(root: HTMLElement) {
   // Shuffle button: pick weighted random entry, scroll to it
   if (shuffleBtn) {
     shuffleBtn.addEventListener('click', () => {
+      trackRybbitEvent(ANALYTICS_EVENTS.shuffleClicked)
       if (!externalEntries || externalEntries.length === 0)
         return
 
@@ -683,6 +688,7 @@ export function initSearchController(root: HTMLElement) {
   // Rotate button: next keyword page + dismiss featured keywords
   if (rotateBtn) {
     rotateBtn.addEventListener('click', () => {
+      trackRybbitEvent(ANALYTICS_EVENTS.keywordRefreshClicked)
       hasDismissedFeaturedKeywords = true
       popularKeywordPage += 1
 
