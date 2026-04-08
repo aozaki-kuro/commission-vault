@@ -11,6 +11,7 @@ import {
   requestArchivedCharactersLoad,
 } from '@features/home/commission/loader/archivedCharactersEvent'
 import { resolveHomeSearchControls } from '@features/home/i18n/homeSearchControls'
+import { LOAD_ARCHIVED_COMMAND_VALUE } from '@features/home/search/commissionSearchConstants'
 import {
   buildPopularKeywordPoolFromEntries,
   buildSearchEntriesFromDom,
@@ -292,8 +293,16 @@ export function initSearchController(root: HTMLElement) {
       if (!item)
         return
       const value = item.dataset.value
-      if (value)
+      if (!value)
+        return
+      if (value === LOAD_ARCHIVED_COMMAND_VALUE) {
+        requestArchivedCharactersLoad(window, { strategy: 'all', preserveScroll: true })
+        dismissSuggestionPanel()
+        scheduleRecompute({ immediate: true })
+      }
+      else {
         applySuggestion(value)
+      }
     },
     onDismiss: () => {
       dismissSuggestionPanel()
