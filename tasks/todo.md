@@ -1,5 +1,12 @@
 # 统一迁移状态板（2026-03-18）
 
+## 本轮执行切片（2026-04-09 CLAUDE.md -> AGENTS.md 迁移）
+
+- [x] 盘点仓库内现有分层 `CLAUDE.md`，确认迁移范围并排除外部目录
+- [x] 为各层目录新增等价 `AGENTS.md`，将其设为新的 agent 文档真值
+- [x] 将原 `CLAUDE.md` 收口为兼容入口，明确指向同目录 `AGENTS.md`
+- [x] 校验迁移后的文件映射，确认不存在遗漏层级
+
 ## 本轮执行切片（2026-03-25 Want this 跨视图状态同步）
 
 - [x] 复盘首页 `Want this` 在 Character / Date 双视图下的状态键与按钮挂载方式，确认根因
@@ -549,3 +556,10 @@
 
 - [x] `bun run check` 通过，`apps/web` 诊断结果为 `0 errors / 0 warnings / 0 hints`，原 `MutableRefObject` warning 已消失。
 - [x] `bun eslint apps/web/src/features/home/search/SurpriseMe.tsx` 初次执行暴露仓库规则 `ts/consistent-type-definitions`；已将本轮新增的 `type CurrentRef<T>` 收口为 `interface CurrentRef<T>`，避免引入新的 lint 噪音。
+
+## Review（2026-04-09 CLAUDE.md -> AGENTS.md 迁移）
+
+- [x] 仓库内 13 处分层 `CLAUDE.md` 均已新增同目录 `AGENTS.md`，未触碰 `node_modules` 等外部目录。
+- [x] 新增的 `AGENTS.md` 已去除对 `Claude Code` / `claude.ai/code` / “root `CLAUDE.md`” 的真值依赖，`rg --glob 'AGENTS.md'` 检查无残留旧指向。
+- [x] 原 `CLAUDE.md` 已统一收口为兼容跳板，继续读取旧文件名的工具会被导向同目录 `AGENTS.md`。
+- [ ] 本轮未运行 lint/test；迁移仅涉及 agent 文档与任务记录，不影响运行时代码路径。

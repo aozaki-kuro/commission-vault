@@ -1,11 +1,5 @@
-# test
+# CLAUDE.md
 
-Committed Playwright baselines and generated test outputs.
+Canonical agent instructions live in `AGENTS.md` in the same directory.
 
-- `visual/apps/web/` — web visual regression baselines
-- `visual/apps/admin/` — admin visual regression baselines
-
-## Rules
-
-- Keep committed baselines under `test/visual/`
-- `playwright-report/` and `test-results/` are generated — never replace baselines with these
+If you are a tool or workflow that still looks for `CLAUDE.md`, follow `./AGENTS.md` verbatim.

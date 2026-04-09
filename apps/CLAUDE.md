@@ -1,9 +1,5 @@
-# apps
+# CLAUDE.md
 
-Deployable applications. See root CLAUDE.md for workspace layout.
+Canonical agent instructions live in `AGENTS.md` in the same directory.
 
-## Dependency Boundaries
-
-- `web` depends on `packages/*` only
-- `admin` calls `admin-worker` for all data operations
-- `admin-worker` depends on `packages/domain` and owns the D1/R2 runtime
+If you are a tool or workflow that still looks for `CLAUDE.md`, follow `./AGENTS.md` verbatim.

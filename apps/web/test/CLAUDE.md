@@ -1,11 +1,5 @@
-# web/test
+# CLAUDE.md
 
-- `setup.tsx` — Vitest DOM/global setup for React unit tests
-- `visual/` — Playwright visual regression specs
+Canonical agent instructions live in `AGENTS.md` in the same directory.
 
-## Rules
-
-- Run `bun run test` for logic changes
-- Run `bun run test:visual` when touching: search shell, sidebars, mobile floating menus, admin icon/layout, or snapshot files
-- Use small, stable locator screenshots — avoid image-heavy full-page baselines
-- Verify visual delta is intentional on both desktop and mobile before updating snapshots
+If you are a tool or workflow that still looks for `CLAUDE.md`, follow `./AGENTS.md` verbatim.

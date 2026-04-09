@@ -1,8 +1,5 @@
-# admin/test
+# CLAUDE.md
 
-Visual regression suites for standalone admin.
+Canonical agent instructions live in `AGENTS.md` in the same directory.
 
-## Rules
-
-- Target `apps/admin`, not `apps/web`
-- Run `bun run test:visual` when changing: create page shell, edit page shell, manager search, drag ordering, source-image controls, suggestion page, or refresh button
+If you are a tool or workflow that still looks for `CLAUDE.md`, follow `./AGENTS.md` verbatim.

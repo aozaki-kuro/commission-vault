@@ -1,10 +1,5 @@
-# scripts
+# CLAUDE.md
 
-Repository-level developer workflow scripts.
+Canonical agent instructions live in `AGENTS.md` in the same directory.
 
-## devAdminRemote.ts
-
-Starts `apps/admin-worker`, waits until binding-backed admin API is readable, then starts standalone admin Vite app. Mirrors Worker deployment topology without frontend startup race.
-
-- Forward signals cleanly; exit non-zero when any child fails
-- Do not reintroduce `apps/web` as a dependency for standalone admin dev
+If you are a tool or workflow that still looks for `CLAUDE.md`, follow `./AGENTS.md` verbatim.

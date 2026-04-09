@@ -1,10 +1,5 @@
-# packages
+# CLAUDE.md
 
-Shared reusable modules.
+Canonical agent instructions live in `AGENTS.md` in the same directory.
 
-- `domain` — shared content/admin/search contracts and pure domain helpers
-- `ui` — shared React UI primitives (must preserve design system semantics)
-- `cloudflare` — placeholder worker env/types (not in main runtime path yet)
-- `config` — shared configuration presets
-
-Packages must not depend on app-local files.
+If you are a tool or workflow that still looks for `CLAUDE.md`, follow `./AGENTS.md` verbatim.
