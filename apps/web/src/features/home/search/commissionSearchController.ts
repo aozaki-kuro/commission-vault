@@ -154,8 +154,8 @@ export function initSearchController(root: HTMLElement) {
   const initialUrlQuery = getUrlQuerySnapshot()
   let query = initialUrlQuery
   let inputQuery: string | null = null
-  let isIndexReady = false
-  let shouldWarmFuse = false
+  let isIndexReady = !!initialUrlQuery
+  let shouldWarmFuse = !!initialUrlQuery
   let isSuggestionPanelDismissed = false
   let activeCommandValue = ''
   let externalEntries = getCachedHomeSearchEntries()
