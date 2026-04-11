@@ -151,7 +151,8 @@ export function initSearchController(root: HTMLElement) {
   const live = liveEl
 
   // 3. Initialize state
-  let query = ''
+  const initialUrlQuery = getUrlQuerySnapshot()
+  let query = initialUrlQuery
   let inputQuery: string | null = null
   let isIndexReady = false
   let shouldWarmFuse = false
@@ -172,6 +173,10 @@ export function initSearchController(root: HTMLElement) {
   let didAutoJump = false
   let prefetchedActive = false
   let prefetchedArchived = false
+
+  if (initialUrlQuery) {
+    input.value = initialUrlQuery
+  }
 
   // 4. Create module instances
   const domSyncRefs = createDomSyncRefs()
@@ -348,6 +353,9 @@ export function initSearchController(root: HTMLElement) {
     const urlQuery = getUrlQuerySnapshot()
     const effectiveQuery = inputQuery ?? urlQuery
     query = effectiveQuery
+    if (inputQuery === null && input.value !== effectiveQuery) {
+      input.value = effectiveQuery
+    }
 
     // Auto-jump on initial URL query (once)
     if (!didAutoJump && urlQuery) {
