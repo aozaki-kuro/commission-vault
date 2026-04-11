@@ -127,6 +127,14 @@ let hasTrackedSearchUsage = false
 let cachedOutputKey = ''
 let cachedOutput: SearchModelOutput | null = null
 
+// Called when Fuse.js hydration completes — allows the controller to schedule a recompute
+// so that CJK and other non-ASCII queries that fall through strict matching can use Fuse results.
+let fuseHydrationCallback: (() => void) | null = null
+
+export function setFuseHydrationCallback(fn: (() => void) | null) {
+  fuseHydrationCallback = fn
+}
+
 /** Mark auto-show archived as done so it doesn't re-trigger */
 export function markAutoShowArchivedDone() {
   didAutoShowArchived = true
@@ -233,7 +241,10 @@ export function computeSearchModel(input: SearchModelInput): SearchModelOutput {
   // Fast-path: if all inputs that affect output are unchanged, return cached result.
   // This avoids re-running index build, Fuse matching, suggestion filtering, and view model
   // construction on every rAF when only the panel state listener or external subscription fired.
-  const outputKey = `${query}\0${mode}\0${isIndexReady}\0${shouldWarmFuse}\0${isSuggestionPanelDismissed}\0${activeCommandValue}\0${activeLoaded}\0${activeBatchCount}\0${archivedLoaded}\0${archivedVisible}\0${archivedBatchCount}\0${timelineLoaded}\0${externalEntries?.length ?? -1}\0${disableDomFiltering}`
+  // cachedHydratedIndex !== null is included so the memoized result is invalidated once
+  // Fuse.js finishes loading — otherwise a keyword-click recompute (which runs before Fuse is
+  // ready) would be permanently cached and a subsequent retry would return the stale empty result.
+  const outputKey = `${query}\0${mode}\0${isIndexReady}\0${shouldWarmFuse}\0${isSuggestionPanelDismissed}\0${activeCommandValue}\0${activeLoaded}\0${activeBatchCount}\0${archivedLoaded}\0${archivedVisible}\0${archivedBatchCount}\0${timelineLoaded}\0${externalEntries?.length ?? -1}\0${disableDomFiltering}\0${cachedHydratedIndex !== null}`
   if (cachedOutput && cachedOutputKey === outputKey) {
     return cachedOutput
   }
@@ -313,6 +324,9 @@ export function computeSearchModel(input: SearchModelInput): SearchModelOutput {
         if (pendingHydration?.index === index) {
           cachedHydratedIndex = nextIndex
           pendingHydration = null
+          // Notify the controller so it can schedule a recompute — needed when a search term
+          // was applied (e.g. popular keyword click) before Fuse finished loading.
+          fuseHydrationCallback?.()
         }
         return nextIndex
       })

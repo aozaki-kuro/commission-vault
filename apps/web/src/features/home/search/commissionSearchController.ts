@@ -36,6 +36,7 @@ import {
   getUrlQuerySnapshot,
   markAutoShowArchivedDone,
   resetModelState,
+  setFuseHydrationCallback,
   subscribeToUrlQuerySnapshot,
 } from '@features/home/search/commissionSearchModel'
 import { readPanelLoadedState, subscribePanelState } from '@features/home/search/commissionSearchPanelState'
@@ -182,6 +183,9 @@ export function initSearchController(root: HTMLElement) {
   const domSyncRefs = createDomSyncRefs()
   domSyncRefs.liveElement = live
   resetModelState()
+  // When Fuse.js finishes loading, trigger a recompute so that queries applied before hydration
+  // (e.g. popular keyword clicks for CJK terms that bypass strict regex matching) get results.
+  setFuseHydrationCallback(() => scheduleRecompute({ immediate: true }))
 
   const suggestionCtrl = createSuggestionPanelController(input)
 
@@ -771,6 +775,7 @@ export function initSearchController(root: HTMLElement) {
 
   // Return cleanup function
   return () => {
+    setFuseHydrationCallback(null)
     unsubViewMode()
     unsubPanelState()
     unsubUrlQuery()
