@@ -173,4 +173,14 @@
       @apply antialiased;
     }
   }
+
+  /* 防止 iOS Safari 在 font-size < 16px 的输入框聚焦时自动放大视口，
+     进而触发 vaul drawer 的 visualViewport 重排导致抽屉撑爆。 */
+  @media (max-width: 639px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px;
+    }
+  }
 }
