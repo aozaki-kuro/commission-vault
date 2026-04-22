@@ -140,6 +140,9 @@ export function CommissionEditDrawer({
           onClose()
       }}
       direction="bottom"
+      // 关闭 vaul 对软键盘弹出时的抽屉高度/底部重定位，避免输入聚焦时整个 drawer 被撑大。
+      // 输入滚动到可视区由 iOS 浏览器自身处理，drawer 内部已是 overflow-y-auto。
+      repositionInputs={false}
     >
       <Drawer.Portal>
         <Drawer.Overlay
