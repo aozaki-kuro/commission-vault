@@ -20,7 +20,7 @@ function DialogOverlay({
       ref={ref}
       className={cn(
         `
-          fixed inset-0 z-60 bg-black/30 backdrop-blur-md
+          fixed inset-0 z-60 bg-black/45 backdrop-blur-md
           data-[state=open]:animate-[dialog-overlay-in_150ms_ease-out]
           data-[state=closed]:animate-[dialog-overlay-in_150ms_ease-in_reverse]
         `,
@@ -45,15 +45,16 @@ const dialogContentBase = {
     data-[state=closed]:animate-[dialog-content-out_150ms_ease-in]
   `,
   // sheet：移动端全屏，>=sm 退化为居中浮层；避免 vaul 那种 fixed+transform 触发的键盘异常。
+  // max-w-3xl 刻意宽于 AdminRootLayout 的 max-w-2xl，保证轮廓不与下方容器边缘重合。
   sheet: `
     fixed inset-0 z-70 flex flex-col overflow-hidden bg-white
     dark:bg-gray-950
     data-[state=open]:animate-[dialog-content-in_200ms_ease-out]
     data-[state=closed]:animate-[dialog-content-out_150ms_ease-in]
-    sm:inset-auto sm:top-1/2 sm:left-1/2 sm:max-h-[85vh] sm:w-full sm:max-w-2xl
-    sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:shadow-2xl
-    sm:ring-1 sm:ring-black/10
-    sm:dark:ring-white/10
+    sm:inset-auto sm:top-1/2 sm:left-1/2 sm:max-h-[85vh] sm:w-full sm:max-w-3xl
+    sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl
+    sm:bg-gray-50 sm:shadow-[0_24px_64px_-12px_rgb(0_0_0_/_0.35)]
+    dark:sm:bg-gray-900
   `,
 } as const satisfies Record<DialogContentVariant, string>
 
