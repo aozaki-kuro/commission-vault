@@ -1,7 +1,5 @@
 <script>
 import { buildNoticeFromContextMenu } from '@features/home/commission/commissionImageNoticeShared'
-import { createCommissionImageVariantTracker } from '@features/home/commission/commissionImageVariantTracker'
-import { trackRybbitEvent } from '@lib/analytics/track'
 
 type NoticeClientModule = typeof import('@features/home/commission/commissionImageNoticeClient')
 
@@ -23,17 +21,6 @@ async function loadNoticeClientModule(): Promise<NoticeClientModule> {
 
   return noticeClientPromise
 }
-
-const tracker = createCommissionImageVariantTracker(trackRybbitEvent, window, document)
-
-function onImageLoadCapture(event: Event) {
-  tracker.handleImageLoadCaptureEvent(event)
-}
-
-document.addEventListener('load', onImageLoadCapture, true)
-const cleanupIdleSampling = tracker.scheduleIdleSampling(() => {
-  tracker.sampleLoadedImagesNearViewport()
-})
 
 function onFirstContextMenu(event: MouseEvent) {
   if (noticeCleanup)
@@ -59,9 +46,7 @@ document.addEventListener('contextmenu', onFirstContextMenu)
 window.addEventListener(
   'pagehide',
   () => {
-    document.removeEventListener('load', onImageLoadCapture, true)
     document.removeEventListener('contextmenu', onFirstContextMenu)
-    cleanupIdleSampling()
     noticeCleanup?.()
     noticeCleanup = null
   },
