@@ -20,7 +20,7 @@ function DialogOverlay({
       ref={ref}
       className={cn(
         `
-          fixed inset-0 z-60 bg-black/15 backdrop-blur-sm
+          fixed inset-0 z-60 bg-black/30 backdrop-blur-md
           data-[state=open]:animate-[dialog-overlay-in_150ms_ease-out]
           data-[state=closed]:animate-[dialog-overlay-in_150ms_ease-in_reverse]
         `,
@@ -39,7 +39,7 @@ const dialogContentBase = {
   default: `
     fixed top-1/2 left-1/2 z-70 flex max-h-[85vh] w-full max-w-2xl
     -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden
-    rounded-2xl bg-white shadow-xl ring-1 ring-black/8
+    rounded-2xl bg-white shadow-2xl ring-1 ring-black/10
     dark:bg-gray-950 dark:ring-white/10
     data-[state=open]:animate-[dialog-content-in_200ms_ease-out]
     data-[state=closed]:animate-[dialog-content-out_150ms_ease-in]
@@ -51,8 +51,8 @@ const dialogContentBase = {
     data-[state=open]:animate-[dialog-content-in_200ms_ease-out]
     data-[state=closed]:animate-[dialog-content-out_150ms_ease-in]
     sm:inset-auto sm:top-1/2 sm:left-1/2 sm:max-h-[85vh] sm:w-full sm:max-w-2xl
-    sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:shadow-xl
-    sm:ring-1 sm:ring-black/8
+    sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:shadow-2xl
+    sm:ring-1 sm:ring-black/10
     sm:dark:ring-white/10
   `,
 } as const satisfies Record<DialogContentVariant, string>
