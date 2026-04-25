@@ -5,7 +5,10 @@ import {
   getHomeCharacterBatchTotalCount,
   prefetchHomeCharacterBatches,
 } from '@features/home/commission/batch/homeCharacterBatchClient'
-import { readActiveCharactersLoadedBatchCount } from '@features/home/commission/loader/activeCharactersEvent'
+import {
+  readActiveCharactersLoadedBatchCount,
+  requestActiveCharactersLoad,
+} from '@features/home/commission/loader/activeCharactersEvent'
 import {
   readArchivedCharactersLoadedBatchCount,
   requestArchivedCharactersLoad,
@@ -174,6 +177,8 @@ export function initSearchController(root: HTMLElement) {
   let didAutoJump = false
   let prefetchedActive = false
   let prefetchedArchived = false
+  let requestedActiveForSearch = false
+  let requestedArchivedForSearch = false
 
   if (initialUrlQuery) {
     input.value = initialUrlQuery
@@ -295,6 +300,35 @@ export function initSearchController(root: HTMLElement) {
     prefetchDeferredBatches('active')
   }
 
+  function shouldSuspendDomFilteringForActiveLoad() {
+    return mode === 'character' && Boolean(normalizeQuery(query)) && !panelState.activeLoaded
+  }
+
+  function requestActiveLoadBeforeFiltering() {
+    if (requestedActiveForSearch)
+      return
+    requestedActiveForSearch = true
+    requestActiveCharactersLoad(window, { strategy: 'all' })
+  }
+
+  function shouldSuspendDomFilteringForArchivedLoad(model: {
+    hiddenArchivedMatchedCount: number
+    visibleMatchedCount: number
+  }) {
+    return mode === 'character'
+      && Boolean(normalizeQuery(query))
+      && model.visibleMatchedCount === 0
+      && model.hiddenArchivedMatchedCount > 0
+      && (!panelState.archivedVisible || !panelState.archivedLoaded)
+  }
+
+  function requestArchivedLoadBeforeFiltering() {
+    if (requestedArchivedForSearch)
+      return
+    requestedArchivedForSearch = true
+    requestArchivedCharactersLoad(window, { strategy: 'all', preserveScroll: true })
+  }
+
   // ==================== Listbox controller ====================
 
   const listboxCtrl = createListboxController({
@@ -372,6 +406,11 @@ export function initSearchController(root: HTMLElement) {
     // Compute popular keywords
     const popularKeywords = computePopularKeywords()
 
+    const shouldSuspendActiveFiltering = shouldSuspendDomFilteringForActiveLoad()
+    if (shouldSuspendActiveFiltering) {
+      requestActiveLoadBeforeFiltering()
+    }
+
     // Compute search model
     const model = computeSearchModel({
       query,
@@ -384,16 +423,27 @@ export function initSearchController(root: HTMLElement) {
       activeCommandValue,
       controls,
       suggestionAliasGroups,
-      disableDomFiltering: false,
+      disableDomFiltering: shouldSuspendActiveFiltering,
       suppressInitialSuggestionPanelAnimation: false,
     })
 
     // Update matched IDs
     matchedIds = model.matchedIds
 
+    const shouldSuspendArchivedFiltering = shouldSuspendDomFilteringForArchivedLoad(model)
+    if (model.shouldAutoShowArchived) {
+      markAutoShowArchivedDone()
+      requestArchivedCharactersVisibility(window, 'visible')
+    }
+    if (shouldSuspendArchivedFiltering) {
+      requestArchivedLoadBeforeFiltering()
+    }
+
+    const shouldSuspendDomFiltering = shouldSuspendActiveFiltering || shouldSuspendArchivedFiltering
+
     // Sync DOM filtering
     syncDom({
-      disableDomFiltering: false,
+      disableDomFiltering: shouldSuspendDomFiltering,
       hasDeferredQuery: model.hasDeferredQuery,
       hiddenArchivedMatchedCount: model.hiddenArchivedMatchedCount,
       matchedIds: model.matchedIds,
@@ -464,12 +514,6 @@ export function initSearchController(root: HTMLElement) {
     // Prefetch archived batches when notice shows
     if (model.shouldShowHiddenArchivedNotice) {
       prefetchDeferredBatches('archived')
-    }
-
-    // Auto-expand archived section when query is complete and only archived matches exist
-    if (model.shouldAutoShowArchived) {
-      markAutoShowArchivedDone()
-      requestArchivedCharactersVisibility(window, 'visible')
     }
 
     // Render popular keywords (skip if unchanged)
@@ -737,11 +781,19 @@ export function initSearchController(root: HTMLElement) {
     mode = nextMode
     prefetchedActive = false
     prefetchedArchived = false
+    requestedActiveForSearch = panelState.activeLoaded
+    requestedArchivedForSearch = panelState.archivedLoaded
     scheduleRecompute({ immediate: true })
   })
 
   const unsubPanelState = subscribePanelState((nextState) => {
     panelState = nextState
+    if (nextState.activeLoaded) {
+      requestedActiveForSearch = true
+    }
+    if (nextState.archivedLoaded) {
+      requestedArchivedForSearch = true
+    }
     scheduleRecompute({ immediate: true })
   })
 

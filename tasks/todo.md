@@ -1,5 +1,19 @@
 # 统一迁移状态板（2026-03-18）
 
+## 本轮执行切片（2026-04-25 featured keyword 首次点击滚动修复）
+
+- [x] 定位 featured keyword 点击链路与首次初始化副作用
+- [x] 暂缓未加载 active 批次下的首次 DOM 过滤，避免首屏索引误收缩页面
+- [x] 补针对性测试并验证搜索回归
+
+### Review
+
+- 根因：首次 keyword 搜索在 active deferred 批次未加载时，立即用不完整 DOM 上下文过滤列表，可能把当前页面主体收缩到浏览器只能夹回顶部。
+- 修复：首次有 query 且 active 未加载时先请求 active 全量加载，并暂停该帧 DOM 过滤；批次加载完成后的 panel state 更新会恢复正常过滤。
+- 验证：`bun run test apps/web/src/features/home/search/commissionSearchController.test.ts`、`bun run test apps/web/src/features/home/search`、`bun run lint`、`bun run typecheck` 均通过。
+- 追加修复：`Blue Archive` 属于 archived-only 命中；过滤必须等 archived 展开/加载请求先拿到正确 scroll position，否则页面先收缩再 preserve，会保存到错误的顶部位置。
+- 追加验证：本地 Astro dev + Playwright 触发 `Blue Archive` 查询，滚动没有回到顶部。
+
 ## 本轮执行切片（2026-04-09 CLAUDE.md -> AGENTS.md 迁移）
 
 - [x] 盘点仓库内现有分层 `CLAUDE.md`，确认迁移范围并排除外部目录
