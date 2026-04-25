@@ -93,7 +93,7 @@ const BASE_SEARCH_FUSE_OPTIONS = {
 let fuseModulePromise: Promise<typeof import('fuse.js')> | null = null
 const EMPTY_IDS = new Set<number>()
 const EMPTY_STRING_SET = new Set<string>()
-const searchIndexCache = new WeakMap<SearchEntryLike[], SearchIndexLike<SearchEntryLike>>()
+const searchIndexCache = new WeakMap<object, unknown>()
 const matchedIdsCache = new WeakMap<object, Map<string, Set<number>>>()
 const strictTermMatchesCache = new WeakMap<object, Map<string, Set<number>>>()
 const preparedSuggestionsCache = new WeakMap<Suggestion[], PreparedSuggestion[]>()
@@ -565,16 +565,15 @@ export function createSearchIndex<T extends SearchEntryLike>(entries: T[]): Sear
   return next
 }
 
-export async function hydrateSearchIndexFuse<
-  T extends SearchEntryLike,
-  I extends SearchIndexLike<T>,
->(index: I): Promise<I> {
+export async function hydrateSearchIndexFuse<T extends SearchEntryLike, Extra extends object>(
+  index: SearchIndexLike<T> & Extra,
+): Promise<SearchIndexLike<T> & Extra> {
   if (index.fuse)
     return index
   return {
     ...index,
     fuse: await createSearchFuse(index.entries),
-  } as I
+  } as SearchIndexLike<T> & Extra
 }
 
 function matchesMaskedAt(pattern: string, query: string, startIndex: number) {
