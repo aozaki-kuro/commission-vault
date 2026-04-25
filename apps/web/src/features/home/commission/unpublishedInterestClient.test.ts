@@ -32,15 +32,34 @@ function expectInterestIconState(
   ).toBe(recordedHidden)
 }
 
+function createMemoryStorage(): Storage {
+  const values = new Map<string, string>()
+  return {
+    get length() {
+      return values.size
+    },
+    clear: () => values.clear(),
+    getItem: key => values.get(key) ?? null,
+    key: index => [...values.keys()][index] ?? null,
+    removeItem: key => values.delete(key),
+    setItem: (key, value) => values.set(key, value),
+  }
+}
+
 describe('unpublishedInterestClient', () => {
+  let storage: Storage
+
   beforeEach(() => {
+    storage = createMemoryStorage()
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: storage,
+    })
     document.body.innerHTML = ''
-    localStorage.clear()
   })
 
   afterEach(() => {
     document.body.innerHTML = ''
-    localStorage.clear()
   })
 
   it('records interest once, persists state, and disables the button', () => {
@@ -63,7 +82,7 @@ describe('unpublishedInterestClient', () => {
     expect(button?.querySelector('[data-commission-interest-label]')?.textContent).toBe('Recorded')
     expectInterestIconState(button, { defaultHidden: true, recordedHidden: false })
     expect(
-      localStorage.getItem('commission-index:unpublished-interest:artoria-pendragon-20240203'),
+      storage.getItem('commission-index:unpublished-interest:artoria-pendragon-20240203'),
     ).toBe('1')
 
     button?.click()
@@ -73,7 +92,7 @@ describe('unpublishedInterestClient', () => {
   })
 
   it('hydrates persisted interest state on mount', () => {
-    localStorage.setItem('commission-index:unpublished-interest:artoria-pendragon-20240203', '1')
+    storage.setItem('commission-index:unpublished-interest:artoria-pendragon-20240203', '1')
     document.body.innerHTML = buildButtonMarkup()
 
     const cleanup = mountUnpublishedInterestButtons()
@@ -106,7 +125,7 @@ describe('unpublishedInterestClient', () => {
     expect(button.getAttribute('aria-pressed')).toBe('true')
     expect(button.querySelector('[data-commission-interest-label]')?.textContent).toBe('Recorded')
     expectInterestIconState(button, { defaultHidden: true, recordedHidden: false })
-    expect(localStorage.getItem('commission-index:unpublished-interest:mash-kyrielight-20240311')).toBe('1')
+    expect(storage.getItem('commission-index:unpublished-interest:mash-kyrielight-20240311')).toBe('1')
 
     cleanup()
   })
@@ -139,7 +158,7 @@ describe('unpublishedInterestClient', () => {
       expectInterestIconState(button, { defaultHidden: true, recordedHidden: false })
     }
 
-    expect(localStorage.getItem('commission-index:unpublished-interest:shared-20240315')).toBe('1')
+    expect(storage.getItem('commission-index:unpublished-interest:shared-20240315')).toBe('1')
 
     cleanup()
   })
