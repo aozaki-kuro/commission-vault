@@ -46,20 +46,24 @@ jobs:
             generated-${{ runner.os }}-master-
             generated-${{ runner.os }}-
 
-      # Derive a stable token from the restored data so turbo can reuse a
-      # previous Astro build when source code hasn't changed.
+      # The whole point of a rebuild dispatch is "admin data changed" — pull
+      # fresh data from D1/R2 before building. Without this, the cached
+      # apps/web/generated would carry stale content into the deploy.
+      - name: Export fact source from D1/R2
+        run: bun run web:fact-source:export
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # Derive token AFTER export so turbo busts its build cache when the
+      # underlying data actually changes.
       - name: Derive WEB_BUILD_CACHE_TOKEN
         run: |
-          if [ -f apps/web/generated/fact-source/content.json ] && \
-             [ -f apps/web/generated/fact-source/source-images-manifest.json ]; then
-            hash=$(sha256sum \
-              apps/web/generated/fact-source/content.json \
-              apps/web/generated/fact-source/source-images-manifest.json \
-              | sha256sum | cut -c1-16)
-            echo "WEB_BUILD_CACHE_TOKEN=data-${hash}" >> "$GITHUB_ENV"
-          else
-            echo "WEB_BUILD_CACHE_TOKEN=rebuild-${{ github.event.client_payload.fact_source_version || github.run_id }}" >> "$GITHUB_ENV"
-          fi
+          hash=$(sha256sum \
+            apps/web/generated/fact-source/content.json \
+            apps/web/generated/fact-source/source-images-manifest.json \
+            | sha256sum | cut -c1-16)
+          echo "WEB_BUILD_CACHE_TOKEN=data-${hash}" >> "$GITHUB_ENV"
 
       - name: Build web
         id: build_web
