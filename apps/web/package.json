@@ -22,15 +22,15 @@
   },
   "dependencies": {
     "@commission-index/domain": "workspace:*",
-    "@iconify-json/tabler": "^1.2.33",
+    "@iconify-json/tabler": "^1.2.34",
     "astro-icon": "^1.1.5",
     "fuse.js": "^7.1.0"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.8",
+    "@astrojs/check": "^0.9.9",
     "@testing-library/jest-dom": "^6.9.1",
-    "astro": "^6.1.1",
-    "jsdom": "^29.0.1",
+    "astro": "^6.3.1",
+    "jsdom": "^29.1.1",
     "sharp": "^0.34.5"
   },
   "overrides": {
