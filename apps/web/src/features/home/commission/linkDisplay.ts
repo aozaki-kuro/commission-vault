@@ -33,21 +33,36 @@ export function selectDisplayLinks({
   const hasDesign = Boolean(designLink)
   const maxLinks = hasDesign ? 2 : 3
 
-  const selected: Record<string, string> = {}
+  const buckets: Record<string, string[]> = {}
   for (const url of links) {
     for (const { type, patterns } of LINK_PRIORITY) {
-      if (patterns.some(pattern => url.includes(pattern)) && !selected[type]) {
-        selected[type] = url
+      if (patterns.some(pattern => url.includes(pattern))) {
+        if (!buckets[type])
+          buckets[type] = []
+        buckets[type].push(url)
         break
       }
     }
   }
 
+  const flat: DisplayLink[] = []
+  for (const { type } of LINK_PRIORITY) {
+    const urls = buckets[type]
+    if (!urls)
+      continue
+    if (urls.length === 1) {
+      flat.push({ type, url: urls[0] })
+    }
+    else {
+      urls.forEach((url, i) => {
+        flat.push({ type: `${type} ${i + 1}`, url })
+      })
+    }
+  }
+
   return {
     hasDesign,
-    mainLinks: LINK_PRIORITY.filter(priority => priority.type in selected)
-      .slice(0, maxLinks)
-      .map(({ type }) => ({ type, url: selected[type] })),
+    mainLinks: flat.slice(0, maxLinks),
     designLink: hasDesign ? designLink! : null,
   }
 }

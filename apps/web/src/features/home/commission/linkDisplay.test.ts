@@ -43,4 +43,78 @@ describe('linkDisplay', () => {
     expect(hasDisplayableLinks({ links: [], designLink: 'https://example.com/design' })).toBe(true)
     expect(hasDisplayableLinks({ links: ['https://twitter.com/example/status/1'] })).toBe(true)
   })
+
+  it('numbers same-platform parts when there are multiple', () => {
+    const result = selectDisplayLinks({
+      links: [
+        'https://www.pixiv.net/artworks/144567573',
+        'https://www.pixiv.net/artworks/144613740',
+      ],
+    })
+
+    expect(result.mainLinks).toEqual([
+      { type: 'Pixiv 1', url: 'https://www.pixiv.net/artworks/144567573' },
+      { type: 'Pixiv 2', url: 'https://www.pixiv.net/artworks/144613740' },
+    ])
+    expect(result.designLink).toBeNull()
+  })
+
+  it('numbers three same-platform parts and fills the slot budget', () => {
+    const result = selectDisplayLinks({
+      links: [
+        'https://www.pixiv.net/artworks/1',
+        'https://www.pixiv.net/artworks/2',
+        'https://www.pixiv.net/artworks/3',
+      ],
+    })
+
+    expect(result.mainLinks).toEqual([
+      { type: 'Pixiv 1', url: 'https://www.pixiv.net/artworks/1' },
+      { type: 'Pixiv 2', url: 'https://www.pixiv.net/artworks/2' },
+      { type: 'Pixiv 3', url: 'https://www.pixiv.net/artworks/3' },
+    ])
+  })
+
+  it('keeps priority order and numbers multipart entries within their platform', () => {
+    const result = selectDisplayLinks({
+      links: [
+        'https://www.pixiv.net/artworks/1',
+        'https://x.com/example/status/1',
+        'https://www.pixiv.net/artworks/2',
+      ],
+    })
+
+    expect(result.mainLinks).toEqual([
+      { type: 'Twitter', url: 'https://x.com/example/status/1' },
+      { type: 'Pixiv 1', url: 'https://www.pixiv.net/artworks/1' },
+      { type: 'Pixiv 2', url: 'https://www.pixiv.net/artworks/2' },
+    ])
+  })
+
+  it('truncates trailing multipart entries when a design link tightens the budget', () => {
+    const result = selectDisplayLinks({
+      links: [
+        'https://x.com/example/status/1',
+        'https://www.pixiv.net/artworks/1',
+        'https://www.pixiv.net/artworks/2',
+      ],
+      designLink: 'https://x.com/example/status/2',
+    })
+
+    expect(result.mainLinks).toEqual([
+      { type: 'Twitter', url: 'https://x.com/example/status/1' },
+      { type: 'Pixiv 1', url: 'https://www.pixiv.net/artworks/1' },
+    ])
+    expect(result.designLink).toBe('https://x.com/example/status/2')
+  })
+
+  it('does not number a single same-platform link', () => {
+    const result = selectDisplayLinks({
+      links: ['https://www.pixiv.net/artworks/1'],
+    })
+
+    expect(result.mainLinks).toEqual([
+      { type: 'Pixiv', url: 'https://www.pixiv.net/artworks/1' },
+    ])
+  })
 })
