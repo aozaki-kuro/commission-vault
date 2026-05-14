@@ -123,21 +123,18 @@ export function renderEntryInfo(entry: BatchEntryPayload) {
   const links = document.createElement('div')
   links.className = LINKS_ROOT_CLASS
 
-  if (entry.links.length > 0) {
-    entry.links.forEach((link) => {
-      const anchor = document.createElement('a')
-      anchor.href = link.url
-      anchor.target = '_blank'
-      anchor.className = TEXT_LINK_CLASS
-      anchor.textContent = link.label
-      links.append(anchor)
-    })
-  }
-  else {
-    const interestButton = renderInterestButton(entry)
-    if (interestButton) {
-      links.append(interestButton)
-    }
+  entry.links.forEach((link) => {
+    const anchor = document.createElement('a')
+    anchor.href = link.url
+    anchor.target = '_blank'
+    anchor.className = TEXT_LINK_CLASS
+    anchor.textContent = link.label
+    links.append(anchor)
+  })
+
+  const interestButton = renderInterestButton(entry)
+  if (interestButton) {
+    links.append(interestButton)
   }
 
   root.append(links)

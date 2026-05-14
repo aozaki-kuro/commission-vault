@@ -2,7 +2,6 @@
 import type { Commission } from '@data/types'
 import {
   COMMISSION_LINK_TEXT_CLASS,
-  hasDisplayableLinks,
   selectDisplayLinks,
 } from '@features/home/commission/linkDisplay'
 import { getUnpublishedInterestIconMarkup } from '@features/home/commission/unpublishedInterestIcon'
@@ -33,7 +32,7 @@ const hasDescription = Boolean(description)
 const hasBoth = hasCreator && hasDescription
 
 const displayLinks = selectDisplayLinks({ links, designLink })
-const hasDisplayLinks = hasDisplayableLinks({ links, designLink })
+const hasPublishedLinks = displayLinks.mainLinks.length > 0
 const rootClass = `flex w-full flex-wrap items-center gap-y-2 font-mono text-xs text-gray-800 md:text-sm dark:text-gray-300 ${className}`.trim()
 ---
 
@@ -88,48 +87,49 @@ const rootClass = `flex w-full flex-wrap items-center gap-y-2 font-mono text-xs 
     {
       showLinks
 ? (
-        hasDisplayLinks
+        <>
+          {
+            displayLinks.mainLinks.map(link => (
+              <a href={link.url} class={COMMISSION_LINK_TEXT_CLASS} target="_blank">
+                {link.type}
+              </a>
+            ))
+          }
+          {
+            displayLinks.designLink
 ? (
-          <>
-            {
-              displayLinks.mainLinks.map(link => (
-                <a href={link.url} class={COMMISSION_LINK_TEXT_CLASS} target="_blank">
-                  {link.type}
-                </a>
-              ))
-            }
-            {
-              displayLinks.designLink
-? (
-                <a href={displayLinks.designLink} class={COMMISSION_LINK_TEXT_CLASS} target="_blank">
-                  {messages.listing.designLink}
-                </a>
-              )
+              <a href={displayLinks.designLink} class={COMMISSION_LINK_TEXT_CLASS} target="_blank">
+                {messages.listing.designLink}
+              </a>
+            )
 : null
-            }
-          </>
-        )
-: (
-          <button
-            type="button"
-            aria-pressed="false"
-            data-link-style="true"
-            class={`
-              ${COMMISSION_LINK_TEXT_CLASS}
-              inline-flex appearance-none items-center gap-2
-              border-0 bg-transparent p-0
-              disabled:cursor-default disabled:no-underline
-            `}
-            title={messages.listing.wantThisTitle}
-            data-commission-interest-key={interestKey}
-            data-commission-interest-recorded-label={messages.listing.wantThisRecorded}
-            data-commission-interest-recorded-title={messages.listing.wantThisRecordedTitle}
-          >
-            <Fragment set:html={getUnpublishedInterestIconMarkup({ state: 'default' })} />
-            <Fragment set:html={getUnpublishedInterestIconMarkup({ state: 'recorded', hidden: true })} />
-            <span data-commission-interest-label>{messages.listing.wantThis}</span>
-          </button>
-        )
+          }
+          {
+            !hasPublishedLinks
+? (
+              <button
+                type="button"
+                aria-pressed="false"
+                data-link-style="true"
+                class={`
+                  ${COMMISSION_LINK_TEXT_CLASS}
+                  inline-flex appearance-none items-center gap-2
+                  border-0 bg-transparent p-0
+                  disabled:cursor-default disabled:no-underline
+                `}
+                title={messages.listing.wantThisTitle}
+                data-commission-interest-key={interestKey}
+                data-commission-interest-recorded-label={messages.listing.wantThisRecorded}
+                data-commission-interest-recorded-title={messages.listing.wantThisRecordedTitle}
+              >
+                <Fragment set:html={getUnpublishedInterestIconMarkup({ state: 'default' })} />
+                <Fragment set:html={getUnpublishedInterestIconMarkup({ state: 'recorded', hidden: true })} />
+                <span data-commission-interest-label>{messages.listing.wantThis}</span>
+              </button>
+            )
+: null
+          }
+        </>
       )
 : null
     }

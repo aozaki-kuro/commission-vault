@@ -95,7 +95,7 @@ async function buildEntryPayload({
     primaryText,
     secondaryText,
     links,
-    interest: links.length > 0 ? null : buildInterestPayload({ interestKey, locale }),
+    interest: displayLinks.mainLinks.length > 0 ? null : buildInterestPayload({ interestKey, locale }),
   }
 }
 
