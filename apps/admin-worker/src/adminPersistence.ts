@@ -292,16 +292,23 @@ export async function updateCharacterOrder(
     throw new Error('Invalid character order payload.')
   }
 
-  const combined = [
-    ...active.map<[number, CharacterStatus]>(id => [id, 'active']),
-    ...archived.map<[number, CharacterStatus]>(id => [id, 'archived']),
-  ]
+  const activeIds = active.map(Number)
+  const archivedIds = archived.map(Number)
 
-  for (const [index, [id, status]] of combined.entries()) {
+  if (activeIds.length > 0) {
+    const cases = activeIds.map((id, i) => `WHEN ${id} THEN ${i + 1}`).join(' ')
     await runStatement(
       db,
-      'UPDATE characters SET sort_order = ?, status = ? WHERE id = ?',
-      [index + 1, status, id],
+      `UPDATE characters SET sort_order = CASE id ${cases} END, status = 'active' WHERE id IN (${activeIds.join(', ')})`,
+    )
+  }
+
+  if (archivedIds.length > 0) {
+    const baseOrder = activeIds.length
+    const cases = archivedIds.map((id, i) => `WHEN ${id} THEN ${baseOrder + i + 1}`).join(' ')
+    await runStatement(
+      db,
+      `UPDATE characters SET sort_order = CASE id ${cases} END, status = 'archived' WHERE id IN (${archivedIds.join(', ')})`,
     )
   }
 }
@@ -705,14 +712,15 @@ export async function saveHomeFeaturedSearchKeywords(db: D1DatabaseLike, keyword
   await ensureHomeFeaturedSearchKeywordsTable(db)
   await runStatement(db, 'DELETE FROM home_featured_search_keywords')
 
-  for (const [index, keyword] of normalizedKeywords.entries()) {
-    await runStatement(
-      db,
-      `
-        INSERT INTO home_featured_search_keywords (keyword, sort_order)
-        VALUES (?, ?)
-      `,
-      [keyword, index + 1],
-    )
+  if (normalizedKeywords.length === 0) {
+    return
   }
+
+  const placeholders = normalizedKeywords.map(() => '(?, ?)').join(', ')
+  const values = normalizedKeywords.flatMap((keyword, index) => [keyword, index + 1])
+  await runStatement(
+    db,
+    `INSERT INTO home_featured_search_keywords (keyword, sort_order) VALUES ${placeholders}`,
+    values,
+  )
 }

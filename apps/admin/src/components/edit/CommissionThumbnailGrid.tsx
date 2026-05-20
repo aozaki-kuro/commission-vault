@@ -78,6 +78,7 @@ function ThumbnailCard({
                 src={previewSrc}
                 alt={commission.fileName}
                 loading="lazy"
+                decoding="async"
                 className="
                   size-full object-contain transition
                   group-hover:scale-[1.02]
