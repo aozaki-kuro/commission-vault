@@ -1,0 +1,9 @@
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true
+shellEmulator: true
+trustPolicy: no-downgrade
+packages:
+  - 'apps/*'
+  - 'packages/*'

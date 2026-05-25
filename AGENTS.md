@@ -6,36 +6,36 @@ This file provides guidance to coding agents when working with code in this repo
 
 ## Project Overview
 
-Commission Index — a personal commission listing/indexing site. Bun monorepo with Astro 6 static site (public web), React 19 SPA (admin), and Cloudflare Worker (admin API). Data lives in remote D1/R2.
+Commission Index — a personal commission listing/indexing site. pnpm monorepo with Astro 6 static site (public web), React 19 SPA (admin), and Cloudflare Worker (admin API). Data lives in remote D1/R2.
 
 ## Commands
 
 ```bash
 # Dev
-bun run dev              # web Astro dev (localhost:4321)
-bun run dev:admin        # admin frontend + worker with remote D1/R2 (localhost:4174 + :8787)
+pnpm run dev              # web Astro dev (localhost:4321)
+pnpm run dev:admin        # admin frontend + worker with remote D1/R2 (localhost:4174 + :8787)
 
 # Build
-bun run build            # build apps/web static output
-bun run build:all        # build all workspaces via Turbo
-bun run build:admin      # build admin only
+pnpm run build            # build apps/web static output
+pnpm run build:all        # build all workspaces via Turbo
+pnpm run build:admin      # build admin only
 
 # Validate
-bun run lint             # ESLint check
-bun run lint:fix         # ESLint auto-fix
-bun run check            # Astro type-check (.astro + TS)
-bun run typecheck        # TS check all workspaces via Turbo
+pnpm run lint             # ESLint check
+pnpm run lint:fix         # ESLint auto-fix
+pnpm run check            # Astro type-check (.astro + TS)
+pnpm run typecheck        # TS check all workspaces via Turbo
 
 # Test
-bun run test             # Vitest unit tests (all workspaces)
-bun run test:watch       # Vitest watch mode
-bun run test:changed     # test changed files only
-bun run test:visual      # Playwright visual regression
-bun run test:visual:update  # update Playwright baselines
+pnpm run test             # Vitest unit tests (all workspaces)
+pnpm run test:watch       # Vitest watch mode
+pnpm run test:changed     # test changed files only
+pnpm run test:visual      # Playwright visual regression
+pnpm run test:visual:update  # update Playwright baselines
 
 # Deploy (manual)
-bun run deploy:web       # deploy public site Worker
-bun run deploy:admin     # deploy admin Worker
+pnpm run deploy:web       # deploy public site Worker
+pnpm run deploy:admin     # deploy admin Worker
 ```
 
 ## Architecture
@@ -51,7 +51,7 @@ packages/domain     Shared types and pure domain helpers (no app imports)
 
 ### Tech Stack
 
-- **Runtime:** Node 24 (mise) + Bun (package manager + scripts; new scripts use `.ts` not `.mjs`)
+- **Runtime:** Node 24 (mise) + pnpm (package manager + scripts; new scripts use `.ts` not `.mjs`)
 - **Build orchestration:** Turbo (cacheable tasks only; deploy stays outside Turbo)
 - **Public site:** Astro 6 + Tailwind CSS 4 (vanilla TS client behavior)
 - **Admin frontend:** React 19 + Vite 8 + Tailwind CSS + shadcn/ui
@@ -132,20 +132,20 @@ When you discover a non-obvious bug, footgun, or architecture-specific gotcha du
 
 **Pre-commit:**
 
-1. `bun install --frozen-lockfile` — lockfile integrity
+1. `pnpm install --frozen-lockfile` — lockfile integrity
 2. `lint-staged` — ESLint fix on staged files
 
 **Pre-push:**
 
-1. `bun run lint` — full ESLint check
-2. `bun run typecheck` — TypeScript across all workspaces
-3. `bun run test` — Vitest unit tests
+1. `pnpm run lint` — full ESLint check
+2. `pnpm run typecheck` — TypeScript across all workspaces
+3. `pnpm run test` — Vitest unit tests
 
 ### CI (master only, after push)
 
-1. `bun run build:admin` — admin build
-2. `bun run --cwd apps/web check:astro` — Astro type-check
-3. `bun run build:web` — web build
+1. `pnpm run build:admin` — admin build
+2. `pnpm -C apps/web run check:astro` — Astro type-check
+3. `pnpm run build:web` — web build
 4. Deploy web + admin
 
 CI gotchas:

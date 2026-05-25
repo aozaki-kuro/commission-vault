@@ -15,7 +15,7 @@ const children = new Set<ReturnType<typeof spawn>>()
 let stopping = false
 
 function startProcess(name: string, args: string[], extraEnv: Record<string, string> = {}) {
-  const child = spawn('bun', args, {
+  const child = spawn('pnpm', args, {
     cwd: process.cwd(),
     stdio: 'inherit',
     env: {
@@ -149,13 +149,13 @@ process.on('SIGTERM', () => {
 
 async function main() {
   await assertPortAvailable(Number.parseInt(workerPort, 10), 'admin worker')
-  startProcess('admin-worker', ['run', '--cwd', 'apps/admin-worker', 'dev'])
+  startProcess('admin-worker', ['-C', 'apps/admin-worker', 'dev'])
 
   console.log(`[dev:admin] waiting for worker data readiness at ${workerReadyUrl}`)
   await waitForWorkerReady(workerReadyUrl, workerReadyTimeoutMs)
   console.log('[dev:admin] worker is ready, starting admin frontend')
 
-  startProcess('admin', ['run', '--cwd', 'apps/admin', 'dev'], {
+  startProcess('admin', ['-C', 'apps/admin', 'dev'], {
     ADMIN_API_BASE_URL: adminApiBaseUrl,
   })
 }

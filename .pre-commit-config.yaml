@@ -5,9 +5,9 @@ default_install_hook_types:
 repos:
   - repo: local
     hooks:
-      - id: bun-install
-        name: bun install (frozen)
-        entry: bun install --frozen-lockfile
+      - id: pnpm-install
+        name: pnpm install (frozen)
+        entry: pnpm install --frozen-lockfile
         language: system
         pass_filenames: false
         stages:
@@ -16,7 +16,7 @@ repos:
 
       - id: lint-staged
         name: lint staged
-        entry: bun lint-staged
+        entry: pnpm lint-staged
         language: system
         pass_filenames: false
         stages:
@@ -25,7 +25,7 @@ repos:
 
       - id: typecheck
         name: typecheck
-        entry: bun run typecheck
+        entry: pnpm run typecheck
         language: system
         pass_filenames: false
         stages:
@@ -34,7 +34,7 @@ repos:
 
       - id: tests
         name: vitest
-        entry: bun run test
+        entry: pnpm run test
         language: system
         pass_filenames: false
         stages:
@@ -43,7 +43,7 @@ repos:
 
       - id: lint
         name: lint (full)
-        entry: bun run lint
+        entry: pnpm run lint
         language: system
         pass_filenames: false
         stages:

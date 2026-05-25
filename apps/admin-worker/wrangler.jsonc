@@ -1,16 +1,16 @@
 {
   // Manual/local deploy entrypoint from this workspace:
-  // `bun run deploy`
+  // `pnpm run deploy`
   // Cloudflare Workers Builds should connect the repo to this worker with:
   // Root directory = `apps/admin-worker`
-  // Build command = `bun run build:assets`
-  // Deploy command = `bun run deploy`
+  // Build command = `pnpm run build:assets`
+  // Deploy command = `pnpm run deploy`
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "commission-index-admin",
   "main": "src/index.ts",
   "compatibility_date": "2026-03-17",
   "build": {
-    "command": "bun run --cwd ../.. build:admin"
+    "command": "pnpm run --cwd ../.. build:admin"
   },
   "assets": {
     "directory": "../admin/dist",

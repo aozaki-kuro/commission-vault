@@ -1,15 +1,15 @@
 {
   // Manual/local deploy entrypoint from this workspace:
-  // `bun run deploy`
+  // `pnpm run deploy`
   // Cloudflare Workers Builds should connect the repo to this worker with:
   // Root directory = `apps/web`
-  // Build command = `bun run build`
-  // Deploy command = `bun run deploy`
+  // Build command = `pnpm run build`
+  // Deploy command = `pnpm run deploy`
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "commission-index-web",
   "compatibility_date": "2026-03-17",
   "build": {
-    "command": "bun run --cwd ../.. build:web"
+    "command": "pnpm run --cwd ../.. build:web"
   },
   "d1_databases": [
     {
