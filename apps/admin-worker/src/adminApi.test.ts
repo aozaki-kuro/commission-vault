@@ -603,14 +603,15 @@ describe('admin worker CRUD contract routing', () => {
       message: 'Character order updated.',
     })
     const updateOps = executions.filter(item =>
-      item.query.includes('UPDATE characters SET sort_order = ?, status = ? WHERE id = ?'),
+      item.query.includes('UPDATE characters SET sort_order ='),
     )
-    expect(updateOps).toHaveLength(3)
-    expect(updateOps.map(item => item.values)).toEqual([
-      [1, 'active', 1],
-      [2, 'active', 2],
-      [3, 'archived', 3],
-    ])
+    expect(updateOps).toHaveLength(2)
+    expect(updateOps[0]!.query).toContain("WHEN 1 THEN 1 WHEN 2 THEN 2")
+    expect(updateOps[0]!.query).toContain("status = 'active'")
+    expect(updateOps[0]!.query).toContain('WHERE id IN (1, 2)')
+    expect(updateOps[1]!.query).toContain("WHEN 3 THEN 3")
+    expect(updateOps[1]!.query).toContain("status = 'archived'")
+    expect(updateOps[1]!.query).toContain('WHERE id IN (3)')
   })
 
   it('handles delete-character natively when DB binding exists', async () => {
@@ -1176,11 +1177,8 @@ describe('admin worker CRUD contract routing', () => {
     )
 
     expect(deleteOps).toHaveLength(1)
-    expect(insertOps).toHaveLength(2)
-    expect(insertOps.map(item => item.values)).toEqual([
-      ['Kanaut Nishe', 1],
-      ['maid', 2],
-    ])
+    expect(insertOps).toHaveLength(1)
+    expect(insertOps[0]!.values).toEqual(['Kanaut Nishe', 1, 'maid', 2])
   })
 
   it('handles creator alias writes natively when DB binding exists', async () => {
