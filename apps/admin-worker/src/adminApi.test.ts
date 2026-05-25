@@ -606,11 +606,11 @@ describe('admin worker CRUD contract routing', () => {
       item.query.includes('UPDATE characters SET sort_order ='),
     )
     expect(updateOps).toHaveLength(2)
-    expect(updateOps[0]!.query).toContain("WHEN 1 THEN 1 WHEN 2 THEN 2")
-    expect(updateOps[0]!.query).toContain("status = 'active'")
+    expect(updateOps[0]!.query).toContain('WHEN 1 THEN 1 WHEN 2 THEN 2')
+    expect(updateOps[0]!.query).toContain('status = \'active\'')
     expect(updateOps[0]!.query).toContain('WHERE id IN (1, 2)')
-    expect(updateOps[1]!.query).toContain("WHEN 3 THEN 3")
-    expect(updateOps[1]!.query).toContain("status = 'archived'")
+    expect(updateOps[1]!.query).toContain('WHEN 3 THEN 3')
+    expect(updateOps[1]!.query).toContain('status = \'archived\'')
     expect(updateOps[1]!.query).toContain('WHERE id IN (3)')
   })
 
