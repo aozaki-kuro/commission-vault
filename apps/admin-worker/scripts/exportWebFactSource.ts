@@ -199,6 +199,7 @@ function runWrangler(args: string[]): SpawnSyncReturns<string> {
   return spawnSync(getWranglerCommand(), args, {
     cwd: adminWorkerRoot,
     encoding: 'utf8',
+    env: { ...process.env, CI: 'true' },
   })
 }
 
@@ -207,6 +208,7 @@ function runWranglerAsync(args: string[]) {
     const child = spawn(getWranglerCommand(), args, {
       cwd: adminWorkerRoot,
       stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, CI: 'true' },
     })
 
     let stdout = ''
