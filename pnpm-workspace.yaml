@@ -4,6 +4,7 @@ allowBuilds:
   workerd: true
 shellEmulator: true
 trustPolicy: no-downgrade
+
 packages:
   - 'apps/*'
   - 'packages/*'
