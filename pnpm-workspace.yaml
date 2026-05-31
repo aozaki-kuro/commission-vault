@@ -4,6 +4,9 @@ allowBuilds:
   workerd: true
 shellEmulator: true
 trustPolicy: no-downgrade
+trustPolicyIgnoreAfter: 20160 # 2 weeks
+trustPolicyExclude:
+  - tinyexec # false positive: cross-major provenance date comparison
 
 packages:
   - 'apps/*'
