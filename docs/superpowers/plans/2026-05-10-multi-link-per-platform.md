@@ -112,7 +112,7 @@ it('does not number a single same-platform link', () => {
 Run:
 
 ```bash
-bun run --cwd apps/web vitest run src/features/home/commission/linkDisplay.test.ts
+pnpm -C apps/web vitest run src/features/home/commission/linkDisplay.test.ts
 ```
 
 Expected: existing 3 tests pass, the **single same-platform link** test passes (current behavior already returns `'Pixiv'` for a single link), and the other 4 new tests fail. Failures should look like:
@@ -213,7 +213,7 @@ What changed and why:
 Run:
 
 ```bash
-bun run --cwd apps/web vitest run src/features/home/commission/linkDisplay.test.ts
+pnpm -C apps/web vitest run src/features/home/commission/linkDisplay.test.ts
 ```
 
 Expected: all 8 tests pass (3 original + 5 new).
@@ -223,18 +223,18 @@ Expected: all 8 tests pass (3 original + 5 new).
 Run:
 
 ```bash
-bun run lint
-bun run typecheck
+pnpm run lint
+pnpm run typecheck
 ```
 
-Expected: both clean. If lint flags formatting (semicolons, quote style, trailing commas, line width), fix with `bun run lint:fix` and re-verify the tests still pass.
+Expected: both clean. If lint flags formatting (semicolons, quote style, trailing commas, line width), fix with `pnpm run lint:fix` and re-verify the tests still pass.
 
 - [ ] **Step 6: Run the full app/web test suite to catch any consumer regression**
 
 Run:
 
 ```bash
-bun run --cwd apps/web vitest run
+pnpm -C apps/web vitest run
 ```
 
 Expected: all green. Nothing else consumes `selectDisplayLinks` in a way that's sensitive to label content (the consumers — `IllustratorInfo.astro`, `homeCharacterBatchPayload.ts`, `homeTimelineBatchPayload.ts` — pass `mainLinks[].type` through as-is), but a full run confirms no incidental breakage.

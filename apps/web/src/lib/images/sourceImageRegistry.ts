@@ -57,7 +57,7 @@ function buildSourceImageRecords(): SourceImageRecord[] {
     const module = SOURCE_IMAGE_MODULES[modulePath]
     if (!module) {
       throw new Error(
-        `Generated source image missing from build input: ${modulePath}. Run \`bun run web:fact-source:export\` and try again.`,
+        `Generated source image missing from build input: ${modulePath}. Run \`pnpm run web:fact-source:export\` and try again.`,
       )
     }
 

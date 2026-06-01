@@ -146,7 +146,7 @@ const maxDownloadConcurrency = 16
 
 function printHelp() {
   console.log(`
-Usage: bun run ./scripts/exportWebFactSource.ts [options]
+Usage: pnpm run ./scripts/exportWebFactSource.ts [options]
 
 Options:
   --output-root <path>  Override generated output root (default: ../web/generated)

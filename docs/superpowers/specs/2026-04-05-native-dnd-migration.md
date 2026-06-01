@@ -151,7 +151,7 @@ Remove from `apps/admin/package.json`:
 - `@dnd-kit/sortable`
 - `@dnd-kit/utilities`
 
-Run `bun install` to clean lockfile.
+Run `pnpm install` to clean lockfile.
 
 ## Drop Target Calculation
 

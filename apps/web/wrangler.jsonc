@@ -9,7 +9,7 @@
   "name": "commission-index-web",
   "compatibility_date": "2026-03-17",
   "build": {
-    "command": "pnpm run --cwd ../.. build:web"
+    "command": "pnpm -C ../.. run build:web"
   },
   "d1_databases": [
     {

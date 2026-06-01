@@ -907,7 +907,7 @@ if (result.status !== 'success') {
 
 ```bash
 # 1. Start the worker (remote D1/R2, local dev mode)
-bun run dev:admin   # starts worker at :8787 and admin UI at :4174
+pnpm run dev:admin   # starts worker at :8787 and admin UI at :4174
 
 # 2. Verify worker is up
 curl http://127.0.0.1:8787/api/admin/health

@@ -10,7 +10,7 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-03-17",
   "build": {
-    "command": "pnpm run --cwd ../.. build:admin"
+    "command": "pnpm -C ../.. run build:admin"
   },
   "assets": {
     "directory": "../admin/dist",

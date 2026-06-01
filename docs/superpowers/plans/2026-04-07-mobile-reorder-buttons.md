@@ -60,7 +60,7 @@ The only change is `inline-flex` → `hidden sm:inline-flex`.
 
 - [ ] **Step 2: Verify visually**
 
-Run `bun run dev:admin`, open the edit page, resize browser to mobile width (< 640px). Confirm the grip icon disappears. At ≥ 640px it should still show and drag should still work.
+Run `pnpm run dev:admin`, open the edit page, resize browser to mobile width (< 640px). Confirm the grip icon disappears. At ≥ 640px it should still show and drag should still work.
 
 - [ ] **Step 3: Commit**
 
@@ -199,7 +199,7 @@ Note: Moving past the divider changes active/archived status — this is the des
 
 - [ ] **Step 5: Verify toggle button appears on mobile only**
 
-Run `bun run dev:admin`, check:
+Run `pnpm run dev:admin`, check:
 
 - Mobile (< 640px): Reorder button visible next to search
 - Desktop (≥ 640px): Reorder button hidden
@@ -355,7 +355,7 @@ In `CommissionManager.tsx`, update the subtitle to mention the reorder button on
 
 - [ ] **Step 4: Verify full flow on mobile**
 
-Run `bun run dev:admin`, resize to mobile:
+Run `pnpm run dev:admin`, resize to mobile:
 
 1. Default: no drag handle, no arrows visible
 2. Tap "Reorder" button → arrows appear on each card
@@ -391,7 +391,7 @@ git commit -m "feat(admin): add mobile reorder arrows for character cards"
 - [ ] **Step 1: Run typecheck**
 
 ```bash
-bun run typecheck
+pnpm run typecheck
 ```
 
 Expected: no errors.
@@ -399,7 +399,7 @@ Expected: no errors.
 - [ ] **Step 2: Run lint**
 
 ```bash
-bun run lint
+pnpm run lint
 ```
 
 Expected: no errors (or only pre-existing ones).

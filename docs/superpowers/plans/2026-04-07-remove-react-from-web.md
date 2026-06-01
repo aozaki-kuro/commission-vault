@@ -3430,9 +3430,9 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 3: Run `bun install` to update lockfile**
+- [ ] **Step 3: Run `pnpm install` to update lockfile**
 
-Run: `cd apps/web && bun install`
+Run: `cd apps/web && pnpm install`
 
 - [ ] **Step 4: Commit**
 
@@ -3479,22 +3479,22 @@ Run the full validation pipeline to confirm everything compiles and passes.
 
 - [ ] **Step 1: TypeScript check**
 
-Run: `bun run typecheck`
+Run: `pnpm run typecheck`
 Expected: No errors
 
 - [ ] **Step 2: Lint**
 
-Run: `bun run lint`
+Run: `pnpm run lint`
 Expected: No errors (or only pre-existing ones)
 
 - [ ] **Step 3: Build**
 
-Run: `bun run build`
+Run: `pnpm run build`
 Expected: Build succeeds, outputs static HTML + JS chunks
 
 - [ ] **Step 4: Unit tests**
 
-Run: `bun run test`
+Run: `pnpm run test`
 Expected: All tests pass
 
 - [ ] **Step 5: Compare bundle size**
@@ -3515,13 +3515,13 @@ Run Playwright visual regression tests to confirm pixel-level consistency.
 
 - [ ] **Step 1: Run visual regression tests**
 
-Run: `bun run test:visual`
+Run: `pnpm run test:visual`
 Expected: All screenshots match baseline (or very close — minor sub-pixel differences from framework removal are acceptable)
 
 - [ ] **Step 2: If screenshots differ, inspect and update baselines**
 
 If differences are only sub-pixel rendering changes (not structural):
-Run: `bun run test:visual:update`
+Run: `pnpm run test:visual:update`
 
 If differences are structural, go back and fix the Astro template or controller.
 

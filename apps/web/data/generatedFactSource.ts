@@ -46,7 +46,7 @@ function readGeneratedJsonFile<T>(fileName: string): T {
   const filePath = resolveGeneratedFactSourcePath(fileName)
   if (!hasGeneratedFactSourceFile(fileName)) {
     throw new Error(
-      `Generated fact source file not found at ${filePath}. Run \`bun run web:fact-source:export\` or \`bun run build:web\` first.`,
+      `Generated fact source file not found at ${filePath}. Run \`pnpm run web:fact-source:export\` or \`pnpm run build:web\` first.`,
     )
   }
 

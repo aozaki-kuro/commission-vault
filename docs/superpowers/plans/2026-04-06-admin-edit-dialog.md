@@ -21,7 +21,7 @@
 Run:
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun add @radix-ui/react-dialog --cwd apps/admin
+cd /Users/aozaki/GitHub/commission-index && pnpm add @radix-ui/react-dialog -C apps/admin
 ```
 
 - [ ] **Step 2: Verify installation**
@@ -29,7 +29,7 @@ cd /Users/aozaki/GitHub/commission-index && bun add @radix-ui/react-dialog --cwd
 Run:
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run --cwd apps/admin typecheck 2>&1 | tail -5
+cd /Users/aozaki/GitHub/commission-index && pnpm -C apps/admin typecheck 2>&1 | tail -5
 ```
 
 Expected: No new errors.
@@ -205,7 +205,7 @@ export {
 Run:
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run --cwd apps/admin typecheck 2>&1 | tail -5
+cd /Users/aozaki/GitHub/commission-index && pnpm -C apps/admin typecheck 2>&1 | tail -5
 ```
 
 Expected: No errors.
@@ -294,7 +294,7 @@ data-[state=closed]:animate-[dialog-content-out_150ms_ease-in]
 Run:
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run build:admin 2>&1 | tail -5
+cd /Users/aozaki/GitHub/commission-index && pnpm run build:admin 2>&1 | tail -5
 ```
 
 Expected: Build succeeds.
@@ -577,7 +577,7 @@ Note: The `EditPanelHeader` helper is not used because desktop uses `DialogHeade
 Run:
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run --cwd apps/admin typecheck 2>&1 | tail -10
+cd /Users/aozaki/GitHub/commission-index && pnpm -C apps/admin typecheck 2>&1 | tail -10
 ```
 
 Expected: No errors.
@@ -587,7 +587,7 @@ Expected: No errors.
 Run:
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run build:admin 2>&1 | tail -5
+cd /Users/aozaki/GitHub/commission-index && pnpm run build:admin 2>&1 | tail -5
 ```
 
 Expected: Build succeeds.
@@ -597,7 +597,7 @@ Expected: Build succeeds.
 Run:
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run lint 2>&1 | tail -10
+cd /Users/aozaki/GitHub/commission-index && pnpm run lint 2>&1 | tail -10
 ```
 
 Expected: No errors.
@@ -618,7 +618,7 @@ git commit -m "feat(admin): use centered dialog for desktop commission editing"
 Run:
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run dev:admin
+cd /Users/aozaki/GitHub/commission-index && pnpm run dev:admin
 ```
 
 Verify manually:
@@ -635,7 +635,7 @@ Verify manually:
 Run:
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run lint && bun run typecheck && bun run test
+cd /Users/aozaki/GitHub/commission-index && pnpm run lint && pnpm run typecheck && pnpm run test
 ```
 
 Expected: All pass.

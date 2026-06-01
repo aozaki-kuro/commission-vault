@@ -179,7 +179,7 @@ In `apps/web/public/_headers`, add before the `/_astro/*` rule:
 
 - [ ] **Step 4: Verify build works**
 
-Run: `bun run --cwd apps/web check:astro`
+Run: `pnpm -C apps/web check:astro`
 Expected: No type errors.
 
 - [ ] **Step 5: Commit**
@@ -353,7 +353,7 @@ import type { HomeCharacterBatchManifest } from '@features/home/server/homeChara
 
 - [ ] **Step 3: Run tests to confirm no regressions**
 
-Run: `bun run test -- --run apps/web/src/features/home/commission/batch/`
+Run: `pnpm run test -- --run apps/web/src/features/home/commission/batch/`
 Expected: All existing tests pass (they don't pass `manifestOverride`, so it defaults to reading the inline manifest as before).
 
 - [ ] **Step 4: Commit**
@@ -546,7 +546,7 @@ import { normalizeBatchTargetId } from '@features/home/commission/batch/batchMan
 
 - [ ] **Step 5: Run tests**
 
-Run: `bun run test -- --run apps/web/src/features/home/commission/loader/timelineViewLoader.test.ts`
+Run: `pnpm run test -- --run apps/web/src/features/home/commission/loader/timelineViewLoader.test.ts`
 Expected: Existing tests pass (inline manifest still resolves; no fallback triggered).
 
 - [ ] **Step 6: Commit**
@@ -665,7 +665,7 @@ const syncHashTarget = async () => {
 
 - [ ] **Step 4: Run tests**
 
-Run: `bun run test -- --run apps/web/src/features/home/commission/loader/activeCharactersLoader.test.ts`
+Run: `pnpm run test -- --run apps/web/src/features/home/commission/loader/activeCharactersLoader.test.ts`
 Expected: Existing tests pass.
 
 - [ ] **Step 5: Commit**
@@ -790,7 +790,7 @@ const syncHashTarget = async () => {
 
 - [ ] **Step 4: Run tests**
 
-Run: `bun run test -- --run apps/web/src/features/home/commission/loader/archivedCharactersLoader.test.ts`
+Run: `pnpm run test -- --run apps/web/src/features/home/commission/loader/archivedCharactersLoader.test.ts`
 Expected: Existing tests pass.
 
 - [ ] **Step 5: Commit**
@@ -903,7 +903,7 @@ In `archivedCharactersLoader.test.ts`, add an analogous test:
 
 - [ ] **Step 4: Run all loader tests**
 
-Run: `bun run test -- --run apps/web/src/features/home/commission/loader/`
+Run: `pnpm run test -- --run apps/web/src/features/home/commission/loader/`
 Expected: All tests pass, including the new fallback tests.
 
 - [ ] **Step 5: Commit**
@@ -919,17 +919,17 @@ git commit -m "test(web): add fresh-manifest fallback test cases for all loaders
 
 - [ ] **Step 1: Run full lint**
 
-Run: `bun run lint`
+Run: `pnpm run lint`
 Expected: No errors.
 
 - [ ] **Step 2: Run full typecheck**
 
-Run: `bun run typecheck`
+Run: `pnpm run typecheck`
 Expected: No errors.
 
 - [ ] **Step 3: Run full test suite**
 
-Run: `bun run test`
+Run: `pnpm run test`
 Expected: All tests pass.
 
 - [ ] **Step 4: Update CLAUDE.md if needed**

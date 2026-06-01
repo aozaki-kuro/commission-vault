@@ -292,9 +292,9 @@ class-variance-authority
 
 ### 12. Testing strategy
 
-1. **Before migration:** Run `bun run test:visual` to capture baseline screenshots.
+1. **Before migration:** Run `pnpm run test:visual` to capture baseline screenshots.
 2. **Unit tests:** Rewrite in Vitest, testing vanilla TS modules directly (no `@testing-library/react`). Test store, keyboard nav, DOM sync, deferred loading.
-3. **Visual regression:** Run `bun run test:visual` after migration — screenshot diff must show zero visible change.
+3. **Visual regression:** Run `pnpm run test:visual` after migration — screenshot diff must show zero visible change.
 4. **Manual verification checklist:**
    - [ ] Type in search box → results filter in real time
    - [ ] Arrow keys navigate suggestion dropdown
@@ -307,7 +307,7 @@ class-variance-authority
    - [ ] View mode toggle (character/timeline) persists
    - [ ] Copy link button works
    - [ ] Search works after stale sections expand
-5. **Build verification:** `bun run build` succeeds, `bun run typecheck` passes, `bun run lint` passes.
+5. **Build verification:** `pnpm run build` succeeds, `pnpm run typecheck` passes, `pnpm run lint` passes.
 
 ## Estimated output
 

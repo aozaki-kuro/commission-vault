@@ -21,13 +21,13 @@
 - [ ] **Step 1: Add vaul and @radix-ui/react-popover**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun add -D vaul @radix-ui/react-popover --cwd apps/admin
+cd /Users/aozaki/GitHub/commission-index && pnpm add -D vaul @radix-ui/react-popover -C apps/admin
 ```
 
 - [ ] **Step 2: Verify install**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun install --frozen-lockfile 2>&1 || bun install
+cd /Users/aozaki/GitHub/commission-index && pnpm install --frozen-lockfile 2>&1 || pnpm install
 ```
 
 Expected: Clean install, both packages in `apps/admin/package.json` dependencies.
@@ -271,7 +271,7 @@ export function CommissionThumbnailGridSkeleton() {
 - [ ] **Step 2: Verify it compiles**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run --cwd apps/admin tsc --noEmit 2>&1 | head -20
+cd /Users/aozaki/GitHub/commission-index && pnpm -C apps/admin tsc --noEmit 2>&1 | head -20
 ```
 
 Expected: No errors related to CommissionThumbnailGrid.
@@ -441,7 +441,7 @@ export function CommissionEditDrawer({
 - [ ] **Step 3: Verify it compiles**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run --cwd apps/admin tsc --noEmit 2>&1 | head -20
+cd /Users/aozaki/GitHub/commission-index && pnpm -C apps/admin tsc --noEmit 2>&1 | head -20
 ```
 
 Expected: No type errors.
@@ -538,7 +538,7 @@ onSelectCommission={handleSelectCommission}
 - [ ] **Step 5: Verify it compiles**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run --cwd apps/admin tsc --noEmit 2>&1 | head -20
+cd /Users/aozaki/GitHub/commission-index && pnpm -C apps/admin tsc --noEmit 2>&1 | head -20
 ```
 
 Expected: Type errors for the new SortableCharacterCard props (not yet added). That's expected — they'll be resolved in Task 5.
@@ -638,7 +638,7 @@ These are now handled by the drawer callbacks added in Task 4.
 - [ ] **Step 6: Verify it compiles**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run --cwd apps/admin tsc --noEmit 2>&1 | head -20
+cd /Users/aozaki/GitHub/commission-index && pnpm -C apps/admin tsc --noEmit 2>&1 | head -20
 ```
 
 Expected: Clean — no type errors.
@@ -646,7 +646,7 @@ Expected: Clean — no type errors.
 - [ ] **Step 7: Verify dev server works**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run dev:admin &
+cd /Users/aozaki/GitHub/commission-index && pnpm run dev:admin &
 sleep 3
 curl -s http://localhost:4174/ | head -5
 kill %1
@@ -1049,7 +1049,7 @@ export function KeywordReplacePopover({
 - [ ] **Step 2: Verify it compiles**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run --cwd apps/admin tsc --noEmit 2>&1 | head -20
+cd /Users/aozaki/GitHub/commission-index && pnpm -C apps/admin tsc --noEmit 2>&1 | head -20
 ```
 
 Expected: No type errors.
@@ -1126,7 +1126,7 @@ The search input `<div className="relative">` becomes `<div className="relative 
 - [ ] **Step 4: Verify it compiles**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run --cwd apps/admin tsc --noEmit 2>&1 | head -20
+cd /Users/aozaki/GitHub/commission-index && pnpm -C apps/admin tsc --noEmit 2>&1 | head -20
 ```
 
 Expected: Clean.
@@ -1149,7 +1149,7 @@ git commit -m "feat(admin): wire KeywordReplacePopover into edit page search bar
 - [ ] **Step 1: Run lint**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run lint 2>&1 | tail -20
+cd /Users/aozaki/GitHub/commission-index && pnpm run lint 2>&1 | tail -20
 ```
 
 Expected: No errors. If there are lint issues, fix them.
@@ -1157,13 +1157,13 @@ Expected: No errors. If there are lint issues, fix them.
 - [ ] **Step 2: Run lint:fix if needed**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run lint:fix
+cd /Users/aozaki/GitHub/commission-index && pnpm run lint:fix
 ```
 
 - [ ] **Step 3: Run typecheck**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run typecheck 2>&1 | tail -20
+cd /Users/aozaki/GitHub/commission-index && pnpm run typecheck 2>&1 | tail -20
 ```
 
 Expected: Clean across all workspaces.
@@ -1171,7 +1171,7 @@ Expected: Clean across all workspaces.
 - [ ] **Step 4: Run tests**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run test 2>&1 | tail -20
+cd /Users/aozaki/GitHub/commission-index && pnpm run test 2>&1 | tail -20
 ```
 
 Expected: All existing tests pass.
@@ -1179,7 +1179,7 @@ Expected: All existing tests pass.
 - [ ] **Step 5: Build admin**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run build:admin 2>&1 | tail -20
+cd /Users/aozaki/GitHub/commission-index && pnpm run build:admin 2>&1 | tail -20
 ```
 
 Expected: Clean build.
@@ -1202,7 +1202,7 @@ This task is for the human operator — not automated.
 - [ ] **Step 1: Start dev server**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run dev:admin
+cd /Users/aozaki/GitHub/commission-index && pnpm run dev:admin
 ```
 
 - [ ] **Step 2: Verify thumbnail grid**

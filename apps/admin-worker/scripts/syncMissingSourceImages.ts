@@ -183,7 +183,7 @@ async function main() {
   // ==================== 读取 manifest ====================
   if (!existsSync(manifestPath)) {
     console.error(`Manifest not found at ${manifestPath}`)
-    console.error('Run `bun run fact-source:export` first to generate it.')
+    console.error('Run `pnpm run fact-source:export` first to generate it.')
     process.exit(1)
   }
 
@@ -239,7 +239,7 @@ async function main() {
   console.log(`Downloaded ${downloaded}/${staleFiles.length} images`)
 
   if (failCount > 0) {
-    console.error(`${failCount} image(s) failed. Run \`bun run fact-source:export\` to retry.`)
+    console.error(`${failCount} image(s) failed. Run \`pnpm run fact-source:export\` to retry.`)
     process.exit(1)
   }
 }

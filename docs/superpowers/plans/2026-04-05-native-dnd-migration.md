@@ -164,7 +164,7 @@ export function useNativeDragReorder({
 - [ ] **Step 2: Verify it compiles**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run --cwd apps/admin tsc --noEmit 2>&1 | head -20
+cd /Users/aozaki/GitHub/commission-index && pnpm -C apps/admin tsc --noEmit 2>&1 | head -20
 ```
 
 Expected: No errors related to useNativeDragReorder.
@@ -223,7 +223,7 @@ export function DropIndicator() {
 - [ ] **Step 2: Verify it compiles**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run --cwd apps/admin tsc --noEmit 2>&1 | head -20
+cd /Users/aozaki/GitHub/commission-index && pnpm -C apps/admin tsc --noEmit 2>&1 | head -20
 ```
 
 - [ ] **Step 3: Commit**
@@ -329,7 +329,7 @@ return {
 - [ ] **Step 5: Verify it compiles (expect errors in consumers)**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run --cwd apps/admin tsc --noEmit 2>&1 | head -30
+cd /Users/aozaki/GitHub/commission-index && pnpm -C apps/admin tsc --noEmit 2>&1 | head -30
 ```
 
 Expected: Type errors in `CommissionManager.tsx` referencing removed properties (`sensors`, `handleDragOver`, `handleDragEnd`, `itemIds`). This is expected — they'll be fixed in Task 4.
@@ -492,7 +492,7 @@ With:
 - [ ] **Step 5: Verify it compiles (expect errors in SortableCharacterCard props)**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run --cwd apps/admin tsc --noEmit 2>&1 | head -30
+cd /Users/aozaki/GitHub/commission-index && pnpm -C apps/admin tsc --noEmit 2>&1 | head -30
 ```
 
 Expected: Type errors for `SortableCharacterCard` props (`character` instead of `item`, new `isDragging`/`dragHandleProps` props, removed `item` prop). Fixed in Task 5.
@@ -681,7 +681,7 @@ With:
 - [ ] **Step 6: Verify it compiles**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run --cwd apps/admin tsc --noEmit 2>&1 | head -20
+cd /Users/aozaki/GitHub/commission-index && pnpm -C apps/admin tsc --noEmit 2>&1 | head -20
 ```
 
 Expected: Clean — no type errors.
@@ -742,7 +742,7 @@ export function SortableDivider({ activeCount }: SortableDividerProps) {
 - [ ] **Step 2: Verify it compiles**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run --cwd apps/admin tsc --noEmit 2>&1 | head -20
+cd /Users/aozaki/GitHub/commission-index && pnpm -C apps/admin tsc --noEmit 2>&1 | head -20
 ```
 
 Expected: Clean.
@@ -996,7 +996,7 @@ With:
 - [ ] **Step 7: Verify it compiles**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run --cwd apps/admin tsc --noEmit 2>&1 | head -20
+cd /Users/aozaki/GitHub/commission-index && pnpm -C apps/admin tsc --noEmit 2>&1 | head -20
 ```
 
 Expected: Clean.
@@ -1019,7 +1019,7 @@ git commit -m "refactor(admin): replace dnd-kit with native drag in AdminSuggest
 - [ ] **Step 1: Remove packages**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && cd apps/admin && bun remove @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+cd /Users/aozaki/GitHub/commission-index && cd apps/admin && pnpm remove @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
 ```
 
 - [ ] **Step 2: Verify no remaining dnd-kit imports**
@@ -1033,7 +1033,7 @@ Expected: "No dnd-kit imports found — clean"
 - [ ] **Step 3: Reinstall to verify clean lockfile**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun install
+cd /Users/aozaki/GitHub/commission-index && pnpm install
 ```
 
 - [ ] **Step 4: Commit**
@@ -1054,15 +1054,15 @@ git commit -m "chore(admin): remove @dnd-kit dependencies"
 - [ ] **Step 1: Run lint**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run lint 2>&1 | tail -20
+cd /Users/aozaki/GitHub/commission-index && pnpm run lint 2>&1 | tail -20
 ```
 
-Expected: No errors. If lint issues, run `bun run lint:fix`.
+Expected: No errors. If lint issues, run `pnpm run lint:fix`.
 
 - [ ] **Step 2: Run typecheck**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run typecheck 2>&1 | tail -20
+cd /Users/aozaki/GitHub/commission-index && pnpm run typecheck 2>&1 | tail -20
 ```
 
 Expected: Clean across all workspaces.
@@ -1070,7 +1070,7 @@ Expected: Clean across all workspaces.
 - [ ] **Step 3: Run tests**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run test 2>&1 | tail -20
+cd /Users/aozaki/GitHub/commission-index && pnpm run test 2>&1 | tail -20
 ```
 
 Expected: All existing tests pass.
@@ -1078,7 +1078,7 @@ Expected: All existing tests pass.
 - [ ] **Step 4: Build admin**
 
 ```bash
-cd /Users/aozaki/GitHub/commission-index && bun run build:admin 2>&1 | tail -20
+cd /Users/aozaki/GitHub/commission-index && pnpm run build:admin 2>&1 | tail -20
 ```
 
 Expected: Clean build.

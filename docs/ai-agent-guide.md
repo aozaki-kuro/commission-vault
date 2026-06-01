@@ -496,7 +496,7 @@ the token is missing, `502` if GitHub returns a non-204 status.
 ```bash
 # Start the admin frontend (port 4174) and local worker (port 8787)
 # Worker connects to remote D1/R2 — there is no mock data layer
-bun run dev:admin
+pnpm run dev:admin
 ```
 
 Verify the worker is running:
