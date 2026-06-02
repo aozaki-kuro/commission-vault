@@ -9,7 +9,7 @@ outputs:
 runs:
   using: composite
   steps:
-    - uses: pnpm/action-setup@v4
+    - uses: pnpm/action-setup@v6
       name: Install pnpm
       # Version comes from packageManager in package.json
       # https://pnpm.io/continuous-integration#github-actions
