@@ -29,9 +29,9 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "@testing-library/jest-dom": "^6.9.1",
-    "astro": "^6.4.4",
+    "astro": "^6.4.6",
     "jsdom": "^29.1.1",
-    "sharp": "^0.34.5"
+    "sharp": "^0.35.1"
   },
   "overrides": {
     "vite": "^8.0.3"
