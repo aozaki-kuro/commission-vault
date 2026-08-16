@@ -22,18 +22,15 @@
   },
   "dependencies": {
     "@commission-index/domain": "workspace:*",
-    "@iconify-json/tabler": "^1.2.34",
+    "@iconify-json/tabler": "^1.2.38",
     "astro-icon": "^1.1.5",
-    "fuse.js": "^7.4.2"
+    "fuse.js": "^7.5.0"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.9",
-    "@testing-library/jest-dom": "^6.9.1",
-    "astro": "^6.4.6",
-    "jsdom": "^29.1.1",
-    "sharp": "^0.35.1"
-  },
-  "overrides": {
-    "vite": "^8.0.3"
+    "@astrojs/check": "^0.9.10",
+    "@testing-library/jest-dom": "^7.0.1",
+    "astro": "^7.2.2",
+    "jsdom": "^30.0.1",
+    "sharp": "^0.35.3"
   }
 }

@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 **/node_modules/
+/.pnpm-store/
 /.pnp
 .pnp.js
 
@@ -67,4 +68,7 @@ apps/web/generated/
 # AI tool artifacts
 .claude/
 .superpowers/
-tasks/
+tasks/*
+!tasks/lessons.md
+!tasks/roadmap.md
+!tasks/todo.md

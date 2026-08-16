@@ -1,17 +1,7 @@
-import type { AstroUserConfig } from 'astro'
 import tailwindcss from '@tailwindcss/vite'
 import icon from 'astro-icon'
 import { defineConfig, fontProviders } from 'astro/config'
 import { assetsPipelineIntegration } from './server/assetsPipelineAstro'
-
-type AstroVitePlugins = NonNullable<NonNullable<AstroUserConfig['vite']>['plugins']>
-
-// `@tailwindcss/vite` can resolve its own Vite 8 types in the monorepo while Astro 6
-// still validates config against Vite 7. The runtime plugin works, but Astro check needs
-// the plugin list coerced back onto Astro's config surface.
-const vitePlugins: AstroVitePlugins = [
-  tailwindcss() as unknown as AstroVitePlugins[number],
-]
 
 export default defineConfig({
   output: 'static',
@@ -53,16 +43,15 @@ export default defineConfig({
 
   integrations: [icon(), assetsPipelineIntegration()],
   vite: {
-    plugins: vitePlugins,
+    plugins: [tailwindcss()],
     resolve: {
-      // @ts-expect-error Vite 6+ native option; Astro's bundled Vite types lag behind
       tsconfigPaths: true,
     },
     optimizeDeps: {
       include: ['fuse.js'],
     },
     build: {
-      rollupOptions: {
+      rolldownOptions: {
         output: {
           manualChunks: (id) => {
             if (!id.includes('node_modules'))

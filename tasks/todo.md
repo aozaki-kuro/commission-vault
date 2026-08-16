@@ -1,5 +1,37 @@
 # 统一迁移状态板（2026-03-18）
 
+## 本轮提交收口（2026-08-16）
+
+- [x] 审计 untracked/ignored/build artifacts，仅补充仓库根 `.pnpm-store/` 忽略规则
+- [x] 确认依赖升级相关测试、类型检查、构建与 smoke 已完成，不重复执行
+- [x] 复核最终 diff、peer/lockfile 状态与提交范围
+- [x] 按提交规范暂存并提交本轮依赖升级
+- [x] 推送当前 `master` 到 `origin/master` 并确认远端状态
+
+## 本轮执行切片（2026-08-16 pnpm 全量依赖升级）
+
+### 规格与边界
+
+- [x] 只读盘点所有 workspace 的直接依赖、锁文件解析版本、pnpm/Node 约束与现有验证门禁
+- [x] 使用 `pnpm outdated -r --format json` 核对 registry 最新版本，并查阅 Astro 7、TypeScript 7、eslint-plugin-astro 3 的官方迁移约束
+- [x] 在升级前完成 main 基线：lint、typecheck、40 个 Vitest 文件 / 207 个测试、admin build、Astro check 全部通过
+- [x] 先用 `pnpm update -r --latest` 暴露真实兼容边界，再按 peer 冲突和验证结果仅回退不兼容单包
+- [x] 处理升级实际暴露的兼容问题；重点覆盖 Astro 7 / Vite 8 配置、TypeScript 7 已移除选项、ESLint Astro 3 peer 约束、jsdom 30 与 jest-dom 7 测试行为
+- [x] 保持 Node 24 运行时、Cloudflare binding/API、业务逻辑与页面行为不变；TypeScript 7 / Node 26 types 等若被现有工具链或运行时边界阻塞，退回最新兼容版本并记录证据
+- [x] 更新根 `AGENTS.md` 与 `apps/web/AGENTS.md` 中会因 Astro 7 / Vite 8 等版本变化而过时的技术栈和 guardrail
+- [x] 运行 `pnpm install --frozen-lockfile`、lint、typecheck、全量 Vitest、admin build、Astro check/build；可用时补 Wrangler dry-run 与本地 smoke
+- [x] 复核 `git diff --check`、依赖 diff、peer/engine 警告和 `pnpm outdated -r`，确认没有漏升或无关改动
+
+### Review
+
+- `pnpm update -r --latest` 已升级所有 workspace 的直接依赖；最终 `pnpm outdated -r` 只剩 TypeScript 7 与 `@types/node` 26 两项有意保留版本。
+- TypeScript 7.0.2 同时违反 `@astrojs/check@0.9.10` 的 `^5 || ^6` 与 `typescript-eslint@8.67.0` 的 `<6.1.0` peer 区间，因此根与 domain 保留 6.0.3；Node types 改为与 mise Node 24 对齐的 24.13.3。
+- Astro 已从 6.4.8 升到 7.2.2；web 配置删除 Vite 7 类型强转与无效局部 override，并将 `build.rollupOptions` 迁移到 Vite 8 的 `build.rolldownOptions`。
+- `pnpm peers check` 无问题；frozen install、lint、四 workspace typecheck、40 个 Vitest 文件 / 207 个测试、admin build、Astro 178 文件诊断、Astro production build、admin Wrangler dry-run 均通过。
+- Astro preview smoke：`/`、`/zh-tw/`、`/ja/`、search JSON 均为 200，`/admin` 为 404；preview 进程已停止。
+- `pnpm run build:all` 的 admin build 通过，web 远程事实源导出因当前环境未设置 `CLOUDFLARE_API_TOKEN` 停止；已用现有 generated 输入单独完成 Astro 7 production build，不把缺凭证路径计作通过。
+- 升级前后测试数量一致，admin production 产物文件名与大小一致；`git diff --check` 通过，无业务/API 改动。
+
 ## 本轮执行切片（2026-04-25 featured keyword 首次点击滚动修复）
 
 - [x] 定位 featured keyword 点击链路与首次初始化副作用

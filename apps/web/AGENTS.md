@@ -1,6 +1,6 @@
 # web
 
-Active Astro 6 public runtime (`crystallize.cc`).
+Active Astro 7 public runtime (`crystallize.cc`).
 
 ## Key Files
 

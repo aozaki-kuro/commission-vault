@@ -6,7 +6,7 @@ Don't look. Personal use only.
 
 |                     |                                            |
 | ------------------- | ------------------------------------------ |
-| `apps/web`          | Astro 6 static site (crystallize.cc)       |
+| `apps/web`          | Astro 7 static site (crystallize.cc)       |
 | `apps/admin`        | React 19 + Vite SPA (admin.crystallize.cc) |
 | `apps/admin-worker` | Cloudflare Worker — D1/R2 CRUD + admin API |
 | `packages/domain`   | Shared types and domain helpers            |

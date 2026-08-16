@@ -6,7 +6,7 @@ This file provides guidance to coding agents when working with code in this repo
 
 ## Project Overview
 
-Commission Index — a personal commission listing/indexing site. pnpm monorepo with Astro 6 static site (public web), React 19 SPA (admin), and Cloudflare Worker (admin API). Data lives in remote D1/R2.
+Commission Index — a personal commission listing/indexing site. pnpm monorepo with Astro 7 static site (public web), React 19 SPA (admin), and Cloudflare Worker (admin API). Data lives in remote D1/R2.
 
 ## Commands
 
@@ -43,7 +43,7 @@ pnpm run deploy:admin     # deploy admin Worker
 ### Workspace Layout
 
 ```
-apps/web            Astro 6 static site — public runtime (crystallize.cc)
+apps/web            Astro 7 static site — public runtime (crystallize.cc)
 apps/admin          React 19 + Vite 8 SPA — admin UI (admin.crystallize.cc)
 apps/admin-worker   Cloudflare Worker — admin API, D1/R2 CRUD, asset serving
 packages/domain     Shared types and pure domain helpers (no app imports)
@@ -53,7 +53,7 @@ packages/domain     Shared types and pure domain helpers (no app imports)
 
 - **Runtime:** Node 24 (mise) + pnpm (package manager + scripts; new scripts use `.ts` not `.mjs`)
 - **Build orchestration:** Turbo (cacheable tasks only; deploy stays outside Turbo)
-- **Public site:** Astro 6 + Tailwind CSS 4 (vanilla TS client behavior)
+- **Public site:** Astro 7 + Tailwind CSS 4 (vanilla TS client behavior)
 - **Admin frontend:** React 19 + Vite 8 + Tailwind CSS + shadcn/ui
 - **Admin backend:** Cloudflare Worker + D1 (SQL) + R2 (images)
 - **Testing:** Vitest + Playwright (visual regression)
@@ -155,12 +155,13 @@ CI gotchas:
 
 ## Guardrails
 
-### Astro 6
+### Astro 7
 
 - Keep `i18n.routing.redirectToDefaultLocale` explicit
 - Keep `apps/web/src/content.config.ts` present even when empty (suppresses dev warning)
 - Do not enable CSP (Shiki inline styles conflict; analytics needs `https://sight.crystallize.cc`)
-- Monorepo type quirk: when Astro (Vite 7) and standalone Vite 8 apps coexist, `@tailwindcss/vite` and similar plugins may resolve to the wrong Vite type defs — pin plugin results to Astro's own `vite.plugins` type surface and verify with `astro check` + real build
+- Astro and admin both use Vite 8/Rolldown; keep production bundler customization under `build.rolldownOptions` and verify Tailwind plugins with `astro check` + real build
+- Keep TypeScript on 6.x until both `@astrojs/check` and `typescript-eslint` publish TypeScript 7-compatible peer ranges; never bypass this mismatch with peer overrides
 
 ### Dependency Boundaries
 

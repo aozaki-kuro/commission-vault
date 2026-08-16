@@ -34,3 +34,6 @@
 - 2026-03-23: Turbo 处于 `envMode: "strict"` 时，外层 workflow 已经设置的凭证不会自动进入任务进程；像 `wrangler` / 远端导出这类链路如果要在 Turbo 任务里访问 Cloudflare，必须显式加到 `passThroughEnv`，否则会出现“部署步骤有 token，实际 build 子进程没 token”的假象。
 - 2026-03-23: 像 `dev:admin` 这种多进程联调入口，不能只把 worker 和 frontend 一起拉起就算完；只要 frontend 首屏依赖 worker 远端数据，就应该等待一个真实的 binding-backed API 成功响应后再放行，否则用户只会看到“本地起了，但像没连上远端”的假故障。
 - 2026-03-23: GitHub Actions 里只要多个 workflow 会在同一分支上共享同一个 `actions/cache` key，就不能让它们由同一个 push 并发触发并各自 save；`deploy` 应该等 `CI` 成功后再跑，发布类 workflow 还要收口到独立的 release cache namespace 并共用一个 concurrency group，否则 `.turbo` 这类共享缓存会因为 reserve 冲突反复报 `another job may be creating this cache`。
+- 2026-08-16: 做“全量升级到 latest”时，不能把每个包各自的 latest 当成一套天然兼容的工具链；必须先核对 framework checker、parser 与 lint toolchain 的 peer 区间，再分阶段升级，并只对有明确 peer 冲突或硬性验证失败的单包回退到最新兼容版本。
+- 2026-08-16: 同一工作区不能并行启动多个会触发 pnpm 依赖校验/重链接的命令；它们会竞争 `node_modules/.pnpm` 与临时目录，产生 `.bin` ENOENT、`workerd getcwd()` 等伪故障。依赖升级期间必须串行执行 install、lint、typecheck、test 与 build。
+- 2026-08-16: 不要把仍由仓库跟踪、且会被 `lint-staged` 自动格式化的 canonical 状态文件放在整目录 ignore 规则下；Git hook 重新暂存时会因 ignored path 失败。应只忽略该目录中的临时产物，并显式 unignore 需要长期维护的跟踪文件。
